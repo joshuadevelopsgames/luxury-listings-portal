@@ -172,18 +172,18 @@ const UserDetailModal = ({
       onClick={onClose}
     >
       <div 
-        className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col"
+        className="bg-surface rounded-xl max-w-lg w-full max-h-[90vh] overflow-hidden border border-hairline-strong shadow-lg flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 z-10 flex-shrink-0">
+        <div className="sticky top-0 bg-surface px-6 py-4 border-b border-hairline z-10 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg">
+              <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-lg">
                 {userPhoto ? (
                   <img src={userPhoto} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#5856d6] to-[#af52de] flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-brand to-brand flex items-center justify-center">
                     <span className="text-white font-semibold text-xl">
                       {initials}
                     </span>
@@ -191,13 +191,13 @@ const UserDetailModal = ({
                 )}
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-[#1d1d1f] dark:text-white">
+                <h2 className="text-xl font-semibold text-ink">
                   {displayName}
                 </h2>
                 <div className="flex items-center gap-2">
-                  <p className="text-[13px] text-[#86868b]">{roleDisplay}</p>
+                  <p className="text-[13px] text-ink-muted">{roleDisplay}</p>
                   {(localUser.uid || localUser.id || localUser.email) && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] font-mono">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand/10 text-brand font-mono">
                       USR-{String(localUser.uid || localUser.id || localUser.email).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0).toString().slice(-4).padStart(4, '0')}
                     </span>
                   )}
@@ -208,17 +208,17 @@ const UserDetailModal = ({
               {canEdit && !isEditing && (
                 <button
                   onClick={startEditing}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
                   title="Edit profile"
                 >
-                  <Pencil className="w-5 h-5 text-[#86868b]" />
+                  <Pencil className="w-5 h-5 text-ink-muted" />
                 </button>
               )}
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
           </div>
@@ -231,47 +231,47 @@ const UserDetailModal = ({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                     First Name {!canEditAnyName && !(canEditOwnName && isOwnProfile) && '(HR managed)'}
                   </label>
                   <input
                     value={editForm.firstName}
                     onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
+                    className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
                     disabled={!canEditAnyName && !(canEditOwnName && isOwnProfile)}
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                     Last Name {!canEditAnyName && !(canEditOwnName && isOwnProfile) && '(HR managed)'}
                   </label>
                   <input
                     value={editForm.lastName}
                     onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
+                    className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
                     disabled={!canEditAnyName && !(canEditOwnName && isOwnProfile)}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Display Name</label>
+                <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Display Name</label>
                 <input
                   value={editForm.displayName}
                   onChange={(e) => setEditForm({ ...editForm, displayName: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                  className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                     Department {!canManageEmployeeProfiles && '(admin only)'}
                   </label>
                   <select
                     value={editForm.department}
                     onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
+                    className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
                     disabled={!canManageEmployeeProfiles}
                   >
                     <option value="">Select department...</option>
@@ -281,14 +281,14 @@ const UserDetailModal = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                     Start Date {!canManageEmployeeProfiles && '(admin only)'}
                   </label>
                   <input
                     type="date"
                     value={editForm.startDate}
                     onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
+                    className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:bg-black/5 dark:disabled:bg-white/5"
                     disabled={!canManageEmployeeProfiles}
                   />
                 </div>
@@ -296,40 +296,40 @@ const UserDetailModal = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Phone</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Phone</label>
                   <input
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                    className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Location</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Location</label>
                   <input
                     value={editForm.location}
                     onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                    className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Avatar URL</label>
+                <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Avatar URL</label>
                 <input
                   value={editForm.avatar}
                   onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                  className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50"
                   placeholder="https://..."
                 />
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Bio</label>
+                <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Bio</label>
                 <textarea
                   value={editForm.bio}
                   onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 resize-none"
+                  className="w-full px-3 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-brand/50 resize-none"
                   placeholder="A brief description..."
                 />
               </div>
@@ -340,61 +340,61 @@ const UserDetailModal = ({
               {/* Contact Info */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#0071e3]/10 flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-4 h-4 text-[#0071e3]" />
+                  <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-4 h-4 text-brand" />
                   </div>
                   <div>
-                    <p className="text-[11px] text-[#86868b] uppercase tracking-wide">Email</p>
-                    <p className="text-[14px] text-[#1d1d1f] dark:text-white">{localUser.email}</p>
+                    <p className="text-[11px] text-ink-muted uppercase tracking-wide">Email</p>
+                    <p className="text-[14px] text-ink">{localUser.email}</p>
                   </div>
                 </div>
 
                 {localUser.phone && (
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#34c759]/10 flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-4 h-4 text-[#34c759]" />
+                    <div className="w-8 h-8 rounded-lg bg-positive/10 flex items-center justify-center flex-shrink-0">
+                      <Phone className="w-4 h-4 text-positive" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-[#86868b] uppercase tracking-wide">Phone</p>
-                      <p className="text-[14px] text-[#1d1d1f] dark:text-white">{localUser.phone}</p>
+                      <p className="text-[11px] text-ink-muted uppercase tracking-wide">Phone</p>
+                      <p className="text-[14px] text-ink">{localUser.phone}</p>
                     </div>
                   </div>
                 )}
 
                 {localUser.location && (
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#ff9500]/10 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-4 h-4 text-[#ff9500]" />
+                    <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-4 h-4 text-warning" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-[#86868b] uppercase tracking-wide">Location</p>
-                      <p className="text-[14px] text-[#1d1d1f] dark:text-white">{localUser.location}</p>
+                      <p className="text-[11px] text-ink-muted uppercase tracking-wide">Location</p>
+                      <p className="text-[14px] text-ink">{localUser.location}</p>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Work Info */}
-              <div className="pt-4 border-t border-black/5 dark:border-white/10 space-y-3">
+              <div className="pt-4 border-t border-hairline space-y-3">
                 {localUser.department && (
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#5856d6]/10 flex items-center justify-center flex-shrink-0">
-                      <Building className="w-4 h-4 text-[#5856d6]" />
+                    <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                      <Building className="w-4 h-4 text-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-[#86868b] uppercase tracking-wide">Department</p>
-                      <p className="text-[14px] text-[#1d1d1f] dark:text-white">{localUser.department}</p>
+                      <p className="text-[11px] text-ink-muted uppercase tracking-wide">Department</p>
+                      <p className="text-[14px] text-ink">{localUser.department}</p>
                     </div>
                   </div>
                 )}
 
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#af52de]/10 flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-4 h-4 text-[#af52de]" />
+                  <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-4 h-4 text-brand" />
                   </div>
                   <div>
-                    <p className="text-[11px] text-[#86868b] uppercase tracking-wide">Role</p>
-                    <p className="text-[14px] text-[#1d1d1f] dark:text-white">{roleDisplay}</p>
+                    <p className="text-[11px] text-ink-muted uppercase tracking-wide">Role</p>
+                    <p className="text-[14px] text-ink">{roleDisplay}</p>
                   </div>
                 </div>
 
@@ -404,8 +404,8 @@ const UserDetailModal = ({
                       <Calendar className="w-4 h-4 text-[#ff2d55]" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-[#86868b] uppercase tracking-wide">Start Date</p>
-                      <p className="text-[14px] text-[#1d1d1f] dark:text-white">
+                      <p className="text-[11px] text-ink-muted uppercase tracking-wide">Start Date</p>
+                      <p className="text-[14px] text-ink">
                         {format(new Date(localUser.startDate), 'MMMM d, yyyy')}
                       </p>
                     </div>
@@ -415,23 +415,23 @@ const UserDetailModal = ({
 
               {/* Bio */}
               {localUser.bio && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <p className="text-[11px] text-[#86868b] uppercase tracking-wide mb-2">Bio</p>
-                  <p className="text-[14px] text-[#1d1d1f] dark:text-white leading-relaxed">{localUser.bio}</p>
+                <div className="pt-4 border-t border-hairline">
+                  <p className="text-[11px] text-ink-muted uppercase tracking-wide mb-2">Bio</p>
+                  <p className="text-[14px] text-ink leading-relaxed">{localUser.bio}</p>
                 </div>
               )}
 
               {/* Roles & Permissions */}
               {(localUser.roles?.length > 0 || localUser.customPermissions?.length > 0) && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
+                <div className="pt-4 border-t border-hairline">
                   {localUser.roles?.length > 0 && (
                     <div className="mb-3">
-                      <p className="text-[11px] text-[#86868b] uppercase tracking-wide mb-2">Roles</p>
+                      <p className="text-[11px] text-ink-muted uppercase tracking-wide mb-2">Roles</p>
                       <div className="flex flex-wrap gap-1.5">
                         {localUser.roles.map((role, i) => (
                           <span 
                             key={i}
-                            className="px-2 py-1 rounded-md bg-[#5856d6]/10 text-[#5856d6] text-[12px] font-medium"
+                            className="px-2 py-1 rounded-md bg-brand/10 text-brand text-[12px] font-medium"
                           >
                             {ROLE_DISPLAY_NAMES[role] || role}
                           </span>
@@ -447,19 +447,19 @@ const UserDetailModal = ({
 
         {/* Footer (Edit Mode) */}
         {isEditing && (
-          <div className="sticky bottom-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-t border-black/5 dark:border-white/10 flex-shrink-0">
+          <div className="sticky bottom-0 bg-surface px-6 py-4 border-t border-hairline flex-shrink-0">
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setIsEditing(false)}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg text-[14px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-lg text-[14px] font-medium text-ink hover:bg-surface-3 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
               >
                 {saving ? (
                   <>

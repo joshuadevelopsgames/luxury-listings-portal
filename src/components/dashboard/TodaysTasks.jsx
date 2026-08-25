@@ -44,11 +44,11 @@ const TodaysTasks = ({ tasks = [] }) => {
   const getTaskPriorityColor = (priority) => {
     switch (priority) {
       case 'urgent':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-danger-soft text-danger border-red-200';
       case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-warning-soft text-warning border-orange-200';
       case 'medium':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-brand-soft text-brand border-blue-200';
       case 'low':
         return 'bg-gray-100 text-gray-600 border-gray-200';
       default:
@@ -58,7 +58,7 @@ const TodaysTasks = ({ tasks = [] }) => {
 
   const getTaskStatusColor = (taskId) => {
     return completedTasks.has(taskId) 
-      ? 'bg-green-100 text-green-800 border-green-200' 
+      ? 'bg-positive-soft text-positive border-green-200' 
       : 'bg-gray-100 text-gray-600 border-gray-200';
   };
 
@@ -76,7 +76,7 @@ const TodaysTasks = ({ tasks = [] }) => {
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-green-600" />
+          <Target className="w-5 h-5 text-positive" />
           Today's Content Tasks
           <Badge variant="secondary" className="ml-2">
             {completedTasks.size}/{tasks.length} Complete
@@ -89,7 +89,7 @@ const TodaysTasks = ({ tasks = [] }) => {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+              className="bg-positive h-2 rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
@@ -114,7 +114,7 @@ const TodaysTasks = ({ tasks = [] }) => {
                   key={task.id} 
                   className={`p-4 rounded-lg border transition-all ${
                     isCompleted 
-                      ? 'bg-green-50 border-green-200' 
+                      ? 'bg-positive-soft border-green-200' 
                       : 'bg-white border-gray-200 hover:border-green-300 hover:shadow-sm'
                   }`}
                 >
@@ -164,7 +164,7 @@ const TodaysTasks = ({ tasks = [] }) => {
                         <Checkbox
                           checked={isCompleted}
                           onCheckedChange={() => handleTaskToggle(task.id)}
-                          className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                          className="data-[state=checked]:bg-positive data-[state=checked]:border-positive"
                         />
                       </div>
                     </div>

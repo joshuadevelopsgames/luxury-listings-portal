@@ -210,12 +210,12 @@ class ErrorBoundary extends React.Component {
       const { error, errorInfo, showDetails, sendingReport, reportSent, reportError } = this.state;
       
       return (
-        <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-surface-2 dark:bg-ink flex items-center justify-center p-6">
           <div className="max-w-lg w-full">
             {/* Main Card */}
-            <div className="bg-white dark:bg-[#2c2c2e] rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-surface rounded-xl shadow-lg overflow-hidden">
               {/* Header */}
-              <div className="bg-gradient-to-br from-[#ff3b30] to-[#ff9500] p-8 text-center">
+              <div className="bg-gradient-to-br from-danger to-warning p-8 text-center">
                 <div className="w-20 h-20 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4">
                   <AlertTriangle className="w-10 h-10 text-white" strokeWidth={1.5} />
                 </div>
@@ -230,10 +230,10 @@ class ErrorBoundary extends React.Component {
               {/* Content */}
               <div className="p-8">
                 {/* Error Message */}
-                <div className="bg-[#f5f5f7] dark:bg-[#1d1d1f] rounded-2xl p-4 mb-6">
+                <div className="bg-surface-2 dark:bg-ink rounded-xl p-4 mb-6">
                   <div className="flex items-start gap-3">
-                    <Bug className="w-5 h-5 text-[#ff3b30] shrink-0 mt-0.5" />
-                    <p className="text-[15px] text-[#1d1d1f] dark:text-white break-words">
+                    <Bug className="w-5 h-5 text-danger shrink-0 mt-0.5" />
+                    <p className="text-[15px] text-ink break-words">
                       {error?.message || 'An unexpected error occurred'}
                     </p>
                   </div>
@@ -243,7 +243,7 @@ class ErrorBoundary extends React.Component {
                 <div className="space-y-3">
                   <button
                     onClick={this.handleReload}
-                    className="w-full h-12 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#0071e3]/25"
+                    className="w-full h-12 bg-brand hover:bg-brand-hover text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand/25"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Reload Page
@@ -251,7 +251,7 @@ class ErrorBoundary extends React.Component {
                   
                   <button
                     onClick={this.handleGoHome}
-                    className="w-full h-12 bg-[#f5f5f7] dark:bg-[#3a3a3c] hover:bg-[#e8e8ed] dark:hover:bg-[#48484a] text-[#1d1d1f] dark:text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                    className="w-full h-12 bg-surface-2 dark:bg-[#3a3a3c] hover:bg-[#e8e8ed] dark:hover:bg-[#48484a] text-ink rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
                   >
                     <Home className="w-4 h-4" />
                     Go to Dashboard
@@ -260,12 +260,12 @@ class ErrorBoundary extends React.Component {
                 
                 {/* Send Report Section */}
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
-                  <p className="text-[13px] text-[#86868b] mb-3 text-center">
+                  <p className="text-[13px] text-ink-muted mb-3 text-center">
                     Help us fix this issue by sending an error report
                   </p>
                   
                   {reportSent ? (
-                    <div className="bg-[#34c759]/10 rounded-xl p-4 flex items-center justify-center gap-2 text-[#34c759]">
+                    <div className="bg-positive/10 rounded-xl p-4 flex items-center justify-center gap-2 text-positive">
                       <CheckCircle className="w-5 h-5" />
                       <span className="font-medium">Report sent! Thank you for helping us improve.</span>
                     </div>
@@ -274,7 +274,7 @@ class ErrorBoundary extends React.Component {
                       <button
                         onClick={this.handleSendReport}
                         disabled={sendingReport}
-                        className="w-full h-12 bg-[#34c759] hover:bg-[#30d158] disabled:bg-[#86868b] text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                        className="w-full h-12 bg-positive hover:bg-positive disabled:bg-ink-muted text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
                       >
                         {sendingReport ? (
                           <>
@@ -290,13 +290,13 @@ class ErrorBoundary extends React.Component {
                       </button>
                       
                       {reportError && (
-                        <div className="bg-[#ff3b30]/10 rounded-xl p-3 text-center">
-                          <p className="text-[13px] text-[#ff3b30] mb-2">
+                        <div className="bg-danger/10 rounded-xl p-3 text-center">
+                          <p className="text-[13px] text-danger mb-2">
                             Failed to send report: {reportError}
                           </p>
                           <button
                             onClick={this.handleEmailFallback}
-                            className="text-[13px] text-[#0071e3] hover:underline flex items-center justify-center gap-1"
+                            className="text-[13px] text-brand hover:underline flex items-center justify-center gap-1"
                           >
                             <Mail className="w-3 h-3" />
                             Send via email instead
@@ -311,7 +311,7 @@ class ErrorBoundary extends React.Component {
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
                   <button
                     onClick={() => this.setState({ showDetails: !showDetails })}
-                    className="w-full flex items-center justify-between text-[13px] text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+                    className="w-full flex items-center justify-between text-[13px] text-ink-muted hover:text-ink dark:hover:text-white transition-colors"
                   >
                     <span>Technical Details</span>
                     <ChevronDown className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
@@ -319,19 +319,19 @@ class ErrorBoundary extends React.Component {
                   
                   {showDetails && (
                     <div className="mt-4 space-y-3">
-                      <div className="bg-[#1d1d1f] dark:bg-black rounded-xl p-4 overflow-x-auto max-h-48 overflow-y-auto">
-                        <pre className="text-[11px] text-[#86868b] font-mono whitespace-pre-wrap break-words">
-                          <span className="text-[#ff3b30]">Error:</span> {error?.message}
+                      <div className="bg-ink dark:bg-black rounded-xl p-4 overflow-x-auto max-h-48 overflow-y-auto">
+                        <pre className="text-[11px] text-ink-muted font-mono whitespace-pre-wrap break-words">
+                          <span className="text-danger">Error:</span> {error?.message}
                           {'\n\n'}
-                          <span className="text-[#ff9500]">Stack:</span>
+                          <span className="text-warning">Stack:</span>
                           {'\n'}{error?.stack}
                         </pre>
                       </div>
                       
                       {errorInfo?.componentStack && (
-                        <div className="bg-[#1d1d1f] dark:bg-black rounded-xl p-4 overflow-x-auto max-h-48 overflow-y-auto">
-                          <pre className="text-[11px] text-[#86868b] font-mono whitespace-pre-wrap break-words">
-                            <span className="text-[#5856d6]">Component Stack:</span>
+                        <div className="bg-ink dark:bg-black rounded-xl p-4 overflow-x-auto max-h-48 overflow-y-auto">
+                          <pre className="text-[11px] text-ink-muted font-mono whitespace-pre-wrap break-words">
+                            <span className="text-brand">Component Stack:</span>
                             {errorInfo.componentStack}
                           </pre>
                         </div>
@@ -343,7 +343,7 @@ class ErrorBoundary extends React.Component {
             </div>
             
             {/* Footer */}
-            <p className="text-center text-[13px] text-[#86868b] mt-6">
+            <p className="text-center text-[13px] text-ink-muted mt-6">
               If this problem persists, please contact support.
             </p>
           </div>
@@ -520,12 +520,12 @@ export function RouteErrorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-surface-2 flex items-center justify-center p-6">
       <div className="max-w-lg w-full">
         {/* Main Card */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-br from-[#ff3b30] to-[#ff9500] p-8 text-center">
+          <div className="bg-gradient-to-br from-danger to-warning p-8 text-center">
             <div className="w-20 h-20 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-10 h-10 text-white" strokeWidth={1.5} />
             </div>
@@ -539,7 +539,7 @@ export function RouteErrorPage() {
           
           {/* Content */}
           <div className="p-8">
-            <p className="text-[15px] text-[#86868b] text-center mb-6">
+            <p className="text-[15px] text-ink-muted text-center mb-6">
               Don't worry, this happens sometimes. Try reloading the page or going back to the dashboard.
             </p>
             
@@ -547,7 +547,7 @@ export function RouteErrorPage() {
             <div className="space-y-3">
               <button
                 onClick={handleReload}
-                className="w-full h-12 bg-[#0071e3] hover:bg-[#0077ed] text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#0071e3]/25"
+                className="w-full h-12 bg-brand hover:bg-brand-hover text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand/25"
               >
                 <RefreshCw className="w-4 h-4" />
                 Reload Page
@@ -555,7 +555,7 @@ export function RouteErrorPage() {
               
               <button
                 onClick={handleGoHome}
-                className="w-full h-12 bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                className="w-full h-12 bg-surface-2 hover:bg-[#e8e8ed] text-ink rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
               >
                 <Home className="w-4 h-4" />
                 Go to Dashboard
@@ -564,12 +564,12 @@ export function RouteErrorPage() {
             
             {/* Send Report Section */}
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-[13px] text-[#86868b] mb-3 text-center">
+              <p className="text-[13px] text-ink-muted mb-3 text-center">
                 Help us fix this issue by sending an error report
               </p>
               
               {reportSent ? (
-                <div className="bg-[#34c759]/10 rounded-xl p-4 flex items-center justify-center gap-2 text-[#34c759]">
+                <div className="bg-positive/10 rounded-xl p-4 flex items-center justify-center gap-2 text-positive">
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">Report sent! Thank you for helping us improve.</span>
                 </div>
@@ -578,7 +578,7 @@ export function RouteErrorPage() {
                   <button
                     onClick={handleSendReport}
                     disabled={sendingReport}
-                    className="w-full h-12 bg-[#34c759] hover:bg-[#30d158] disabled:bg-[#86868b] text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                    className="w-full h-12 bg-positive hover:bg-positive disabled:bg-ink-muted text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
                   >
                     {sendingReport ? (
                       <>
@@ -594,13 +594,13 @@ export function RouteErrorPage() {
                   </button>
                   
                   {reportError && (
-                    <div className="bg-[#ff3b30]/10 rounded-xl p-3 text-center">
-                      <p className="text-[13px] text-[#ff3b30] mb-2">
+                    <div className="bg-danger/10 rounded-xl p-3 text-center">
+                      <p className="text-[13px] text-danger mb-2">
                         Failed to send report: {reportError}
                       </p>
                       <button
                         onClick={handleEmailFallback}
-                        className="text-[13px] text-[#0071e3] hover:underline flex items-center justify-center gap-1 mx-auto"
+                        className="text-[13px] text-brand hover:underline flex items-center justify-center gap-1 mx-auto"
                       >
                         <Mail className="w-3 h-3" />
                         Send via email instead
@@ -614,7 +614,7 @@ export function RouteErrorPage() {
         </div>
         
         {/* Footer */}
-        <p className="text-center text-[13px] text-[#86868b] mt-6">
+        <p className="text-center text-[13px] text-ink-muted mt-6">
           If this problem persists, please contact support.
         </p>
       </div>

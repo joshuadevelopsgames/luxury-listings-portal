@@ -32,17 +32,17 @@ import TutorialCard from '../components/tutorials/TutorialCard';
 import TutorialViewer from '../components/tutorials/TutorialViewer';
 
 const categoryColors = {
-  strategy: 'bg-[#0071e3]/10 text-[#0071e3]',
-  'content-creation': 'bg-[#af52de]/10 text-[#af52de]',
-  platforms: 'bg-[#34c759]/10 text-[#34c759]',
-  community: 'bg-[#ff9500]/10 text-[#ff9500]',
-  advertising: 'bg-[#ff3b30]/10 text-[#ff3b30]',
-  analytics: 'bg-[#5856d6]/10 text-[#5856d6]',
+  strategy: 'bg-brand/10 text-brand',
+  'content-creation': 'bg-brand/10 text-brand',
+  platforms: 'bg-positive/10 text-positive',
+  community: 'bg-warning/10 text-warning',
+  advertising: 'bg-danger/10 text-danger',
+  analytics: 'bg-brand/10 text-brand',
   'influencer-marketing': 'bg-[#ff2d55]/10 text-[#ff2d55]',
   'crisis-management': 'bg-[#ffcc00]/10 text-[#ffcc00]',
   tools: 'bg-[#30b0c7]/10 text-[#30b0c7]',
   trends: 'bg-[#64d2ff]/10 text-[#64d2ff]',
-  'admin-portal': 'bg-[#ff3b30]/10 text-[#ff3b30]',
+  'admin-portal': 'bg-danger/10 text-danger',
 };
 
 const salesCrmFeatures = [
@@ -258,38 +258,38 @@ export default function FeaturesPage() {
   return (
     <div className="min-h-screen relative">
       {/* Full-viewport gradient (fixed so it fills the whole content area) */}
-      <div className="fixed inset-0 -z-10 bg-[#f5f5f7] dark:bg-[#1d1d1f]" style={{ minHeight: '100vh', minWidth: '100vw' }} />
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" style={{ minHeight: '100vh', minWidth: '100vw' }} />
-      <div className="fixed top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl -z-10" />
-      <div className="fixed bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl -z-10" />
+      <div className="fixed inset-0 -z-10 bg-surface-2 dark:bg-ink" style={{ minHeight: '100vh', minWidth: '100vw' }} />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-brand-soft/80 via-transparent to-brand-soft/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" style={{ minHeight: '100vh', minWidth: '100vw' }} />
+      <div className="fixed top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-brand/10 to-brand/10 blur-3xl -z-10" />
+      <div className="fixed bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-brand/10 to-[#ff2d55]/10 blur-3xl -z-10" />
 
       <div className="relative max-w-5xl mx-auto px-6 py-12 sm:py-16">
         <Link
           to="/resources"
-          className="inline-flex items-center gap-2 text-[13px] text-[#0071e3] dark:text-[#0a84ff] font-medium mb-10 hover:underline"
+          className="inline-flex items-center gap-2 text-[13px] text-brand dark:text-[#0a84ff] font-medium mb-10 hover:underline"
         >
           <ArrowRight className="w-4 h-4 rotate-180" />
           Back to Resources
         </Link>
 
         <header className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-white/10 backdrop-blur border border-black/5 dark:border-white/10 mb-6">
-            <Sparkles className="w-4 h-4 text-[#0071e3] dark:text-[#0a84ff]" />
-            <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Add-ons</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-white/10 backdrop-blur border border-hairline mb-6">
+            <Sparkles className="w-4 h-4 text-brand dark:text-[#0a84ff]" />
+            <span className="text-[13px] font-medium text-ink">Add-ons</span>
           </div>
-          <h1 className="text-[40px] sm:text-[56px] font-semibold text-[#1d1d1f] dark:text-white leading-[1.05] tracking-[-0.03em] mb-5">
+          <h1 className="text-[40px] sm:text-[56px] font-semibold text-ink leading-[1.05] tracking-[-0.03em] mb-5">
             Power up your{' '}
-            <span className="bg-gradient-to-r from-[#0071e3] to-[#5856d6] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand to-brand bg-clip-text text-transparent">
               portal
             </span>
           </h1>
-          <p className="text-[19px] text-[#86868b] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-[19px] text-ink-muted max-w-2xl mx-auto leading-relaxed">
             Potential add-ons for your portal — built on the same codebase so we can turn them on quickly and quote accurately.
           </p>
         </header>
 
         <section>
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-6">
+          <h2 className="text-[22px] font-semibold text-ink tracking-[-0.02em] mb-6">
             Sales and CRM Improvements
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -298,13 +298,13 @@ export default function FeaturesPage() {
               return (
                 <div
                   key={idx}
-                  className="p-6 rounded-2xl bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:border-[#0071e3]/20 dark:hover:border-[#0a84ff]/30 transition-colors"
+                  className="p-6 rounded-xl bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-hairline hover:border-brand/20 dark:hover:border-[#0a84ff]/30 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center mb-4 shadow-lg shadow-[#0071e3]/20">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center mb-4 shadow-lg shadow-brand/20">
                     <Icon className="w-5 h-5 text-white" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white mb-2">{feature.title}</h3>
-                  <p className="text-[14px] text-[#86868b] leading-relaxed">{feature.description}</p>
+                  <h3 className="font-semibold text-[17px] text-ink mb-2">{feature.title}</h3>
+                  <p className="text-[14px] text-ink-muted leading-relaxed">{feature.description}</p>
                 </div>
               );
             })}
@@ -312,7 +312,7 @@ export default function FeaturesPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-6">
+          <h2 className="text-[22px] font-semibold text-ink tracking-[-0.02em] mb-6">
             Content & Collaboration
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -321,13 +321,13 @@ export default function FeaturesPage() {
               return (
                 <div
                   key={idx}
-                  className="p-6 rounded-2xl bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:border-[#0071e3]/20 dark:hover:border-[#0a84ff]/30 transition-colors"
+                  className="p-6 rounded-xl bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-hairline hover:border-brand/20 dark:hover:border-[#0a84ff]/30 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center mb-4 shadow-lg shadow-[#0071e3]/20">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center mb-4 shadow-lg shadow-brand/20">
                     <Icon className="w-5 h-5 text-white" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white mb-2">{feature.title}</h3>
-                  <p className="text-[14px] text-[#86868b] leading-relaxed">{feature.description}</p>
+                  <h3 className="font-semibold text-[17px] text-ink mb-2">{feature.title}</h3>
+                  <p className="text-[14px] text-ink-muted leading-relaxed">{feature.description}</p>
                 </div>
               );
             })}
@@ -335,7 +335,7 @@ export default function FeaturesPage() {
         </section>
 
         <section className="mt-16">
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-6">
+          <h2 className="text-[22px] font-semibold text-ink tracking-[-0.02em] mb-6">
             Automation & Engagement
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -344,13 +344,13 @@ export default function FeaturesPage() {
               return (
                 <div
                   key={idx}
-                  className="p-6 rounded-2xl bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 hover:border-[#0071e3]/20 dark:hover:border-[#0a84ff]/30 transition-colors"
+                  className="p-6 rounded-xl bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-hairline hover:border-brand/20 dark:hover:border-[#0a84ff]/30 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center mb-4 shadow-lg shadow-[#0071e3]/20">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center mb-4 shadow-lg shadow-brand/20">
                     <Icon className="w-5 h-5 text-white" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white mb-2">{feature.title}</h3>
-                  <p className="text-[14px] text-[#86868b] leading-relaxed">{feature.description}</p>
+                  <h3 className="font-semibold text-[17px] text-ink mb-2">{feature.title}</h3>
+                  <p className="text-[14px] text-ink-muted leading-relaxed">{feature.description}</p>
                 </div>
               );
             })}
@@ -358,32 +358,32 @@ export default function FeaturesPage() {
         </section>
 
         <section id="tutorials" className="mt-16">
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-2">
+          <h2 className="text-[22px] font-semibold text-ink tracking-[-0.02em] mb-2">
             Tutorials & Training
           </h2>
-          <p className="text-[15px] text-[#86868b] mb-6">Step-by-step guides to get up to speed with our systems.</p>
+          <p className="text-[15px] text-ink-muted mb-6">Step-by-step guides to get up to speed with our systems.</p>
           {tutorialsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-48 bg-white/50 dark:bg-white/5 rounded-2xl animate-pulse" />
+                <div key={i} className="h-48 bg-white/50 dark:bg-white/5 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : tutorials.length === 0 ? (
-            <p className="text-[14px] text-[#86868b]">No tutorials available yet.</p>
+            <p className="text-[14px] text-ink-muted">No tutorials available yet.</p>
           ) : (
             <>
-              <div className="flex items-center gap-3 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-2xl p-4 mb-6 w-fit">
+              <div className="flex items-center gap-3 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-hairline rounded-xl p-4 mb-6 w-fit">
                 <Trophy className="w-6 h-6 text-[#ffcc00]" />
                 <div>
-                  <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Overall Progress</p>
+                  <p className="text-[13px] font-medium text-ink">Overall Progress</p>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-24 h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#34c759] rounded-full transition-all"
+                        className="h-full bg-positive rounded-full transition-all"
                         style={{ width: `${getOverallProgress()}%` }}
                       />
                     </div>
-                    <span className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">{getOverallProgress()}%</span>
+                    <span className="text-[13px] font-semibold text-ink">{getOverallProgress()}%</span>
                   </div>
                 </div>
               </div>
@@ -391,10 +391,10 @@ export default function FeaturesPage() {
                 {Object.entries(groupedTutorials).map(([category, categoryTutorials]) => (
                   <div key={category}>
                     <div className="flex items-center gap-2 mb-4">
-                      <span className={`text-[12px] px-3 py-1 rounded-lg font-medium ${categoryColors[category] || 'bg-black/10 text-[#1d1d1f]'}`}>
+                      <span className={`text-[12px] px-3 py-1 rounded-lg font-medium ${categoryColors[category] || 'bg-black/10 text-ink'}`}>
                         {category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ')}
                       </span>
-                      <span className="text-[13px] text-[#86868b]">
+                      <span className="text-[13px] text-ink-muted">
                         {categoryTutorials.length} tutorial{categoryTutorials.length !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -416,8 +416,8 @@ export default function FeaturesPage() {
         </section>
 
         <div className="mt-16 text-center">
-          <p className="text-[15px] text-[#86868b] mb-2">Want to add any of these to your package?</p>
-          <p className="text-[13px] text-[#86868b]">
+          <p className="text-[15px] text-ink-muted mb-2">Want to add any of these to your package?</p>
+          <p className="text-[13px] text-ink-muted">
             Contact your account manager or sales to get a tailored quote.
           </p>
         </div>

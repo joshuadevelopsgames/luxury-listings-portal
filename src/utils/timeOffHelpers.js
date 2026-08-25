@@ -221,15 +221,15 @@ export const formatDateRange = (startDate, endDate) => {
 export const getStatusColor = (status) => {
   switch (status) {
     case 'approved':
-      return 'bg-[#34c759]/10 text-[#34c759]';
+      return 'bg-positive/10 text-positive';
     case 'pending':
-      return 'bg-[#ff9500]/10 text-[#ff9500]';
+      return 'bg-warning/10 text-warning';
     case 'rejected':
-      return 'bg-[#ff3b30]/10 text-[#ff3b30]';
+      return 'bg-danger/10 text-danger';
     case 'cancelled':
-      return 'bg-[#86868b]/10 text-[#86868b]';
+      return 'bg-ink-muted/10 text-ink-muted';
     default:
-      return 'bg-[#86868b]/10 text-[#86868b]';
+      return 'bg-ink-muted/10 text-ink-muted';
   }
 };
 
@@ -238,13 +238,13 @@ export const getStatusColor = (status) => {
  */
 export const getLeaveTypeInfo = (type) => {
   const types = {
-    vacation: { label: 'Vacation', icon: '🏖️', color: 'text-[#0071e3]' },
-    sick: { label: 'Sick Leave', icon: '🏥', color: 'text-[#ff3b30]' },
-    travel: { label: 'Business Travel', icon: '✈️', color: 'text-[#ff9500]' },
-    remote: { label: 'Remote', icon: '💻', color: 'text-[#34c759]' },
-    other: { label: 'Other', icon: '📋', color: 'text-[#5856d6]' }
+    vacation: { label: 'Vacation', icon: '🏖️', color: 'text-brand' },
+    sick: { label: 'Sick Leave', icon: '🏥', color: 'text-danger' },
+    travel: { label: 'Business Travel', icon: '✈️', color: 'text-warning' },
+    remote: { label: 'Remote', icon: '💻', color: 'text-positive' },
+    other: { label: 'Other', icon: '📋', color: 'text-brand' }
   };
-  return types[type] || { label: type, icon: '📅', color: 'text-[#86868b]' };
+  return types[type] || { label: type, icon: '📅', color: 'text-ink-muted' };
 };
 
 /** Display label for a request (handles type=other with otherSubType/otherCustomLabel). */

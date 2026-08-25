@@ -127,13 +127,13 @@ const LeadDetailModal = ({
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'warm': return 'bg-[#86868b]/10 text-[#86868b]';
+      case 'warm': return 'bg-ink-muted/10 text-ink-muted';
       case 'not_interested':
       case 'not interested': return 'bg-stone-400/15 text-stone-700 dark:text-stone-300';
-      case 'contacted': return 'bg-[#0071e3]/10 text-[#0071e3]';
-      case 'cold': return 'bg-[#86868b]/10 text-[#86868b]';
-      case 'converted': return 'bg-[#34c759]/10 text-[#34c759]';
-      default: return 'bg-[#86868b]/10 text-[#86868b]';
+      case 'contacted': return 'bg-brand/10 text-brand';
+      case 'cold': return 'bg-ink-muted/10 text-ink-muted';
+      case 'converted': return 'bg-positive/10 text-positive';
+      default: return 'bg-ink-muted/10 text-ink-muted';
     }
   };
 
@@ -143,20 +143,20 @@ const LeadDetailModal = ({
       onClick={onClose}
     >
       <div 
-        className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col"
+        className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-hairline-strong shadow-lg flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 z-10 flex-shrink-0">
+        <div className="sticky top-0 bg-surface px-6 py-4 border-b border-hairline z-10 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 shadow-lg bg-gradient-to-br from-[#ff9500] to-[#ff3b30] flex items-center justify-center">
+              <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-lg bg-gradient-to-br from-warning to-danger flex items-center justify-center">
                 <span className="text-white font-semibold text-xl">
                   {displayName.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div>
-                <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white mb-0.5">
+                <h2 className="text-[20px] font-semibold text-ink mb-0.5">
                   {displayName}
                 </h2>
                 <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ const LeadDetailModal = ({
                     {statusDisplay}
                   </span>
                   {lead.organization && (
-                    <span className="text-[12px] text-[#86868b]">
+                    <span className="text-[12px] text-ink-muted">
                       {lead.organization}
                     </span>
                   )}
@@ -175,7 +175,7 @@ const LeadDetailModal = ({
               {canEdit && onGraduate && !isEditing && (
                 <button
                   onClick={() => onGraduate(lead)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#34c759] hover:bg-[#30b350] text-white text-[13px] font-medium transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-positive hover:bg-[#30b350] text-white text-[13px] font-medium transition-colors shadow-sm"
                   title="Add this lead as a client; you'll be asked to upload a day-one screenshot"
                 >
                   <UserCheck className="w-4 h-4" />
@@ -185,26 +185,26 @@ const LeadDetailModal = ({
               {canEdit && !isEditing && (
                 <button
                   onClick={startEditing}
-                  className="p-2 rounded-xl bg-[#0071e3]/10 hover:bg-[#0071e3]/20 transition-colors"
+                  className="p-2 rounded-xl bg-brand/10 hover:bg-brand/20 transition-colors"
                   title="Edit lead"
                 >
-                  <Pencil className="w-4 h-4 text-[#0071e3]" />
+                  <Pencil className="w-4 h-4 text-brand" />
                 </button>
               )}
               {canEdit && onDelete && !isEditing && (
                 <button
                   onClick={handleDelete}
-                  className="p-2 rounded-xl hover:bg-[#ff3b30]/10 transition-colors"
+                  className="p-2 rounded-xl hover:bg-danger/10 transition-colors"
                   title="Delete lead"
                 >
-                  <Trash2 className="w-4 h-4 text-[#ff3b30]" />
+                  <Trash2 className="w-4 h-4 text-danger" />
                 </button>
               )}
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="p-2 rounded-xl hover:bg-surface-3 transition-colors"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
           </div>
@@ -217,25 +217,25 @@ const LeadDetailModal = ({
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Contact Name *</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Contact Name *</label>
                   <input
                     type="text"
                     value={editForm.contactName}
                     onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Email</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Email</label>
                   <input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Service type(s)</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Service type(s)</label>
                   <div className="flex flex-wrap gap-3">
                     {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
                       <label key={value} className="flex items-center gap-2 cursor-pointer">
@@ -249,66 +249,66 @@ const LeadDetailModal = ({
                               types: e.target.checked ? [...prev, value] : prev.filter(t => t !== value)
                             });
                           }}
-                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                          className="w-4 h-4 rounded border-black/20 text-brand focus:ring-brand"
                         />
-                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">{label}</span>
+                        <span className="text-[13px] text-ink">{label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Phone</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Phone</label>
                   <input
                     type="tel"
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Location</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Location</label>
                   <LocationSelect
                     value={editForm.location || ''}
                     onChange={(loc) => setEditForm({ ...editForm, location: loc || '' })}
                     placeholder="Search or select location"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                     allowLegacy={true}
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Organization</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Organization</label>
                   <input
                     type="text"
                     value={editForm.organization}
                     onChange={(e) => setEditForm({ ...editForm, organization: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Website</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Website</label>
                   <input
                     type="url"
                     value={editForm.website}
                     onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Instagram</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Instagram</label>
                   <input
                     type="text"
                     value={editForm.instagram}
                     onChange={(e) => setEditForm({ ...editForm, instagram: e.target.value.replace('@', '') })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                     placeholder="username"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Status</label>
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Status</label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand"
                   >
                     <option value="contacted">Contacted</option>
                     <option value="cold">Cold Lead</option>
@@ -316,23 +316,23 @@ const LeadDetailModal = ({
                     <option value="converted">Converted</option>
                   </select>
                 </div>
-                <div className="md:col-span-2 border-t border-black/5 dark:border-white/10 pt-4">
-                  <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-2 block">Primary contact (optional)</label>
+                <div className="md:col-span-2 border-t border-hairline pt-4">
+                  <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-2 block">Primary contact (optional)</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <input type="text" value={editForm.primaryContact?.name || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), name: e.target.value } })} placeholder="Name" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
-                    <input type="email" value={editForm.primaryContact?.email || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), email: e.target.value } })} placeholder="Email" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
-                    <input type="tel" value={editForm.primaryContact?.phone || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), phone: e.target.value } })} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
-                    <input type="text" value={editForm.primaryContact?.role || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), role: e.target.value } })} placeholder="Role" className="w-full h-10 px-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="text" value={editForm.primaryContact?.name || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), name: e.target.value } })} placeholder="Name" className="w-full h-10 px-3 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="email" value={editForm.primaryContact?.email || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), email: e.target.value } })} placeholder="Email" className="w-full h-10 px-3 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="tel" value={editForm.primaryContact?.phone || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), phone: e.target.value } })} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02]" />
+                    <input type="text" value={editForm.primaryContact?.role || ''} onChange={(e) => setEditForm({ ...editForm, primaryContact: { ...(editForm.primaryContact || {}), role: e.target.value } })} placeholder="Role" className="w-full h-10 px-3 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02]" />
                   </div>
                 </div>
               </div>
               <div>
-                <label className="text-[11px] text-[#86868b] uppercase tracking-wide font-medium mb-1.5 block">Notes</label>
+                <label className="text-[11px] text-ink-muted uppercase tracking-wide font-medium mb-1.5 block">Notes</label>
                 <textarea
                   value={editForm.notes}
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-3 text-[14px] rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 text-[14px] rounded-xl border border-hairline-strong bg-black/[0.02] dark:bg-white/[0.02] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand resize-none"
                 />
               </div>
             </div>
@@ -341,14 +341,14 @@ const LeadDetailModal = ({
             <div className="space-y-6">
               {/* Promote to Client – prominent CTA */}
               {canEdit && onGraduate && (
-                <div className="rounded-xl border-2 border-[#34c759]/30 bg-[#34c759]/5 dark:bg-[#34c759]/10 p-4">
-                  <p className="text-[13px] text-[#1d1d1f] dark:text-white font-medium mb-1">Add this lead as a client</p>
-                  <p className="text-[12px] text-[#86868b] mb-3">
+                <div className="rounded-xl border-2 border-positive/30 bg-positive/5 dark:bg-positive/10 p-4">
+                  <p className="text-[13px] text-ink font-medium mb-1">Add this lead as a client</p>
+                  <p className="text-[12px] text-ink-muted mb-3">
                     Promote to Client creates a client record in the system. You&apos;ll then be asked to upload a day-one social screenshot (required).
                   </p>
                   <button
                     onClick={() => onGraduate(lead)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] hover:bg-[#30b350] text-white text-[13px] font-medium transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-positive hover:bg-[#30b350] text-white text-[13px] font-medium transition-colors"
                   >
                     <UserCheck className="w-4 h-4" />
                     Promote to Client
@@ -358,49 +358,49 @@ const LeadDetailModal = ({
 
               {/* Contact Info */}
               <div>
-                <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Contact Information</h3>
+                <h3 className="text-[12px] font-semibold text-ink-muted mb-3 uppercase tracking-wide">Contact Information</h3>
                 <div className="space-y-3">
                   {lead.location && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                      <div className="w-9 h-9 rounded-lg bg-[#34c759]/10 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-4 h-4 text-[#34c759]" />
+                      <div className="w-9 h-9 rounded-lg bg-positive/10 flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-4 h-4 text-positive" />
                       </div>
                       <div>
-                        <p className="text-[11px] text-[#86868b]">Location</p>
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{lead.location}</p>
+                        <p className="text-[11px] text-ink-muted">Location</p>
+                        <p className="text-[13px] font-medium text-ink">{lead.location}</p>
                       </div>
                     </div>
                   )}
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                    <div className="w-9 h-9 rounded-lg bg-[#5856d6]/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-4 h-4 text-[#5856d6]" />
+                    <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-[#86868b]">Service type</p>
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                      <p className="text-[11px] text-ink-muted">Service type</p>
+                      <p className="text-[13px] font-medium text-ink">
                         {getContactTypes(lead).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
                       </p>
                     </div>
                   </div>
                   {lead.primaryContact && (lead.primaryContact.name || lead.primaryContact.email) && (
                     <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                      <p className="text-[11px] text-[#86868b] mb-1">Primary contact</p>
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{lead.primaryContact.name || '—'}{lead.primaryContact.role ? ` · ${lead.primaryContact.role}` : ''}</p>
-                      {lead.primaryContact.email && <p className="text-[12px] text-[#86868b]">{lead.primaryContact.email}</p>}
-                      {lead.primaryContact.phone && <p className="text-[12px] text-[#86868b]">{lead.primaryContact.phone}</p>}
+                      <p className="text-[11px] text-ink-muted mb-1">Primary contact</p>
+                      <p className="text-[13px] font-medium text-ink">{lead.primaryContact.name || '—'}{lead.primaryContact.role ? ` · ${lead.primaryContact.role}` : ''}</p>
+                      {lead.primaryContact.email && <p className="text-[12px] text-ink-muted">{lead.primaryContact.email}</p>}
+                      {lead.primaryContact.phone && <p className="text-[12px] text-ink-muted">{lead.primaryContact.phone}</p>}
                     </div>
                   )}
                   {lead.email && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                      <div className="w-9 h-9 rounded-lg bg-[#0071e3]/10 flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-4 h-4 text-[#0071e3]" />
+                      <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                        <Mail className="w-4 h-4 text-brand" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-[#86868b]">Email</p>
+                        <p className="text-[11px] text-ink-muted">Email</p>
                         <button
                           type="button"
                           onClick={() => openGmailWithComposeTo(lead.email)}
-                          className="text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:text-[#0071e3] truncate block text-left"
+                          className="text-[13px] font-medium text-ink hover:text-brand truncate block text-left"
                         >
                           {lead.email}
                         </button>
@@ -409,14 +409,14 @@ const LeadDetailModal = ({
                   )}
                   {lead.phone && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                      <div className="w-9 h-9 rounded-lg bg-[#34c759]/10 flex items-center justify-center flex-shrink-0">
-                        <Phone className="w-4 h-4 text-[#34c759]" />
+                      <div className="w-9 h-9 rounded-lg bg-positive/10 flex items-center justify-center flex-shrink-0">
+                        <Phone className="w-4 h-4 text-positive" />
                       </div>
                       <div>
-                        <p className="text-[11px] text-[#86868b]">Phone</p>
+                        <p className="text-[11px] text-ink-muted">Phone</p>
                         <a 
                           href={`tel:${lead.phone}`}
-                          className="text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:text-[#0071e3]"
+                          className="text-[13px] font-medium text-ink hover:text-brand"
                         >
                           {lead.phone}
                         </a>
@@ -425,12 +425,12 @@ const LeadDetailModal = ({
                   )}
                   {lead.organization && (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                      <div className="w-9 h-9 rounded-lg bg-[#5856d6]/10 flex items-center justify-center flex-shrink-0">
-                        <Building className="w-4 h-4 text-[#5856d6]" />
+                      <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
+                        <Building className="w-4 h-4 text-brand" />
                       </div>
                       <div>
-                        <p className="text-[11px] text-[#86868b]">Organization</p>
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{lead.organization}</p>
+                        <p className="text-[11px] text-ink-muted">Organization</p>
+                        <p className="text-[13px] font-medium text-ink">{lead.organization}</p>
                       </div>
                     </div>
                   )}
@@ -445,11 +445,11 @@ const LeadDetailModal = ({
                       href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] text-[13px] text-ink hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors"
                     >
-                      <Globe className="w-4 h-4 text-[#86868b]" />
+                      <Globe className="w-4 h-4 text-ink-muted" />
                       Website
-                      <ExternalLink className="w-3.5 h-3.5 text-[#86868b]" />
+                      <ExternalLink className="w-3.5 h-3.5 text-ink-muted" />
                     </a>
                   )}
                   {lead.instagram && (
@@ -468,33 +468,33 @@ const LeadDetailModal = ({
 
               {/* Activity Info */}
               <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                <h3 className="text-[12px] font-semibold text-[#86868b] mb-4 uppercase tracking-wide">Activity</h3>
+                <h3 className="text-[12px] font-semibold text-ink-muted mb-4 uppercase tracking-wide">Activity</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {lead.lastContact && lead.lastContact !== '—' && (
                     <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
                       <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-3.5 h-3.5 text-[#86868b]" />
-                        <p className="text-[11px] text-[#86868b]">Last Contact</p>
+                        <Clock className="w-3.5 h-3.5 text-ink-muted" />
+                        <p className="text-[11px] text-ink-muted">Last Contact</p>
                       </div>
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{lead.lastContact}</p>
+                      <p className="text-[13px] font-medium text-ink">{lead.lastContact}</p>
                     </div>
                   )}
                   {lead.followUpDate && (
                     <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
                       <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-3.5 h-3.5 text-[#86868b]" />
-                        <p className="text-[11px] text-[#86868b]">Follow Up</p>
+                        <Calendar className="w-3.5 h-3.5 text-ink-muted" />
+                        <p className="text-[11px] text-ink-muted">Follow Up</p>
                       </div>
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{lead.followUpDate}</p>
+                      <p className="text-[13px] font-medium text-ink">{lead.followUpDate}</p>
                     </div>
                   )}
                   {lead.nextOutreach && (
-                    <div className="p-3 bg-[#ff9500]/5 rounded-xl">
+                    <div className="p-3 bg-warning/5 rounded-xl">
                       <div className="flex items-center gap-2 mb-1">
-                        <AlertCircle className="w-3.5 h-3.5 text-[#ff9500]" />
-                        <p className="text-[11px] text-[#ff9500]">Next Outreach</p>
+                        <AlertCircle className="w-3.5 h-3.5 text-warning" />
+                        <p className="text-[11px] text-warning">Next Outreach</p>
                       </div>
-                      <p className="text-[13px] font-medium text-[#ff9500]">{lead.nextOutreach}</p>
+                      <p className="text-[13px] font-medium text-warning">{lead.nextOutreach}</p>
                     </div>
                   )}
                 </div>
@@ -503,9 +503,9 @@ const LeadDetailModal = ({
               {/* Notes */}
               {lead.notes && lead.notes !== 'No additional information' && (
                 <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                  <h3 className="text-[12px] font-semibold text-[#86868b] mb-3 uppercase tracking-wide">Notes</h3>
+                  <h3 className="text-[12px] font-semibold text-ink-muted mb-3 uppercase tracking-wide">Notes</h3>
                   <div className="p-4 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                    <p className="text-[13px] text-[#1d1d1f] dark:text-white whitespace-pre-wrap">{lead.notes}</p>
+                    <p className="text-[13px] text-ink whitespace-pre-wrap">{lead.notes}</p>
                   </div>
                 </div>
               )}
@@ -519,14 +519,14 @@ const LeadDetailModal = ({
             <div className="flex gap-3">
               <button
                 onClick={() => setIsEditing(false)}
-                className="flex-1 h-11 rounded-xl border border-black/10 dark:border-white/10 text-[14px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="flex-1 h-11 rounded-xl border border-hairline-strong text-[14px] font-medium text-ink hover:bg-surface-3 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -543,7 +543,7 @@ const LeadDetailModal = ({
               {lead.phone && (
                 <a
                   href={`tel:${lead.phone}`}
-                  className="flex-1 min-w-[120px] h-11 flex items-center justify-center gap-2 rounded-xl bg-[#34c759] text-white text-[14px] font-medium hover:bg-[#2db24b] transition-colors"
+                  className="flex-1 min-w-[120px] h-11 flex items-center justify-center gap-2 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-[#2db24b] transition-colors"
                 >
                   <Phone className="w-4 h-4" />
                   Call
@@ -553,7 +553,7 @@ const LeadDetailModal = ({
                 <button
                   type="button"
                   onClick={() => openGmailWithComposeTo(lead.email)}
-                  className="flex-1 min-w-[120px] h-11 flex items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+                  className="flex-1 min-w-[120px] h-11 flex items-center justify-center gap-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
                 >
                   <MessageSquare className="w-4 h-4" />
                   Email
@@ -561,7 +561,7 @@ const LeadDetailModal = ({
               )}
               <button
                 onClick={onClose}
-                className="flex-1 min-w-[120px] h-11 rounded-xl border border-black/10 dark:border-white/10 text-[14px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="flex-1 min-w-[120px] h-11 rounded-xl border border-hairline-strong text-[14px] font-medium text-ink hover:bg-surface-3 transition-colors"
               >
                 Close
               </button>

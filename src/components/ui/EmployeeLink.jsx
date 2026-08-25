@@ -21,11 +21,11 @@ const EmployeeLink = ({ user, showId = true, className = '', onEmployeeUpdate = 
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
-        className={`inline-flex items-center gap-1.5 text-[#5856d6] hover:text-[#6e6ce8] hover:underline font-medium transition-colors cursor-pointer ${className}`}
+        className={`inline-flex items-center gap-1.5 text-brand hover:text-[#6e6ce8] hover:underline font-medium transition-colors cursor-pointer ${className}`}
       >
         {children ?? displayName}
         {showId && idLabel && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] font-mono">{idLabel}</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand/10 text-brand font-mono">{idLabel}</span>
         )}
       </button>
       {open && (

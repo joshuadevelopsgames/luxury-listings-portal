@@ -6,11 +6,11 @@ import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
 const PRESET_FILTERS = [
-  { id: 'preset-p1', name: 'P1 Urgent', icon: Flag, color: 'text-[#ff3b30]', criteria: { priorities: ['urgent', 'p1'] } },
-  { id: 'preset-week', name: 'This Week', icon: Calendar, color: 'text-[#ff9500]', criteria: { dueWithinDays: 7 } },
-  { id: 'preset-client', name: 'Client Work', icon: Users, color: 'text-[#0071e3]', criteria: { labels: ['client-work', 'urgent'] } },
+  { id: 'preset-p1', name: 'P1 Urgent', icon: Flag, color: 'text-danger', criteria: { priorities: ['urgent', 'p1'] } },
+  { id: 'preset-week', name: 'This Week', icon: Calendar, color: 'text-warning', criteria: { dueWithinDays: 7 } },
+  { id: 'preset-client', name: 'Client Work', icon: Users, color: 'text-brand', criteria: { labels: ['client-work', 'urgent'] } },
   { id: 'preset-quick', name: 'Quick Wins', icon: Zap, color: 'text-[#ffcc00]', criteria: { priorities: ['low', 'p4', 'medium', 'p3'], estimatedTimeMax: 30 } },
-  { id: 'preset-recurring', name: 'Recurring', icon: Repeat, color: 'text-[#34c759]', criteria: { isRecurring: true } }
+  { id: 'preset-recurring', name: 'Recurring', icon: Repeat, color: 'text-positive', criteria: { isRecurring: true } }
 ];
 
 const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFilter, buttonRef }) => {
@@ -112,16 +112,16 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
   return createPortal(
     <div
       ref={dropdownRef}
-      className="fixed w-72 bg-white dark:bg-[#1d1d1f] rounded-xl shadow-xl border border-black/10 dark:border-white/10 z-50 overflow-y-auto"
+      className="fixed w-72 bg-surface rounded-xl shadow-lg border border-hairline-strong z-50 overflow-y-auto"
       style={{ 
         maxHeight,
         ...(dropUp ? { bottom: position.bottom, right: position.right } : { top: position.top, right: position.right })
       }}
     >
       {/* Preset Filters */}
-      <div className="border-b border-black/5 dark:border-white/10">
-        <div className="px-3 py-2.5 bg-black/[0.02] dark:bg-white/5 border-b border-black/5 dark:border-white/10 sticky top-0 z-10">
-          <p className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider">Quick Filters</p>
+      <div className="border-b border-hairline">
+        <div className="px-3 py-2.5 bg-surface-2 border-b border-hairline sticky top-0 z-10">
+          <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">Quick Filters</p>
         </div>
         <div className="py-1 pb-2">
           {PRESET_FILTERS.map((filter) => {
@@ -133,8 +133,8 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
                 onClick={() => handleFilterClick(filter)}
                 className={`w-full px-4 py-2.5 text-left transition-colors flex items-center gap-3 rounded-lg mx-1 ${
                   isActive
-                    ? 'bg-[#0071e3]/10 dark:bg-[#0071e3]/20 border-l-2 border-[#0071e3] text-[#0071e3]'
-                    : 'hover:bg-black/5 dark:hover:bg-white/10 text-[#1d1d1f] dark:text-white'
+                    ? 'bg-brand/10 dark:bg-brand/20 border-l-2 border-brand text-brand'
+                    : 'hover:bg-surface-3 text-ink'
                 }`}
               >
                 <Icon className={`w-4 h-4 ${filter.color} dark:opacity-90`} />
@@ -147,9 +147,9 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
 
       {/* Custom Filters */}
       {customFilters.length > 0 && (
-        <div className="border-b border-black/5 dark:border-white/10">
-          <div className="px-3 py-2.5 bg-black/[0.02] dark:bg-white/5 border-b border-black/5 dark:border-white/10 sticky top-0 z-10">
-            <p className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider">My Filters</p>
+        <div className="border-b border-hairline">
+          <div className="px-3 py-2.5 bg-surface-2 border-b border-hairline sticky top-0 z-10">
+            <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider">My Filters</p>
           </div>
           <div className="py-1 pb-2">
             {customFilters.map((filter) => {
@@ -157,20 +157,20 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
               return (
                 <div
                   key={filter.id}
-                  className={`group relative rounded-lg mx-1 ${isActive ? 'bg-[#0071e3]/10 dark:bg-[#0071e3]/20 border-l-2 border-[#0071e3]' : ''}`}
+                  className={`group relative rounded-lg mx-1 ${isActive ? 'bg-brand/10 dark:bg-brand/20 border-l-2 border-brand' : ''}`}
                 >
                   <button
                     onClick={() => handleFilterClick(filter)}
                     className={`w-full px-4 py-2.5 text-left transition-colors flex items-center gap-3 pr-10 ${
-                      isActive ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/10'
+                      isActive ? 'text-brand' : 'text-ink hover:bg-surface-3'
                     }`}
                   >
-                    <Star className="w-4 h-4 text-[#ff9500] dark:text-[#ff9f0a]" />
+                    <Star className="w-4 h-4 text-warning dark:text-[#ff9f0a]" />
                     <span className="text-[13px] font-medium">{filter.name}</span>
                   </button>
                   <button
                     onClick={(e) => handleDeleteFilter(filter.id, e)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-[#ff3b30]/10 dark:hover:bg-[#ff3b30]/20 text-[#ff3b30]"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-danger/10 dark:hover:bg-danger/20 text-danger"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -182,14 +182,14 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
       )}
 
       {/* Clear Filter & Create New */}
-      <div className="py-2 pb-3 sticky bottom-0 z-10 bg-white dark:bg-[#1d1d1f] border-t border-black/5 dark:border-white/10">
+      <div className="py-2 pb-3 sticky bottom-0 z-10 bg-surface border-t border-hairline">
         {activeFilter?.id && (
           <button
             onClick={() => {
               onApplyFilter(null);
               onClose();
             }}
-            className="w-full px-4 py-2.5 text-left hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex items-center gap-3 rounded-lg mx-1 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white"
+            className="w-full px-4 py-2.5 text-left hover:bg-surface-3 transition-colors flex items-center gap-3 rounded-lg mx-1 text-ink-muted hover:text-ink dark:hover:text-white"
           >
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-[13px] font-medium">Clear Filter</span>
@@ -200,7 +200,7 @@ const FilterDropdown = ({ isOpen, onClose, onApplyFilter, currentUser, activeFil
             onClose();
             window.dispatchEvent(new CustomEvent('create-smart-filter'));
           }}
-          className="w-full px-4 py-2.5 text-left hover:bg-[#0071e3]/10 dark:hover:bg-[#0071e3]/20 transition-colors flex items-center gap-3 text-[#0071e3] font-medium mb-2 rounded-lg mx-1"
+          className="w-full px-4 py-2.5 text-left hover:bg-brand/10 dark:hover:bg-brand/20 transition-colors flex items-center gap-3 text-brand font-medium mb-2 rounded-lg mx-1"
         >
           <Plus className="w-4 h-4" />
           <span className="text-[13px]">Create New Filter</span>

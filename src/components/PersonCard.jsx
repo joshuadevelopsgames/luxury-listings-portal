@@ -116,7 +116,7 @@ const PersonCard = ({
   // Render an input or display field
   const renderField = (label, Icon, field, type = 'text', value, colSpan = false) => (
     <div className={colSpan ? 'md:col-span-2' : ''} key={field}>
-      <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+      <label className="text-[13px] font-medium text-ink-muted flex items-center gap-1.5 mb-2">
         <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
         <span>{label}</span>
       </label>
@@ -125,13 +125,13 @@ const PersonCard = ({
           type={type}
           value={editedData[field] ?? value ?? ''}
           onChange={(e) => handleFieldChange(field, e.target.value)}
-          className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
+          className="w-full px-4 py-2.5 bg-surface border border-hairline-strong rounded-xl text-[15px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand transition-all"
         />
       ) : (
         <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
-          <p className="text-[15px] text-[#1d1d1f] dark:text-white">{value || 'Not provided'}</p>
+          <p className="text-[15px] text-ink">{value || 'Not provided'}</p>
           {!isHRView && isEditing && field !== 'phone' && (
-            <p className="text-[11px] text-[#86868b] mt-1">Contact HR to change</p>
+            <p className="text-[11px] text-ink-muted mt-1">Contact HR to change</p>
           )}
         </div>
       )}
@@ -139,20 +139,20 @@ const PersonCard = ({
   );
 
   return (
-    <div className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden ${className}`}>
+    <div className={`bg-surface backdrop-blur-xl rounded-xl border border-hairline overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+      <div className="px-6 py-4 border-b border-hairline">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center shadow-lg shadow-brand/20">
               <User className="w-4 h-4 text-white" strokeWidth={1.5} />
             </div>
-            <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Personal Information</h3>
+            <h3 className="font-semibold text-[17px] text-ink">Personal Information</h3>
           </div>
           {editable && !isEditing && (
             <button 
               onClick={handleEdit}
-              className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[#0071e3] hover:bg-[#0071e3]/10 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-brand hover:bg-brand/10 rounded-xl transition-colors"
             >
               <Edit className="w-4 h-4" strokeWidth={1.5} />
               Edit
@@ -163,7 +163,7 @@ const PersonCard = ({
               <button 
                 onClick={handleSave} 
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-[#0071e3] hover:bg-[#0077ed] rounded-xl transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-brand hover:bg-brand-hover rounded-xl transition-colors disabled:opacity-50"
               >
                 <Save className="w-4 h-4" strokeWidth={1.5} />
                 {saving ? 'Saving...' : 'Save'}
@@ -171,7 +171,7 @@ const PersonCard = ({
               <button 
                 onClick={handleCancel} 
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-ink-muted hover:text-ink dark:hover:text-white hover:bg-surface-3 rounded-xl transition-colors"
               >
                 <X className="w-4 h-4" strokeWidth={1.5} />
                 Cancel
@@ -184,16 +184,16 @@ const PersonCard = ({
       <div className="p-6">
         {/* Avatar and Name Section */}
         {showAvatar && !compact && (
-          <div className="flex items-center gap-5 mb-6 pb-6 border-b border-black/5 dark:border-white/10">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-2xl font-semibold shadow-lg shadow-[#0071e3]/30">
+          <div className="flex items-center gap-5 mb-6 pb-6 border-b border-hairline">
+            <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center text-white text-2xl font-semibold shadow-lg shadow-brand/30">
               {(displayPerson.displayName || '').slice(0, 2).toUpperCase() || `${displayPerson.firstName?.[0] || ''}${displayPerson.lastName?.[0] || ''}`.toUpperCase() || '?'}
             </div>
             <div>
-              <h3 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
+              <h3 className="text-[22px] font-semibold text-ink tracking-tight">
                 {displayPerson.displayName || `${(displayPerson.firstName || '').trim()} ${(displayPerson.lastName || '').trim()}`.trim() || 'Team Member'}
               </h3>
-              <p className="text-[15px] text-[#86868b] mt-0.5">{displayPerson.position}</p>
-              <span className="inline-flex items-center px-3 py-1 mt-2 text-[12px] font-medium text-[#0071e3] bg-[#0071e3]/10 rounded-full">
+              <p className="text-[15px] text-ink-muted mt-0.5">{displayPerson.position}</p>
+              <span className="inline-flex items-center px-3 py-1 mt-2 text-[12px] font-medium text-brand bg-brand/10 rounded-full">
                 {displayPerson.department}
               </span>
             </div>
@@ -208,7 +208,7 @@ const PersonCard = ({
           {renderField("Phone", Phone, "phone", "tel", displayPerson.phone)}
           {/* Department as dropdown when editing */}
           <div key="department">
-            <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+            <label className="text-[13px] font-medium text-ink-muted flex items-center gap-1.5 mb-2">
               <Building className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>Department</span>
             </label>
@@ -216,16 +216,16 @@ const PersonCard = ({
               <select
                 value={editedData.department ?? displayPerson.department ?? ''}
                 onChange={(e) => handleFieldChange('department', e.target.value)}
-                className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
+                className="w-full px-4 py-2.5 bg-surface border border-hairline-strong rounded-xl text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand transition-all"
               >
                 <option value="">Select department...</option>
                 {DEPARTMENTS.map((d) => (<option key={d} value={d}>{d}</option>))}
               </select>
             ) : (
               <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
-                <p className="text-[15px] text-[#1d1d1f] dark:text-white">{displayPerson.department || 'Not provided'}</p>
+                <p className="text-[15px] text-ink">{displayPerson.department || 'Not provided'}</p>
                 {!isHRView && isEditing && (
-                  <p className="text-[11px] text-[#86868b] mt-1">Contact HR to change</p>
+                  <p className="text-[11px] text-ink-muted mt-1">Contact HR to change</p>
                 )}
               </div>
             )}
@@ -234,21 +234,21 @@ const PersonCard = ({
           
           {/* Employee ID - Read only */}
           <div>
-            <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+            <label className="text-[13px] font-medium text-ink-muted flex items-center gap-1.5 mb-2">
               <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>Employee ID</span>
             </label>
             <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
-              <p className="text-[15px] text-[#1d1d1f] dark:text-white">{displayPerson.employeeId || 'Not assigned'}</p>
+              <p className="text-[15px] text-ink">{displayPerson.employeeId || 'Not assigned'}</p>
               {isEditing && isHRView && (
-                <p className="text-[11px] text-[#86868b] mt-1">System-generated, cannot be changed</p>
+                <p className="text-[11px] text-ink-muted mt-1">System-generated, cannot be changed</p>
               )}
             </div>
           </div>
 
           {/* Start Date */}
           <div>
-            <label className="text-[13px] font-medium text-[#86868b] flex items-center gap-1.5 mb-2">
+            <label className="text-[13px] font-medium text-ink-muted flex items-center gap-1.5 mb-2">
               <Calendar className="w-3.5 h-3.5" strokeWidth={1.5} />
               <span>Start Date</span>
             </label>
@@ -257,11 +257,11 @@ const PersonCard = ({
                 type="date"
                 value={editedData.startDate ?? displayPerson.startDate ?? ''}
                 onChange={(e) => handleFieldChange('startDate', e.target.value)}
-                className="w-full px-4 py-2.5 bg-white/60 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3] transition-all"
+                className="w-full px-4 py-2.5 bg-surface border border-hairline-strong rounded-xl text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand transition-all"
               />
             ) : (
               <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-xl">
-                <p className="text-[15px] text-[#1d1d1f] dark:text-white">
+                <p className="text-[15px] text-ink">
                   {displayPerson.startDate ? format(new Date(displayPerson.startDate), 'MMMM dd, yyyy') : 'Not provided'}
                 </p>
               </div>
@@ -273,8 +273,8 @@ const PersonCard = ({
 
         {/* Edit Mode Info */}
         {isEditing && (
-          <div className="mt-6 p-4 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 border border-[#0071e3]/20 rounded-xl">
-            <p className="text-[13px] text-[#0071e3] dark:text-[#5ac8fa]">
+          <div className="mt-6 p-4 bg-brand/5 dark:bg-brand/10 border border-brand/20 rounded-xl">
+            <p className="text-[13px] text-brand dark:text-[#5ac8fa]">
               {isHRView ? (
                 <><span className="font-semibold">HR Manager:</span> You can update all employee information fields except Employee ID.</>
               ) : (

@@ -55,11 +55,11 @@ const ClientLink = ({
           e.stopPropagation();
           setIsOpen(true);
         }}
-        className={`inline-flex items-center gap-1.5 text-[#0071e3] hover:text-[#0077ed] hover:underline font-medium transition-colors cursor-pointer ${className}`}
+        className={`inline-flex items-center gap-1.5 text-brand hover:text-brand-hover hover:underline font-medium transition-colors cursor-pointer ${className}`}
       >
         {children || displayName}
         {showId && clientNumber && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-mono">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-3 text-ink-muted font-mono">
             {clientNumber}
           </span>
         )}

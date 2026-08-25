@@ -28,7 +28,7 @@ const PermissionRoute = ({ pageId, pageName, children }) => {
           {[...Array(7)].map((_, i) => (
             <div
               key={i}
-              className="absolute top-0 left-0 w-3.5 h-3.5 bg-[#0071e3] dark:bg-white animate-square"
+              className="absolute top-0 left-0 w-3.5 h-3.5 bg-brand dark:bg-white animate-square"
               style={{ animationDelay: `${-1.4285714286 * i}s` }}
             />
           ))}

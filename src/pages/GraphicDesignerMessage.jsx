@@ -61,21 +61,21 @@ export default function GraphicDesignerMessage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Social Media Graphics</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Create stunning posts, stories, and reels graphics for Instagram and other platforms</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Brand Consistency</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Maintain visual consistency across all client brands and materials</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Photo Enhancement</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Edit and enhance property photos to showcase luxury features</p>
@@ -84,21 +84,21 @@ export default function GraphicDesignerMessage() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Template Design</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Create reusable templates for various content types and campaigns</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Asset Organization</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Upload and organize completed designs in the resource library</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Project Turnaround</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Complete assigned tasks within deadlines while maintaining quality</p>
@@ -110,7 +110,7 @@ export default function GraphicDesignerMessage() {
         </Card>
 
         {/* Design Standards */}
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+        <Card className="border-blue-200 bg-brand-soft dark:bg-blue-950/20 dark:border-brand">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-400">
               <Palette className="h-5 w-5" />
@@ -121,33 +121,33 @@ export default function GraphicDesignerMessage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Sparkles className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <Sparkles className="h-5 w-5 text-brand mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-blue-900 dark:text-blue-400">Luxury Aesthetic</h4>
-                    <p className="text-sm text-blue-800 dark:text-blue-500">Clean lines, sophisticated typography, premium color palettes</p>
+                    <p className="text-sm text-brand dark:text-brand">Clean lines, sophisticated typography, premium color palettes</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Eye className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <Eye className="h-5 w-5 text-brand mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-blue-900 dark:text-blue-400">Visual Hierarchy</h4>
-                    <p className="text-sm text-blue-800 dark:text-blue-500">Guide viewer attention with proper balance and focal points</p>
+                    <p className="text-sm text-brand dark:text-brand">Guide viewer attention with proper balance and focal points</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Layers className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <Layers className="h-5 w-5 text-brand mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-blue-900 dark:text-blue-400">File Organization</h4>
-                    <p className="text-sm text-blue-800 dark:text-blue-500">Use proper naming conventions and layered files for edits</p>
+                    <p className="text-sm text-brand dark:text-brand">Use proper naming conventions and layered files for edits</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Image className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <Image className="h-5 w-5 text-brand mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-blue-900 dark:text-blue-400">Export Quality</h4>
-                    <p className="text-sm text-blue-800 dark:text-blue-500">Export at proper resolutions for each platform</p>
+                    <p className="text-sm text-brand dark:text-brand">Export at proper resolutions for each platform</p>
                   </div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function GraphicDesignerMessage() {
         </Card>
 
         {/* Critical Reminders */}
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+        <Card className="border-amber-200 bg-warning-soft dark:bg-amber-950/20 dark:border-warning">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-400">
               <AlertTriangle className="h-5 w-5" />
@@ -167,33 +167,33 @@ export default function GraphicDesignerMessage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <Clock className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">Deadline Priority</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Check task deadlines daily and communicate early if you need more time</p>
+                    <p className="text-sm text-warning dark:text-warning">Check task deadlines daily and communicate early if you need more time</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <FileImage className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <FileImage className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">Source Files</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Always save and upload source files, not just exports</p>
+                    <p className="text-sm text-warning dark:text-warning">Always save and upload source files, not just exports</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Eye className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <Eye className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">Proofread</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Double-check all text for typos before marking complete</p>
+                    <p className="text-sm text-warning dark:text-warning">Double-check all text for typos before marking complete</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Palette className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <Palette className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">Brand Guidelines</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Reference client brand guidelines for every project</p>
+                    <p className="text-sm text-warning dark:text-warning">Reference client brand guidelines for every project</p>
                   </div>
                 </div>
               </div>
@@ -212,17 +212,17 @@ export default function GraphicDesignerMessage() {
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="text-center p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <FileImage className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                <FileImage className="h-8 w-8 text-brand mx-auto mb-2" />
                 <h4 className="font-semibold text-gray-900 dark:text-white">My Tasks</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">View assigned projects</p>
               </div>
               <div className="text-center p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <Folder className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <Folder className="h-8 w-8 text-positive mx-auto mb-2" />
                 <h4 className="font-semibold text-gray-900 dark:text-white">Resources</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Brand assets & templates</p>
               </div>
               <div className="text-center p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <Layers className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                <Layers className="h-8 w-8 text-brand mx-auto mb-2" />
                 <h4 className="font-semibold text-gray-900 dark:text-white">Upload</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Submit completed work</p>
               </div>

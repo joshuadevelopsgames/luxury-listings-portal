@@ -51,7 +51,7 @@ const LinkedInIcon = ({ size = 18 }) => (
 );
 
 const OtherIcon = ({ size = 18 }) => (
-  <Globe className="text-[#86868b]" style={{ width: size, height: size }} strokeWidth={1.5} />
+  <Globe className="text-ink-muted" style={{ width: size, height: size }} strokeWidth={1.5} />
 );
 
 // Platform definitions
@@ -85,8 +85,8 @@ export default function PlatformIcons({ platforms = {}, editable = false, onChan
             key={key}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-all ${
               platforms[key]
-                ? 'border-[#0071e3] bg-[#0071e3]/5 dark:bg-[#0071e3]/10'
-                : 'border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20'
+                ? 'border-brand bg-brand/5 dark:bg-brand/10'
+                : 'border-hairline-strong hover:border-hairline-strong'
             }`}
           >
             <input
@@ -96,9 +96,9 @@ export default function PlatformIcons({ platforms = {}, editable = false, onChan
               className="sr-only"
             />
             <Icon size={size} />
-            <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{label}</span>
+            <span className="text-[13px] font-medium text-ink">{label}</span>
             {platforms[key] && (
-              <svg className="w-3.5 h-3.5 text-[#0071e3]" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="w-3.5 h-3.5 text-brand" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             )}
@@ -123,7 +123,7 @@ export default function PlatformIcons({ platforms = {}, editable = false, onChan
         ) : (
           <span
             key={key}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-black/[0.03] dark:bg-white/[0.06] text-[11px] font-medium text-[#1d1d1f] dark:text-white/80"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-black/[0.03] dark:bg-white/[0.06] text-[11px] font-medium text-ink/80"
           >
             <Icon size={14} />
             {label}

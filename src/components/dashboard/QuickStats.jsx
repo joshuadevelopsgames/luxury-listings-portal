@@ -253,7 +253,7 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* Training Modules / Leave Requests for HR */}
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+      <Card className="bg-surface border-hairline">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-blue-900">
             <BookOpen className="w-5 h-5" />
@@ -265,21 +265,21 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
             <p className="text-3xl font-bold text-blue-900 mb-2">
               {currentRole === 'hr_manager' ? hrMetrics.pendingLeaveRequests : tutorials.length}
             </p>
-            <p className="text-sm text-blue-700 mb-3">{roleContent.trainingModules.subtitle}</p>
-            <p className="text-xs text-blue-600 mb-3">{roleContent.trainingModules.description}</p>
+            <p className="text-sm text-brand mb-3">{roleContent.trainingModules.subtitle}</p>
+            <p className="text-xs text-brand mb-3">{roleContent.trainingModules.description}</p>
             {currentRole === 'hr_manager' ? (
               <div className="flex items-center justify-center gap-2">
-                <Badge variant="secondary" className="bg-yellow-200 text-yellow-800">
+                <Badge variant="secondary" className="bg-yellow-200 text-warning">
                   Requires Action
                 </Badge>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2">
-                <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+                <Badge variant="secondary" className="bg-blue-200 text-brand">
                   {completedTutorials} Completed
                 </Badge>
                 {inProgressTutorials > 0 && (
-                  <Badge variant="outline" className="border-blue-300 text-blue-700">
+                  <Badge variant="outline" className="border-blue-300 text-brand">
                     {inProgressTutorials} In Progress
                   </Badge>
                 )}
@@ -290,7 +290,7 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
       </Card>
 
       {/* Today's Content Tasks / Team Absences for HR */}
-      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+      <Card className="bg-surface border-hairline">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-green-900">
             <Target className="w-5 h-5" />
@@ -302,21 +302,21 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
             <p className="text-3xl font-bold text-green-900 mb-2">
               {currentRole === 'hr_manager' ? hrMetrics.teamAbsencesToday : todaysTasks.length}
             </p>
-            <p className="text-sm text-green-700 mb-3">{roleContent.contentTasks.subtitle}</p>
-            <p className="text-xs text-green-600 mb-3">{roleContent.contentTasks.description}</p>
+            <p className="text-sm text-positive mb-3">{roleContent.contentTasks.subtitle}</p>
+            <p className="text-xs text-positive mb-3">{roleContent.contentTasks.description}</p>
             {currentRole === 'hr_manager' ? (
               <div className="flex items-center justify-center gap-2">
-                <Badge variant="secondary" className="bg-green-200 text-green-800">
+                <Badge variant="secondary" className="bg-green-200 text-positive">
                   23 Present
                 </Badge>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2">
-                <Badge variant="secondary" className="bg-green-200 text-green-800">
+                <Badge variant="secondary" className="bg-green-200 text-positive">
                   {todaysTasks.length - pendingTasks} Completed
                 </Badge>
                 {pendingTasks > 0 && (
-                  <Badge variant="outline" className="border-green-300 text-green-700">
+                  <Badge variant="outline" className="border-green-300 text-positive">
                     {pendingTasks} Pending
                   </Badge>
                 )}
@@ -327,7 +327,7 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
       </Card>
 
       {/* Content Toolbox */}
-      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+      <Card className="bg-surface border-hairline">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-purple-900">
             <Palette className="w-5 h-5" />
@@ -337,14 +337,14 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
         <CardContent className="pt-4">
           <div className="text-center">
             <p className="text-3xl font-bold text-purple-900 mb-2">{roleContent.contentTools.length}</p>
-            <p className="text-sm text-purple-700 mb-3">{roleContent.contentToolbox.subtitle}</p>
-            <p className="text-xs text-purple-600 mb-3">{roleContent.contentToolbox.description}</p>
+            <p className="text-sm text-brand mb-3">{roleContent.contentToolbox.subtitle}</p>
+            <p className="text-xs text-brand mb-3">{roleContent.contentToolbox.description}</p>
             <div className="grid grid-cols-3 gap-1">
               {roleContent.contentTools.slice(0, 6).map((tool, index) => {
                 const Icon = tool.icon;
                 return (
                   <div key={index} className="flex items-center justify-center p-1">
-                    <Icon className="w-4 h-4 text-purple-600" />
+                    <Icon className="w-4 h-4 text-brand" />
                   </div>
                 );
               })}
@@ -354,7 +354,7 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
       </Card>
 
       {/* Content Readiness Score / Team Satisfaction for HR */}
-      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+      <Card className="bg-surface border-hairline">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-orange-900">
             <TrendingUp className="w-5 h-5" />
@@ -366,17 +366,17 @@ const QuickStats = ({ tutorials, progress, todaysTasks, integrations, currentRol
             <p className="text-3xl font-bold text-orange-900 mb-2">
               {currentRole === 'hr_manager' ? `${hrMetrics.teamSatisfaction}/5.0` : `${getContentReadinessScore()}%`}
             </p>
-            <p className="text-sm text-orange-700 mb-3">{roleContent.contentReadiness.subtitle}</p>
-            <p className="text-xs text-orange-600 mb-3">{roleContent.contentReadiness.description}</p>
+            <p className="text-sm text-warning mb-3">{roleContent.contentReadiness.subtitle}</p>
+            <p className="text-xs text-warning mb-3">{roleContent.contentReadiness.description}</p>
             {currentRole === 'hr_manager' ? (
               <div>
-                <Badge variant="secondary" className="bg-orange-200 text-orange-800">
+                <Badge variant="secondary" className="bg-orange-200 text-warning">
                   Excellent
                 </Badge>
               </div>
             ) : (
               <div>
-                <Badge variant="secondary" className="bg-orange-200 text-orange-800">
+                <Badge variant="secondary" className="bg-orange-200 text-warning">
                   {getContentReadinessScore() < 25 ? 'Rookie' :
                    getContentReadinessScore() < 50 ? 'Apprentice' :
                    getContentReadinessScore() < 75 ? 'Professional' : 'Master'}

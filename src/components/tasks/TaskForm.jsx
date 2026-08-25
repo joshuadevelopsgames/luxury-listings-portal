@@ -114,9 +114,9 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
   ];
 
   const priorities = [
-    { value: 'urgent', label: 'Priority 1', icon: <Flag className="w-4 h-4 fill-red-600 stroke-red-600" />, color: 'text-red-600' },
-    { value: 'high', label: 'Priority 2', icon: <Flag className="w-4 h-4 fill-orange-500 stroke-orange-500" />, color: 'text-orange-500' },
-    { value: 'medium', label: 'Priority 3', icon: <Flag className="w-4 h-4 fill-blue-500 stroke-blue-500" />, color: 'text-blue-500' },
+    { value: 'urgent', label: 'Priority 1', icon: <Flag className="w-4 h-4 fill-danger stroke-danger" />, color: 'text-danger' },
+    { value: 'high', label: 'Priority 2', icon: <Flag className="w-4 h-4 fill-warning stroke-warning" />, color: 'text-warning' },
+    { value: 'medium', label: 'Priority 3', icon: <Flag className="w-4 h-4 fill-brand stroke-brand" />, color: 'text-brand' },
     { value: 'low', label: 'Priority 4', icon: <Flag className="w-4 h-4 stroke-gray-400" />, color: 'text-gray-400' }
   ];
 
@@ -249,7 +249,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
             type="text"
             value={formData.title}
             onChange={(e) => handleInputChange('title', e.target.value)}
-            className="w-full text-base font-semibold border-none outline-none focus:ring-0 px-0 py-2 placeholder-gray-400 text-gray-900"
+            className="w-full text-[15px] font-semibold leading-tight bg-transparent border-0 rounded-md px-2 py-1.5 -mx-2 text-ink placeholder-ink-subtle outline-none focus:bg-surface-3 focus:ring-2 focus:ring-brand/25"
             placeholder="Task name"
             autoFocus
           />
@@ -259,7 +259,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
             value={formData.description}
             onChange={(e) => handleInputChange('description', e.target.value)}
             rows={2}
-            className="w-full text-sm border-none outline-none focus:ring-0 px-0 py-2 placeholder-gray-400 resize-none text-gray-900"
+            className="w-full text-[13px] leading-snug bg-transparent border-0 rounded-md px-2 py-1.5 -mx-2 mt-0.5 text-ink placeholder-ink-subtle outline-none resize-none focus:bg-surface-3 focus:ring-2 focus:ring-brand/25"
             placeholder="Description"
           />
 
@@ -277,7 +277,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   e.stopPropagation();
                   setShowDatePicker(!showDatePicker);
                 }}
-                className={`text-xs ${formData.dueDate ? 'text-green-700 bg-green-50 hover:bg-green-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`text-xs ${formData.dueDate ? 'text-positive bg-positive-soft hover:bg-positive-soft' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <Calendar className="w-4 h-4 mr-1" />
                 {formData.dueDate ? getFormattedDate(formData.dueDate) : 'Date'}
@@ -285,16 +285,16 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Date Picker Dropdown */}
               {showDatePicker && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-3 z-[100]">
                   <input
                     type="text"
                     value={naturalDateInput}
                     onChange={(e) => handleNaturalDateChange(e.target.value)}
                     placeholder="Type a date"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                    className="w-full px-2.5 py-1.5 border border-hairline-strong rounded-md text-[13px] bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-brand mb-2"
                   />
                   
-                  <div className="space-y-1 mb-3">
+                  <div className="space-y-0.5 mb-2">
                     {[
                       { label: 'Today', value: 'today', day: 'Thu' },
                       { label: 'Tomorrow', value: 'tomorrow', day: 'Fri' },
@@ -305,10 +305,10 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                         key={option.label}
                         type="button"
                         onClick={() => selectQuickDate(option.value)}
-                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded text-sm text-left"
+                        className="w-full flex items-center justify-between px-2.5 py-1.5 hover:bg-surface-3 rounded text-[13px] text-left"
                       >
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-green-600" />
+                          <Calendar className="w-4 h-4 text-positive" />
                           <span className="text-gray-900">{option.label}</span>
                         </div>
                         <span className="text-gray-500 text-xs">{option.day}</span>
@@ -316,13 +316,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                     ))}
                   </div>
 
-                  <div className="border-t border-gray-200 pt-3">
+                  <div className="border-t border-hairline pt-2">
                     <input
                       type="date"
                       value={formData.dueDate}
                       onChange={(e) => handleInputChange('dueDate', e.target.value)}
                       min={getTodayDate()}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                      className="w-full px-2.5 py-1.5 border border-hairline-strong rounded-md text-[13px] bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                     
                     {/* Time picker - only show if date is selected */}
@@ -333,13 +333,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                           type="time"
                           value={formData.dueTime}
                           onChange={(e) => handleInputChange('dueTime', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                         />
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 relative" ref={recurringPickerRef}>
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-hairline relative" ref={recurringPickerRef}>
                     <Button
                       type="button"
                       variant="ghost"
@@ -350,7 +350,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                         setShowDatePicker(false);
                         setShowRecurringPicker(!showRecurringPicker);
                       }}
-                      className={`text-xs ${formData.recurring ? 'text-blue-700 bg-blue-50 hover:bg-blue-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                      className={`text-xs ${formData.recurring ? 'text-brand bg-brand-soft hover:bg-brand-soft' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                       <Repeat className="w-4 h-4 mr-1" />
                       {formData.recurring ? (() => {
@@ -370,7 +370,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
                     {/* Recurring Picker Dropdown */}
                     {showRecurringPicker && (
-                      <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+                      <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-[100]">
                         <div className="mb-3">
                           <p className="text-sm font-semibold mb-3">Repeat Task</p>
                         </div>
@@ -389,7 +389,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                                 endDate: null
                               });
                             }}
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                           >
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
                               <option key={num} value={num}>{num}</option>
@@ -408,7 +408,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                                 endDate: null
                               });
                             }}
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                           >
                             <option value="daily">{recurringInterval === 1 ? 'day' : 'days'}</option>
                             <option value="weekly">{recurringInterval === 1 ? 'week' : 'weeks'}</option>
@@ -429,7 +429,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                               });
                               setShowRecurringPicker(false);
                             }}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                            className="flex-1 bg-brand hover:bg-brand-hover text-white text-sm"
                           >
                             Apply
                           </Button>
@@ -446,7 +446,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                                 setRecurringPattern('weekly');
                                 setShowRecurringPicker(false);
                               }}
-                              className="w-full px-3 py-2 hover:bg-red-50 rounded text-sm text-left text-red-600"
+                              className="w-full px-3 py-2 hover:bg-danger-soft rounded text-sm text-left text-danger"
                             >
                               Don't repeat
                             </button>
@@ -478,7 +478,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Priority Picker Dropdown */}
               {showPriorityPicker && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100]">
                   {priorities.map((priority) => (
                     <button
                       key={priority.value}
@@ -493,7 +493,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                         <span className="text-gray-900">{priority.label}</span>
                       </div>
                       {formData.priority === priority.value && (
-                        <X className="w-3 h-3 text-red-600" />
+                        <X className="w-3 h-3 text-danger" />
                       )}
                     </button>
                   ))}
@@ -512,7 +512,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   e.stopPropagation();
                   setShowReminderPicker(!showReminderPicker);
                 }}
-                className={`text-xs ${formData.reminders.length > 0 ? 'text-yellow-700 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`text-xs ${formData.reminders.length > 0 ? 'text-warning bg-warning-soft hover:bg-warning-soft' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <Bell className="w-4 h-4 mr-1" />
                 Reminders
@@ -523,7 +523,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Reminders Picker Dropdown */}
               {showReminderPicker && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-3 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Reminders</p>
                   </div>
@@ -563,13 +563,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                       <input
                         type="date"
                         id="reminder-date"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                         min={new Date().toISOString().split('T')[0]}
                       />
                       <input
                         type="time"
                         id="reminder-time"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                       <button
                         type="button"
@@ -609,7 +609,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                           timeInput.value = '';
                           setShowReminderPicker(false);
                         }}
-                        className="w-full px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        className="w-full px-3 py-2 bg-brand text-white rounded text-sm hover:bg-brand-hover"
                       >
                         Add reminder
                       </button>
@@ -623,13 +623,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                         {formData.reminders.map((reminder) => (
                           <div
                             key={reminder.id}
-                            className="flex items-center justify-between px-2 py-1 bg-yellow-50 rounded text-xs"
+                            className="flex items-center justify-between px-2 py-1 bg-warning-soft rounded text-xs"
                           >
-                            <span className="text-yellow-800">{reminder.label}</span>
+                            <span className="text-warning">{reminder.label}</span>
                             <button
                               type="button"
                               onClick={() => removeReminder(reminder.id)}
-                              className="text-gray-400 hover:text-red-600"
+                              className="text-gray-400 hover:text-danger"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -653,7 +653,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   e.stopPropagation();
                   setShowLabels(!showLabels);
                 }}
-                className={`text-xs ${formData.labels.length > 0 ? 'text-purple-700 bg-purple-50 hover:bg-purple-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`text-xs ${formData.labels.length > 0 ? 'text-brand bg-brand-soft hover:bg-brand-soft' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <Tag className="w-4 h-4 mr-1" />
                 Labels
@@ -664,7 +664,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Labels Dropdown */}
               {showLabels && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 pt-4 pb-4 pl-4 pr-8 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Labels</p>
                   </div>
@@ -672,12 +672,12 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   {formData.labels.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
                       {formData.labels.map((label) => (
-                        <Badge key={label} variant="secondary" className="bg-purple-100 text-purple-800">
+                        <Badge key={label} variant="secondary" className="bg-brand-soft text-brand">
                           {label}
                           <button
                             type="button"
                             onClick={() => handleRemoveLabel(label)}
-                            className="ml-2 text-purple-600 hover:text-purple-800"
+                            className="ml-2 text-brand hover:text-brand"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -720,13 +720,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                         }
                       }}
                       placeholder="Add label"
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 min-w-0 px-3 py-2 border border-hairline-strong rounded-md text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                     <Button
                       type="button"
                       onClick={handleAddLabel}
                       size="sm"
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      className="shrink-0 bg-brand hover:bg-brand-hover text-brand-fg"
                     >
                       Add
                     </Button>
@@ -746,7 +746,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   e.stopPropagation();
                   setShowSubtasks(!showSubtasks);
                 }}
-                className={`text-xs ${formData.subtasks.length > 0 ? 'text-blue-700 bg-blue-50 hover:bg-blue-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`text-xs ${formData.subtasks.length > 0 ? 'text-brand bg-brand-soft hover:bg-brand-soft' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <CheckSquare className="w-4 h-4 mr-1" />
                 Subtasks
@@ -757,7 +757,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Subtasks Dropdown */}
               {showSubtasks && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 pt-4 pb-4 pl-4 pr-8 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Subtasks</p>
                   </div>
@@ -771,7 +771,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                           <button
                             type="button"
                             onClick={() => handleRemoveSubtask(subtask.id)}
-                            className="text-gray-400 hover:text-red-600"
+                            className="text-gray-400 hover:text-danger"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -792,13 +792,13 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                         }
                       }}
                       placeholder="Add subtask"
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 min-w-0 px-3 py-2 border border-hairline-strong rounded-md text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                     <Button
                       type="button"
                       onClick={handleAddSubtask}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="shrink-0 bg-brand hover:bg-brand-hover text-brand-fg"
                     >
                       Add
                     </Button>
@@ -818,7 +818,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   e.stopPropagation();
                   setShowEstimatedTime(!showEstimatedTime);
                 }}
-                className={`text-xs ${formData.estimatedTime && formData.estimatedTime !== 30 ? 'text-orange-700 bg-orange-50 hover:bg-orange-100' : 'text-gray-600 hover:bg-gray-100'}`}
+                className={`text-xs ${formData.estimatedTime && formData.estimatedTime !== 30 ? 'text-warning bg-warning-soft hover:bg-warning-soft' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <Clock className="w-4 h-4 mr-1" />
                 {formData.estimatedTime ? `${formData.estimatedTime}m` : 'Time'}
@@ -826,7 +826,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Estimated Time Dropdown */}
               {showEstimatedTime && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+                <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Estimated Time</p>
                   </div>
@@ -838,7 +838,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                       onChange={(e) => handleInputChange('estimatedTime', parseInt(e.target.value) || 0)}
                       min="0"
                       placeholder="30"
-                      className="w-24 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-24 px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                     <span className="text-sm text-gray-600">minutes</span>
                   </div>
@@ -894,14 +894,14 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Project Picker Dropdown */}
               {showProjectPicker && (
-                <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100] max-h-64 overflow-y-auto">
+                <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100] max-h-64 overflow-y-auto">
                   {projects.map((project) => (
                     <button
                       key={project.name}
                       type="button"
                       onClick={() => selectProject(project.name)}
                       className={`w-full flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm text-left ${
-                        formData.project === project.name ? 'bg-gray-50 text-blue-600' : 'text-gray-900'
+                        formData.project === project.name ? 'bg-gray-50 text-brand' : 'text-gray-900'
                       }`}
                     >
                       <Inbox className="w-4 h-4" />
@@ -931,7 +931,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
                   e.stopPropagation();
                   handleSubmit(e);
                 }}
-                className="text-sm bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-sm bg-brand hover:bg-brand-hover text-brand-fg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Adding...' : 'Add task'}
               </Button>

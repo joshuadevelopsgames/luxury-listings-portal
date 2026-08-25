@@ -54,7 +54,7 @@ const TimeOffWidget = () => {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
+            <Calendar className="w-5 h-5 text-brand" />
             <span>My Time Off</span>
           </CardTitle>
           <Button 
@@ -70,43 +70,43 @@ const TimeOffWidget = () => {
       <CardContent className="space-y-4">
         {/* Quick Balances */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-blue-50 rounded-lg p-3">
+          <div className="bg-brand-soft rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
-              <Plane className="w-4 h-4 text-blue-600" />
+              <Plane className="w-4 h-4 text-brand" />
               <span className="text-sm font-medium text-blue-900">Vacation</span>
             </div>
             <p className="text-2xl font-bold text-blue-900">{leaveBalances.vacation.remaining}</p>
-            <p className="text-xs text-blue-700">days remaining</p>
+            <p className="text-xs text-brand">days remaining</p>
           </div>
 
-          <div className="bg-red-50 rounded-lg p-3">
+          <div className="bg-danger-soft rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
-              <Heart className="w-4 h-4 text-red-600" />
+              <Heart className="w-4 h-4 text-danger" />
               <span className="text-sm font-medium text-red-900">Sick Leave</span>
             </div>
             <p className="text-2xl font-bold text-red-900">{leaveBalances.sick.remaining}</p>
-            <p className="text-xs text-red-700">days remaining</p>
+            <p className="text-xs text-danger">days remaining</p>
           </div>
 
-          <div className="bg-purple-50 rounded-lg p-3">
+          <div className="bg-brand-soft rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
-              <Clock className="w-4 h-4 text-purple-600" />
+              <Clock className="w-4 h-4 text-brand" />
               <span className="text-sm font-medium text-purple-900">Remote</span>
             </div>
             <p className="text-2xl font-bold text-purple-900">{leaveBalances.remote.remaining}</p>
-            <p className="text-xs text-purple-700">days remaining</p>
+            <p className="text-xs text-brand">days remaining</p>
           </div>
         </div>
 
         {/* Pending Requests */}
         {pendingRequests.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <div className="bg-warning-soft border border-yellow-200 rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
-              <Clock className="w-4 h-4 text-yellow-700" />
+              <Clock className="w-4 h-4 text-warning" />
               <span className="text-sm font-medium text-yellow-900">Pending Approval</span>
             </div>
             {pendingRequests.map((request) => (
-              <div key={request.id} className="text-sm text-yellow-800">
+              <div key={request.id} className="text-sm text-warning">
                 {safeFormatDate(request.startDate, 'MMM dd')} - {safeFormatDate(request.endDate, 'MMM dd')} ({request.days} days)
               </div>
             ))}
@@ -115,13 +115,13 @@ const TimeOffWidget = () => {
 
         {/* Upcoming Time Off */}
         {upcomingTimeOff.length > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="bg-positive-soft border border-green-200 rounded-lg p-3">
             <div className="flex items-center space-x-2 mb-2">
-              <CheckCircle className="w-4 h-4 text-green-700" />
+              <CheckCircle className="w-4 h-4 text-positive" />
               <span className="text-sm font-medium text-green-900">Upcoming Time Off</span>
             </div>
             {upcomingTimeOff.map((timeOff) => (
-              <div key={timeOff.id} className="text-sm text-green-800">
+              <div key={timeOff.id} className="text-sm text-positive">
                 {safeFormatDate(timeOff.startDate, 'MMM dd')} - {safeFormatDate(timeOff.endDate, 'MMM dd')} ({timeOff.days} days)
               </div>
             ))}

@@ -16,17 +16,17 @@ import TutorialCard from "../components/tutorials/TutorialCard";
 import TutorialViewer from "../components/tutorials/TutorialViewer";
 
 const categoryColors = {
-  strategy: "bg-[#0071e3]/10 text-[#0071e3]",
-  "content-creation": "bg-[#af52de]/10 text-[#af52de]", 
-  platforms: "bg-[#34c759]/10 text-[#34c759]",
-  community: "bg-[#ff9500]/10 text-[#ff9500]",
-  advertising: "bg-[#ff3b30]/10 text-[#ff3b30]",
-  analytics: "bg-[#5856d6]/10 text-[#5856d6]",
+  strategy: "bg-brand/10 text-brand",
+  "content-creation": "bg-brand/10 text-brand", 
+  platforms: "bg-positive/10 text-positive",
+  community: "bg-warning/10 text-warning",
+  advertising: "bg-danger/10 text-danger",
+  analytics: "bg-brand/10 text-brand",
   "influencer-marketing": "bg-[#ff2d55]/10 text-[#ff2d55]",
   "crisis-management": "bg-[#ffcc00]/10 text-[#ffcc00]",
   tools: "bg-[#30b0c7]/10 text-[#30b0c7]",
   trends: "bg-[#64d2ff]/10 text-[#64d2ff]",
-  "admin-portal": "bg-[#ff3b30]/10 text-[#ff3b30]"
+  "admin-portal": "bg-danger/10 text-danger"
 };
 
 export default function TutorialsPage() {
@@ -138,10 +138,10 @@ export default function TutorialsPage() {
   if (loading) {
     return (
       <div className="space-y-6 sm:space-y-8">
-        <div className="h-8 bg-black/5 dark:bg-white/10 rounded-xl animate-pulse"></div>
+        <div className="h-8 bg-surface-3 rounded-xl animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 bg-black/5 dark:bg-white/10 rounded-2xl animate-pulse"></div>
+            <div key={i} className="h-64 bg-surface-3 rounded-xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -163,21 +163,21 @@ export default function TutorialsPage() {
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">Training Tutorials</h1>
-          <p className="text-[15px] text-[#86868b] mt-1">Complete these modules to get up to speed with our systems</p>
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">Training Tutorials</h1>
+          <p className="text-[15px] text-ink-muted mt-1">Complete these modules to get up to speed with our systems</p>
         </div>
-        <div className="flex items-center gap-3 bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-2xl p-4">
+        <div className="flex items-center gap-3 bg-surface backdrop-blur-xl border border-hairline rounded-xl p-4">
           <Trophy className="w-6 h-6 text-[#ffcc00]" />
           <div>
-            <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Overall Progress</p>
+            <p className="text-[13px] font-medium text-ink">Overall Progress</p>
             <div className="flex items-center gap-2 mt-1">
               <div className="w-24 h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#34c759] rounded-full transition-all"
+                  className="h-full bg-positive rounded-full transition-all"
                   style={{ width: `${getOverallProgress()}%` }}
                 />
               </div>
-              <span className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">{getOverallProgress()}%</span>
+              <span className="text-[13px] font-semibold text-ink">{getOverallProgress()}%</span>
             </div>
           </div>
         </div>
@@ -190,7 +190,7 @@ export default function TutorialsPage() {
               <span className={`text-[12px] px-3 py-1 rounded-lg font-medium ${categoryColors[category]}`}>
                 {category.charAt(0).toUpperCase() + category.slice(1).replace('-', ' ')}
               </span>
-              <span className="text-[13px] text-[#86868b]">
+              <span className="text-[13px] text-ink-muted">
                 {categoryTutorials.length} tutorial{categoryTutorials.length !== 1 ? 's' : ''}
               </span>
             </div>

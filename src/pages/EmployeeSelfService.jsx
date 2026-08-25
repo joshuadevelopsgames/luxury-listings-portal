@@ -242,8 +242,8 @@ const EmployeeSelfService = () => {
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">My Profile</h1>
-        <p className="text-[15px] text-[#86868b] mt-1">Manage your information, time off, and access important resources</p>
+        <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">My Profile</h1>
+        <p className="text-[15px] text-ink-muted mt-1">Manage your information, time off, and access important resources</p>
       </div>
 
       {/* Quick Actions */}
@@ -251,30 +251,30 @@ const EmployeeSelfService = () => {
         {quickActions.map((action, index) => {
           const Icon = action.icon;
           const colorMap = {
-            blue: { bg: 'bg-[#0071e3]/10', icon: 'text-[#0071e3]' },
-            green: { bg: 'bg-[#34c759]/10', icon: 'text-[#34c759]' },
-            purple: { bg: 'bg-[#af52de]/10', icon: 'text-[#af52de]' },
-            orange: { bg: 'bg-[#ff9500]/10', icon: 'text-[#ff9500]' }
+            blue: { bg: 'bg-brand/10', icon: 'text-brand' },
+            green: { bg: 'bg-positive/10', icon: 'text-positive' },
+            purple: { bg: 'bg-brand/10', icon: 'text-brand' },
+            orange: { bg: 'bg-warning/10', icon: 'text-warning' }
           };
           const colors = colorMap[action.color] || colorMap.blue;
           return (
             <div 
               key={index} 
-              className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 cursor-pointer hover:shadow-lg transition-all"
+              className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5 cursor-pointer hover:shadow-md transition-all"
               onClick={action.action}
             >
               <div className={`p-2.5 rounded-xl ${colors.bg} w-fit mb-3`}>
                 <Icon className={`w-5 h-5 ${colors.icon}`} />
               </div>
-              <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white mb-1">{action.label}</h3>
-              <p className="text-[12px] text-[#86868b]">{action.description}</p>
+              <h3 className="text-[14px] font-medium text-ink mb-1">{action.label}</h3>
+              <p className="text-[12px] text-ink-muted">{action.description}</p>
             </div>
           );
         })}
       </div>
 
       {/* Main Content Tabs */}
-      <div className="flex flex-wrap gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-1 p-1 bg-surface-3 rounded-xl w-fit">
         {[
           { value: 'overview', label: 'Overview' },
           { value: 'personal', label: 'Personal Info' },
@@ -286,8 +286,8 @@ const EmployeeSelfService = () => {
             onClick={() => setActiveTab(tab.value)}
             className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${
               activeTab === tab.value
-                ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-surface text-brand shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             {tab.label}
@@ -300,86 +300,86 @@ const EmployeeSelfService = () => {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Personal Summary */}
-            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+            <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5">
               <div className="flex items-center gap-2 mb-4">
-                <User className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-                <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Personal Summary</span>
+                <User className="w-5 h-5 text-ink" />
+                <span className="text-[15px] font-medium text-ink">Personal Summary</span>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 bg-[#0071e3] rounded-full flex items-center justify-center text-white text-[17px] font-semibold">
+                  <div className="w-14 h-14 bg-brand rounded-full flex items-center justify-center text-white text-[17px] font-semibold">
                     {(currentUser?.displayName || '').slice(0, 2).toUpperCase() || `${employeeData.personalInfo.firstName?.[0] || ''}${employeeData.personalInfo.lastName?.[0] || ''}`.toUpperCase() || '?'}
                   </div>
                   <div>
-                    <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
+                    <p className="text-[15px] font-medium text-ink">
                       {currentUser?.displayName || `${(employeeData.personalInfo.firstName || '').trim()} ${(employeeData.personalInfo.lastName || '').trim()}`.trim() || 'Team Member'}
                     </p>
-                    <p className="text-[12px] text-[#86868b]">{employeeData.personalInfo.position}</p>
-                    <p className="text-[12px] text-[#86868b]">{employeeData.personalInfo.department}</p>
+                    <p className="text-[12px] text-ink-muted">{employeeData.personalInfo.position}</p>
+                    <p className="text-[12px] text-ink-muted">{employeeData.personalInfo.department}</p>
                   </div>
                 </div>
-                <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
+                <div className="pt-3 border-t border-hairline space-y-2">
                   <div className="flex items-center gap-2 text-[12px]">
-                    <Mail className="w-4 h-4 text-[#86868b]" />
-                    <span className="text-[#86868b]">{employeeData.personalInfo.email}</span>
+                    <Mail className="w-4 h-4 text-ink-muted" />
+                    <span className="text-ink-muted">{employeeData.personalInfo.email}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[12px]">
-                    <Briefcase className="w-4 h-4 text-[#86868b]" />
-                    <span className="text-[#86868b]">Start Date: {employeeData.personalInfo.startDate && isValid(new Date(employeeData.personalInfo.startDate)) ? format(new Date(employeeData.personalInfo.startDate), 'MMM dd, yyyy') : (employeeData.personalInfo.startDate || '—')}</span>
+                    <Briefcase className="w-4 h-4 text-ink-muted" />
+                    <span className="text-ink-muted">Start Date: {employeeData.personalInfo.startDate && isValid(new Date(employeeData.personalInfo.startDate)) ? format(new Date(employeeData.personalInfo.startDate), 'MMM dd, yyyy') : (employeeData.personalInfo.startDate || '—')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[12px]">
-                    <User className="w-4 h-4 text-[#86868b]" />
-                    <span className="text-[#86868b]">Manager: {employeeData.personalInfo.manager}</span>
+                    <User className="w-4 h-4 text-ink-muted" />
+                    <span className="text-ink-muted">Manager: {employeeData.personalInfo.manager}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Time Off Summary */}
-            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+            <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-                  <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Time Off Balance</span>
+                  <Calendar className="w-5 h-5 text-ink" />
+                  <span className="text-[15px] font-medium text-ink">Time Off Balance</span>
                 </div>
-                <button onClick={() => navigate('/my-time-off')} className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                <button onClick={() => navigate('/my-time-off')} className="px-3 py-1.5 rounded-lg bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors">
                   View Details
                 </button>
               </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-[#0071e3]/5 rounded-xl">
+                <div className="flex items-center justify-between p-3 bg-brand/5 rounded-xl">
                   <div className="flex items-center gap-2">
-                    <Plane className="w-5 h-5 text-[#0071e3]" />
-                    <span className="text-[13px] font-medium text-[#0071e3]">Vacation</span>
+                    <Plane className="w-5 h-5 text-brand" />
+                    <span className="text-[13px] font-medium text-brand">Vacation</span>
                   </div>
-                  <span className="text-[17px] font-semibold text-[#0071e3]">{employeeData.timeOff.vacation.remaining} days</span>
+                  <span className="text-[17px] font-semibold text-brand">{employeeData.timeOff.vacation.remaining} days</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-[#ff3b30]/5 rounded-xl">
+                <div className="flex items-center justify-between p-3 bg-danger/5 rounded-xl">
                   <div className="flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-[#ff3b30]" />
-                    <span className="text-[13px] font-medium text-[#ff3b30]">Sick Leave</span>
+                    <Heart className="w-5 h-5 text-danger" />
+                    <span className="text-[13px] font-medium text-danger">Sick Leave</span>
                   </div>
-                  <span className="text-[17px] font-semibold text-[#ff3b30]">{employeeData.timeOff.sick.remaining} days</span>
+                  <span className="text-[17px] font-semibold text-danger">{employeeData.timeOff.sick.remaining} days</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Recent Requests */}
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Recent Requests</span>
+              <Clock className="w-5 h-5 text-ink" />
+              <span className="text-[15px] font-medium text-ink">Recent Requests</span>
             </div>
             <div className="space-y-3">
               {employeeData.recentRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/5 rounded-xl">
+                <div key={request.id} className="flex items-center justify-between p-3 bg-surface-2 rounded-xl">
                   <div>
-                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{request.type}</p>
-                    <p className="text-[12px] text-[#86868b]">{request.description}</p>
+                    <p className="text-[13px] font-medium text-ink">{request.type}</p>
+                    <p className="text-[12px] text-ink-muted">{request.description}</p>
                   </div>
                   <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${
-                    request.status === 'Approved' ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                    request.status === 'Approved' ? 'bg-positive/10 text-positive' : 'bg-surface-3 text-ink-muted'
                   }`}>
                     {request.status}
                   </span>
@@ -394,9 +394,9 @@ const EmployeeSelfService = () => {
       {activeTab === 'personal' && (
         <div>
           {loading ? (
-            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-12 text-center">
-              <div className="w-12 h-12 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-[14px] text-[#86868b]">Loading employee data...</p>
+            <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-12 text-center">
+              <div className="w-12 h-12 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[14px] text-ink-muted">Loading employee data...</p>
             </div>
           ) : (
             <PersonCard 
@@ -416,25 +416,25 @@ const EmployeeSelfService = () => {
 
       {/* Time Off Tab */}
       {activeTab === 'timeoff' && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Time Off Management</span>
+              <Calendar className="w-5 h-5 text-ink" />
+              <span className="text-[15px] font-medium text-ink">Time Off Management</span>
             </div>
-            <button onClick={() => navigate('/my-time-off')} className="px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors">
+            <button onClick={() => navigate('/my-time-off')} className="px-4 py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors">
               Go to My Time Off
             </button>
           </div>
-          <p className="text-[13px] text-[#86868b] mb-4">
+          <p className="text-[13px] text-ink-muted mb-4">
             View detailed time-off information, submit requests, and track your leave balances on the dedicated Time Off page.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {Object.entries(employeeData.timeOff).map(([key, balance]) => (
-              <div key={key} className="p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                <p className="text-[12px] font-medium text-[#86868b] capitalize mb-2">{key}</p>
-                <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{balance.remaining}</p>
-                <p className="text-[12px] text-[#86868b] mt-1">of {balance.total} days remaining</p>
+              <div key={key} className="p-4 bg-surface-2 rounded-xl">
+                <p className="text-[12px] font-medium text-ink-muted capitalize mb-2">{key}</p>
+                <p className="text-[28px] font-semibold text-ink">{balance.remaining}</p>
+                <p className="text-[12px] text-ink-muted mt-1">of {balance.total} days remaining</p>
               </div>
             ))}
           </div>
@@ -445,27 +445,27 @@ const EmployeeSelfService = () => {
 
       {/* Documents Tab - Coming Soon */}
       {activeTab === 'documents' && (
-        <div className="relative min-h-[280px] rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 blur-sm select-none pointer-events-none">
+        <div className="relative min-h-[280px] rounded-xl border border-hairline overflow-hidden">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5 blur-sm select-none pointer-events-none">
             <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">My Documents</span>
+              <FileText className="w-5 h-5 text-ink" />
+              <span className="text-[15px] font-medium text-ink">My Documents</span>
             </div>
             <div className="space-y-3">
               {employeeData.documents.map((doc, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/10 transition-colors">
+                <div key={index} className="flex items-center justify-between p-4 bg-surface-2 rounded-xl hover:bg-surface-3 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-black/5 dark:bg-white/10 rounded-lg">
-                      <FileText className="w-5 h-5 text-[#86868b]" />
+                    <div className="p-2 bg-surface-3 rounded-lg">
+                      <FileText className="w-5 h-5 text-ink-muted" />
                     </div>
                     <div>
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{doc.name}</p>
-                      <p className="text-[12px] text-[#86868b]">
+                      <p className="text-[13px] font-medium text-ink">{doc.name}</p>
+                      <p className="text-[12px] text-ink-muted">
                         {doc.category} • {doc.date && isValid(new Date(doc.date)) ? format(new Date(doc.date), 'MMM dd, yyyy') : (doc.date || '—')}
                       </p>
                     </div>
                   </div>
-                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors">
                     <Download className="w-4 h-4" />
                     Download
                   </button>
@@ -474,7 +474,7 @@ const EmployeeSelfService = () => {
             </div>
           </div>
           <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-black/40 backdrop-blur-md">
-            <p className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-tight">
+            <p className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-tight">
               Coming Soon!
             </p>
           </div>

@@ -166,14 +166,14 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                     onClick={() => setCurrentSection(index)}
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
                       currentSection === index
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        ? 'bg-brand-soft text-brand border border-blue-200'
                         : 'hover:bg-gray-50 text-gray-700'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                         currentSection === index
-                          ? 'bg-blue-100 text-blue-700'
+                          ? 'bg-brand-soft text-brand'
                           : 'bg-gray-100 text-gray-500'
                       }`}>
                         {index + 1}
@@ -183,7 +183,7 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                         <p className="text-xs text-gray-500">{section.duration} min</p>
                       </div>
                       {index < currentSection && (
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        <CheckCircle2 className="w-4 h-4 text-positive" />
                       )}
                     </div>
                   </button>
@@ -198,27 +198,27 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-yellow-500" />
+                  <Star className="w-4 h-4 text-warning" />
                   <span className="text-sm text-gray-600">
                     Difficulty: {tutorial.difficulty}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-500" />
+                  <Clock className="w-4 h-4 text-brand" />
                   <span className="text-sm text-gray-600">
                     Estimated: {tutorial.formattedTime}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-green-500" />
+                  <BookOpen className="w-4 h-4 text-positive" />
                   <span className="text-sm text-gray-600">
                     Category: {tutorial.category}
                   </span>
                 </div>
                 {tutorial.isRequired && (
                   <div className="flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-red-500" />
-                    <span className="text-sm text-red-600 font-medium">
+                    <Trophy className="w-4 h-4 text-danger" />
+                    <span className="text-sm text-danger font-medium">
                       Required for onboarding
                     </span>
                   </div>
@@ -247,8 +247,8 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                     
                     {!showQuiz ? (
                       <div className="space-y-4">
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-blue-800">
+                        <div className="p-4 bg-brand-soft border border-blue-200 rounded-lg">
+                          <p className="text-brand">
                             Ready to test your knowledge? Click the button below to start the quiz.
                           </p>
                         </div>
@@ -271,7 +271,7 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                                     value={option}
                                     checked={quizAnswers.q1 === option}
                                     onChange={(e) => setQuizAnswers(prev => ({ ...prev, q1: e.target.value }))}
-                                    className="w-4 h-4 text-blue-600"
+                                    className="w-4 h-4 text-brand"
                                   />
                                   <span className="text-sm">
                                     {option}) {option === 'A' ? 'Start immediately' : 
@@ -295,7 +295,7 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                                     value={option}
                                     checked={quizAnswers.q2 === option}
                                     onChange={(e) => setQuizAnswers(prev => ({ ...prev, q2: e.target.value }))}
-                                    className="w-4 h-4 text-blue-600"
+                                    className="w-4 h-4 text-brand"
                                   />
                                   <span className="text-sm">
                                     {option}) {option === 'A' ? 'Rushing through steps' :
@@ -319,7 +319,7 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                                     value={option}
                                     checked={quizAnswers.q3 === option}
                                     onChange={(e) => setQuizAnswers(prev => ({ ...prev, q3: e.target.value }))}
-                                    className="w-4 h-4 text-blue-600"
+                                    className="w-4 h-4 text-brand"
                                   />
                                   <span className="text-sm">
                                     {option}) {option === 'A' ? 'Guess and continue' :
@@ -340,16 +340,16 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                     
                     {quizScore > 0 && (
                       <div className={`p-4 rounded-lg border ${
-                        quizScore >= 80 ? 'bg-green-50 border-green-200' :
-                        quizScore >= 60 ? 'bg-yellow-50 border-yellow-200' :
-                        'bg-red-50 border-red-200'
+                        quizScore >= 80 ? 'bg-positive-soft border-green-200' :
+                        quizScore >= 60 ? 'bg-warning-soft border-yellow-200' :
+                        'bg-danger-soft border-red-200'
                       }`}>
                         <div className="text-center">
                           <h3 className="font-semibold text-lg mb-2">Quiz Results</h3>
                           <p className={`text-2xl font-bold ${
-                            quizScore >= 80 ? 'text-green-700' :
-                            quizScore >= 60 ? 'text-yellow-700' :
-                            'text-red-700'
+                            quizScore >= 80 ? 'text-positive' :
+                            quizScore >= 60 ? 'text-warning' :
+                            'text-danger'
                           }`}>
                             {quizScore}%
                           </p>
@@ -382,7 +382,7 @@ const TutorialViewer = ({ tutorial, progress, onComplete, onBack }) => {
                 {isLastSection ? (
                   <Button 
                     onClick={handleComplete}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-positive hover:bg-positive-hover"
                     disabled={requiresQuiz && quizScore === 0}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />

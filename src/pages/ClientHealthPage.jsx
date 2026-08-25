@@ -161,19 +161,19 @@ const ClientHealthPage = () => {
   });
 
   const statusColors = {
-    good: { color: 'text-[#34c759]', bg: 'bg-[#34c759]/10' },
-    warning: { color: 'text-[#ff9500]', bg: 'bg-[#ff9500]/10' },
-    critical: { color: 'text-[#ff3b30]', bg: 'bg-[#ff3b30]/10' }
+    good: { color: 'text-positive', bg: 'bg-positive/10' },
+    warning: { color: 'text-warning', bg: 'bg-warning/10' },
+    critical: { color: 'text-danger', bg: 'bg-danger/10' }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">
             Client Health Overview
           </h1>
-          <p className="text-[15px] text-[#86868b] mt-1">
+          <p className="text-[15px] text-ink-muted mt-1">
             Score out of 100 per client (100 = doing exceptionally well), from insights reports and deliverables. Runs automatically 3 days before month end; you can run manually below.
           </p>
         </div>
@@ -181,7 +181,7 @@ const ClientHealthPage = () => {
           <button
             onClick={runBulk}
             disabled={runningBulk}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
           >
             {runningBulk ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -194,8 +194,8 @@ const ClientHealthPage = () => {
       </div>
 
       <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-[#86868b]" />
-        <span className="text-[12px] text-[#86868b]">Status:</span>
+        <Filter className="w-4 h-4 text-ink-muted" />
+        <span className="text-[12px] text-ink-muted">Status:</span>
         {['all', 'good', 'warning', 'critical'].map((status) => (
           <button
             key={status}
@@ -203,11 +203,11 @@ const ClientHealthPage = () => {
             className={`px-2.5 py-1 rounded-lg text-[12px] font-medium ${
               filterStatus === status
                 ? status === 'all'
-                  ? 'bg-[#0071e3] text-white'
+                  ? 'bg-brand text-white'
                   : statusColors[status]
                     ? `${statusColors[status].bg} ${statusColors[status].color}`
-                    : 'bg-black/10 text-[#1d1d1f] dark:bg-white/10 dark:text-white'
-                : 'bg-black/5 dark:bg-white/5 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10'
+                    : 'bg-black/10 text-ink dark:bg-white/10 dark:text-white'
+                : 'bg-surface-3 text-ink-muted hover:bg-black/10 dark:hover:bg-white/10'
             }`}
           >
             {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -216,22 +216,22 @@ const ClientHealthPage = () => {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl bg-white/60 dark:bg-white/5 border border-black/5 dark:border-white/10 p-8 text-center text-[#86868b]">
+        <div className="rounded-xl bg-surface border border-hairline p-8 text-center text-ink-muted">
           Loading…
         </div>
       ) : (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-black/5 dark:border-white/10">
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Client</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Manager</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Status</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Score</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Insight</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">As of</th>
-                  <th className="text-left py-3 px-4 text-[11px] font-medium text-[#86868b] uppercase tracking-wide">Actions</th>
+                <tr className="border-b border-hairline">
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-ink-muted uppercase tracking-wide">Client</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-ink-muted uppercase tracking-wide">Manager</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-ink-muted uppercase tracking-wide">Status</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-ink-muted uppercase tracking-wide">Score</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-ink-muted uppercase tracking-wide">Insight</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-ink-muted uppercase tracking-wide">As of</th>
+                  <th className="text-left py-3 px-4 text-[11px] font-medium text-ink-muted uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -256,9 +256,9 @@ const ClientHealthPage = () => {
                       </td>
                       <td className="py-3 px-4 text-[12px]">
                         {managerLabel === 'Unassigned' ? (
-                          <span className="text-[#ff9500] font-medium">Unassigned</span>
+                          <span className="text-warning font-medium">Unassigned</span>
                         ) : (
-                          <span className="text-[#34c759] font-medium">{managerLabel}</span>
+                          <span className="text-positive font-medium">{managerLabel}</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -267,23 +267,23 @@ const ClientHealthPage = () => {
                             {snap.status === 'good' ? 'Healthy' : snap.status === 'warning' ? 'Watch' : 'At risk'}
                           </span>
                         ) : (
-                          <span className="text-[11px] text-[#86868b]">No snapshot</span>
+                          <span className="text-[11px] text-ink-muted">No snapshot</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-[12px] text-[#1d1d1f] dark:text-white font-medium">
+                      <td className="py-3 px-4 text-[12px] text-ink font-medium">
                         {snap?.healthScore != null ? `${snap.healthScore}/100` : '—'}
                       </td>
-                      <td className="py-3 px-4 text-[12px] text-[#1d1d1f] dark:text-white max-w-[200px] truncate" title={snap?.reason}>
+                      <td className="py-3 px-4 text-[12px] text-ink max-w-[200px] truncate" title={snap?.reason}>
                         {snap?.reason || '—'}
                       </td>
-                      <td className="py-3 px-4 text-[11px] text-[#86868b]">
+                      <td className="py-3 px-4 text-[11px] text-ink-muted">
                         {snap?.timestamp ? format(new Date(snap.timestamp), 'MMM d, yyyy') : '—'}
                       </td>
                       <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => refreshOne(client)}
                           disabled={!!refreshingId}
-                          className="p-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-50"
+                          className="p-1.5 rounded-lg bg-surface-3 text-ink-muted hover:bg-hairline-strong disabled:opacity-50"
                           title="Refresh this client (on-demand prediction)"
                         >
                           <RefreshCw className={`w-4 h-4 ${refreshingId === client.id ? 'animate-spin' : ''}`} />
@@ -296,7 +296,7 @@ const ClientHealthPage = () => {
             </table>
           </div>
           {filteredClients.length === 0 && (
-            <div className="p-8 text-center text-[#86868b] text-[13px]">
+            <div className="p-8 text-center text-ink-muted text-[13px]">
               No clients match the filter.
             </div>
           )}
@@ -310,31 +310,31 @@ const ClientHealthPage = () => {
           onClick={() => setReportClient(null)}
         >
           <div
-            className="bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-2xl w-full max-w-lg overflow-hidden"
+            className="bg-surface rounded-xl border border-hairline-strong shadow-lg w-full max-w-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-hairline">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  reportClient.snap?.status === 'good' ? 'bg-[#34c759]/10' :
-                  reportClient.snap?.status === 'warning' ? 'bg-[#ff9500]/10' :
-                  reportClient.snap?.status === 'critical' ? 'bg-[#ff3b30]/10' : 'bg-black/5 dark:bg-white/10'
+                  reportClient.snap?.status === 'good' ? 'bg-positive/10' :
+                  reportClient.snap?.status === 'warning' ? 'bg-warning/10' :
+                  reportClient.snap?.status === 'critical' ? 'bg-danger/10' : 'bg-surface-3'
                 }`}>
                   <FileText className={`w-5 h-5 ${
-                    reportClient.snap?.status === 'good' ? 'text-[#34c759]' :
-                    reportClient.snap?.status === 'warning' ? 'text-[#ff9500]' :
-                    reportClient.snap?.status === 'critical' ? 'text-[#ff3b30]' : 'text-[#86868b]'
+                    reportClient.snap?.status === 'good' ? 'text-positive' :
+                    reportClient.snap?.status === 'warning' ? 'text-warning' :
+                    reportClient.snap?.status === 'critical' ? 'text-danger' : 'text-ink-muted'
                   }`} />
                 </div>
                 <div>
-                  <h2 className="text-[18px] font-semibold text-[#1d1d1f] dark:text-white">Health Report</h2>
-                  <p className="text-[13px] text-[#86868b]">{reportClient.client.clientName || reportClient.client.name || 'Client'}</p>
+                  <h2 className="text-[18px] font-semibold text-ink">Health Report</h2>
+                  <p className="text-[13px] text-ink-muted">{reportClient.client.clientName || reportClient.client.name || 'Client'}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setReportClient(null)}
-                className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center text-[#86868b]"
+                className="w-8 h-8 rounded-full hover:bg-surface-3 flex items-center justify-center text-ink-muted"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -342,10 +342,10 @@ const ClientHealthPage = () => {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3 text-[13px]">
                 <div>
-                  <p className="text-[#86868b] mb-0.5">Manager</p>
-                  <p className="font-medium text-[#1d1d1f] dark:text-white">
+                  <p className="text-ink-muted mb-0.5">Manager</p>
+                  <p className="font-medium text-ink">
                     {!reportClient.client.assignedManager || (reportClient.client.assignedManager || '').trim() === '' ? (
-                      <span className="text-[#ff9500]">Unassigned</span>
+                      <span className="text-warning">Unassigned</span>
                     ) : (() => {
                       const raw = (reportClient.client.assignedManager || '').trim();
                       const resolved = assignedUserByKey[raw.toLowerCase()] || assignedUserByKey[raw];
@@ -354,50 +354,50 @@ const ClientHealthPage = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[#86868b] mb-0.5">Status</p>
+                  <p className="text-ink-muted mb-0.5">Status</p>
                   <p className="font-medium">
                     {reportClient.snap ? (
                       <span className={reportClient.snap.status ? statusColors[reportClient.snap.status]?.color : ''}>
                         {reportClient.snap.status === 'good' ? 'Healthy' : reportClient.snap.status === 'warning' ? 'Watch' : reportClient.snap.status === 'critical' ? 'At risk' : '—'}
                       </span>
                     ) : (
-                      <span className="text-[#86868b]">No snapshot</span>
+                      <span className="text-ink-muted">No snapshot</span>
                     )}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[#86868b] mb-0.5">Score</p>
-                  <p className="font-medium text-[#1d1d1f] dark:text-white">
+                  <p className="text-ink-muted mb-0.5">Score</p>
+                  <p className="font-medium text-ink">
                     {reportClient.snap?.healthScore != null ? `${reportClient.snap.healthScore}/100` : '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[#86868b] mb-0.5">As of</p>
-                  <p className="font-medium text-[#1d1d1f] dark:text-white">
+                  <p className="text-ink-muted mb-0.5">As of</p>
+                  <p className="font-medium text-ink">
                     {reportClient.snap?.timestamp ? format(new Date(reportClient.snap.timestamp), 'MMM d, yyyy') : '—'}
                   </p>
                 </div>
               </div>
               <div>
-                <p className="text-[#86868b] text-[12px] font-medium uppercase tracking-wide mb-1.5">Insight</p>
-                <p className="text-[14px] text-[#1d1d1f] dark:text-white leading-relaxed">
+                <p className="text-ink-muted text-[12px] font-medium uppercase tracking-wide mb-1.5">Insight</p>
+                <p className="text-[14px] text-ink leading-relaxed">
                   {reportClient.snap?.reason || 'No insight available.'}
                 </p>
               </div>
               {reportClient.snap?.action && (
                 <div>
-                  <p className="text-[#86868b] text-[12px] font-medium uppercase tracking-wide mb-1.5">Recommended action</p>
-                  <p className="text-[14px] text-[#1d1d1f] dark:text-white leading-relaxed">
+                  <p className="text-ink-muted text-[12px] font-medium uppercase tracking-wide mb-1.5">Recommended action</p>
+                  <p className="text-[14px] text-ink leading-relaxed">
                     {reportClient.snap.action}
                   </p>
                 </div>
               )}
             </div>
-            <div className="px-6 py-3 border-t border-black/5 dark:border-white/10 flex justify-end">
+            <div className="px-6 py-3 border-t border-hairline flex justify-end">
               <button
                 type="button"
                 onClick={() => setReportClient(null)}
-                className="px-4 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15"
+                className="px-4 py-2 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong"
               >
                 Close
               </button>

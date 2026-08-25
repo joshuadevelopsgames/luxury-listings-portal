@@ -4,6 +4,9 @@ import { useConfirm } from '../contexts/ConfirmContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import EmployeeDetailsModal from '../components/EmployeeDetailsModal';
 import EmployeeLink from '../components/ui/EmployeeLink';
+import PageHeader from '../components/ui/PageHeader';
+import StatCard from '../components/ui/StatCard';
+import { formatStat, formatDays, formatCurrencyCompact } from '../utils/formatStat';
 import { supabaseService } from '../services/supabaseService';
 import { 
   Users, 
@@ -133,13 +136,23 @@ const TeamManagement = () => {
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 
-  // Team statistics
+  // Team statistics. Derived values are null (rendered as "—") rather than
+  // NaN/0 when there is nothing to derive them from — an empty team has no
+  // average tenure, it does not have an average tenure of zero.
+  const tenures = teamMembers
+    .map(m => differenceInDays(new Date(), new Date(m.startDate)))
+    .filter(days => Number.isFinite(days));
+
   const teamStats = {
     totalMembers: teamMembers.length,
     activeMembers: teamMembers.filter(m => m.status === 'active').length,
     probationMembers: teamMembers.filter(m => m.status === 'probation').length,
-    totalSalary: teamMembers.reduce((sum, m) => sum + m.salary, 0),
-    averageTenure: Math.round(teamMembers.reduce((sum, m) => sum + differenceInDays(new Date(), new Date(m.startDate)), 0) / teamMembers.length)
+    totalSalary: teamMembers.length
+      ? teamMembers.reduce((sum, m) => sum + (Number(m.salary) || 0), 0)
+      : null,
+    averageTenure: tenures.length
+      ? Math.round(tenures.reduce((sum, days) => sum + days, 0) / tenures.length)
+      : null
   };
 
   // Department breakdown
@@ -150,10 +163,10 @@ const TeamManagement = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-[#34c759]/10 text-[#34c759]';
-      case 'probation': return 'bg-[#ff9500]/10 text-[#ff9500]';
-      case 'inactive': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
-      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
+      case 'active': return 'bg-positive/10 text-positive';
+      case 'probation': return 'bg-warning/10 text-warning';
+      case 'inactive': return 'bg-danger/10 text-danger';
+      default: return 'bg-surface-3 text-ink-muted';
     }
   };
 
@@ -174,102 +187,57 @@ const TeamManagement = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">Team Management</h1>
-          <p className="text-[15px] sm:text-[17px] text-[#86868b] mt-1">Manage your team, track performance, and oversee employee development</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Export Team Data</span>
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors">
-            <UserPlus className="w-4 h-4" />
-            <span>Add Team Member</span>
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Team Management"
+        actions={
+          <>
+            <button className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+            <button className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors">
+              <UserPlus className="w-4 h-4" />
+              <span>Add Team Member</span>
+            </button>
+          </>
+        }
+      />
 
       {/* Team Overview Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#86868b]">Total Team</p>
-              <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white mt-1">{teamStats.totalMembers}</p>
-            </div>
-            <div className="p-2.5 rounded-full bg-[#0071e3]/10">
-              <Users className="w-5 h-5 text-[#0071e3]" />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#86868b]">Active Members</p>
-              <p className="text-[24px] font-semibold text-[#34c759] mt-1">{teamStats.activeMembers}</p>
-            </div>
-            <div className="p-2.5 rounded-full bg-[#34c759]/10">
-              <CheckCircle className="w-5 h-5 text-[#34c759]" />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#86868b]">Avg Tenure</p>
-              <p className="text-[24px] font-semibold text-[#af52de] mt-1">{teamStats.averageTenure}d</p>
-            </div>
-            <div className="p-2.5 rounded-full bg-[#af52de]/10">
-              <Calendar className="w-5 h-5 text-[#af52de]" />
-            </div>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <StatCard label="Total Team" value={formatStat(teamStats.totalMembers)} icon={Users} />
+        <StatCard label="Active Members" value={formatStat(teamStats.activeMembers)} icon={CheckCircle} />
+        <StatCard label="Avg Tenure" value={formatDays(teamStats.averageTenure)} icon={Calendar} />
         {canViewFinancials && (
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[12px] font-medium text-[#86868b]">Total Salary</p>
-                <p className="text-[24px] font-semibold text-[#5856d6] mt-1">${(teamStats.totalSalary / 1000).toFixed(0)}k</p>
-              </div>
-              <div className="p-2.5 rounded-full bg-[#5856d6]/10">
-                <TrendingUp className="w-5 h-5 text-[#5856d6]" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            label="Total Salary"
+            value={formatCurrencyCompact(teamStats.totalSalary)}
+            icon={TrendingUp}
+          />
         )}
-
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#86868b]">Probation</p>
-              <p className="text-[24px] font-semibold text-[#ff9500] mt-1">{teamStats.probationMembers}</p>
-            </div>
-            <div className="p-2.5 rounded-full bg-[#ff9500]/10">
-              <AlertTriangle className="w-5 h-5 text-[#ff9500]" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          label="Probation"
+          value={formatStat(teamStats.probationMembers)}
+          icon={AlertTriangle}
+          status={teamStats.probationMembers > 0 ? 'Needs review' : undefined}
+          statusTone="warning"
+        />
       </div>
 
       {/* Department Breakdown */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <div className="flex items-center gap-2">
-            <Building className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Department Breakdown</span>
+            <Building className="w-5 h-5 text-ink" />
+            <span className="text-[15px] font-medium text-ink">Department Breakdown</span>
           </div>
         </div>
         <div className="p-5">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {Object.entries(departmentBreakdown).map(([dept, count]) => (
-              <div key={dept} className="text-center p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{count}</p>
-                <p className="text-[12px] text-[#86868b]">{dept}</p>
+              <div key={dept} className="text-center p-4 bg-surface-2 rounded-xl">
+                <p className="text-[24px] font-semibold text-ink">{count}</p>
+                <p className="text-[12px] text-ink-muted">{dept}</p>
               </div>
             ))}
           </div>
@@ -277,17 +245,17 @@ const TeamManagement = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-muted w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search team members..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full h-10 pl-10 pr-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
           </div>
@@ -295,7 +263,7 @@ const TeamManagement = () => {
           <select
             value={filterDepartment}
             onChange={(e) => setFilterDepartment(e.target.value)}
-            className="h-10 px-4 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+            className="h-10 px-4 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
           >
             {departments.map(dept => (
               <option key={dept} value={dept}>
@@ -307,7 +275,7 @@ const TeamManagement = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="h-10 px-4 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+            className="h-10 px-4 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
           >
             {statusOptions.map(status => (
               <option key={status} value={status}>
@@ -319,22 +287,22 @@ const TeamManagement = () => {
       </div>
 
       {/* Team Members Table */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Team Members ({filteredTeamMembers.length})</span>
+            <Users className="w-5 h-5 text-ink" />
+            <span className="text-[15px] font-medium text-ink">Team Members ({filteredTeamMembers.length})</span>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-black/5 dark:border-white/10">
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Employee</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Department</th>
-                {canViewLeaveBalance && <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Leave Balance</th>}
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Status</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Actions</th>
+              <tr className="border-b border-hairline">
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Employee</th>
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Department</th>
+                {canViewLeaveBalance && <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Leave Balance</th>}
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Status</th>
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -346,7 +314,7 @@ const TeamManagement = () => {
                 >
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center text-white text-[13px] font-medium">
+                      <div className="w-10 h-10 bg-gradient-to-br from-brand to-brand rounded-full flex items-center justify-center text-white text-[13px] font-medium">
                         {member.avatar}
                       </div>
                       <div>
@@ -358,16 +326,16 @@ const TeamManagement = () => {
                         >
                           {member.name}
                         </EmployeeLink>
-                        <p className="text-[11px] text-[#86868b]">{member.position}</p>
-                        <p className="text-[10px] text-[#86868b]">{member.email}</p>
+                        <p className="text-[11px] text-ink-muted">{member.position}</p>
+                        <p className="text-[10px] text-ink-muted">{member.email}</p>
                       </div>
                     </div>
                   </td>
                   
                   <td className="py-4 px-4">
                     <div>
-                      <p className="text-[13px] text-[#1d1d1f] dark:text-white">{member.department}</p>
-                      <p className="text-[11px] text-[#86868b]">Since {safeFormatDate(member.startDate, 'MMM yyyy')}</p>
+                      <p className="text-[13px] text-ink">{member.department}</p>
+                      <p className="text-[11px] text-ink-muted">Since {safeFormatDate(member.startDate, 'MMM yyyy')}</p>
                     </div>
                   </td>
                   
@@ -375,37 +343,37 @@ const TeamManagement = () => {
                     <td className="py-4 px-4">
                       <div className="space-y-2">
                         <div>
-                          <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
+                          <div className="flex justify-between text-[10px] text-ink-muted mb-1">
                             <span>Vacation</span>
                             <span>{member.leaveBalance.vacation.remaining}/{member.leaveBalance.vacation.total}</span>
                           </div>
-                          <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-[#0071e3] rounded-full transition-all"
+                              className="h-full bg-brand rounded-full transition-all"
                               style={{ width: `${(member.leaveBalance.vacation.remaining / member.leaveBalance.vacation.total) * 100}%` }}
                             />
                           </div>
                         </div>
                         <div>
-                          <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
+                          <div className="flex justify-between text-[10px] text-ink-muted mb-1">
                             <span>Sick</span>
                             <span>{member.leaveBalance.sick.remaining}/{member.leaveBalance.sick.total}</span>
                           </div>
-                          <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-[#ff3b30] rounded-full transition-all"
+                              className="h-full bg-danger rounded-full transition-all"
                               style={{ width: `${(member.leaveBalance.sick.remaining / member.leaveBalance.sick.total) * 100}%` }}
                             />
                           </div>
                         </div>
                         <div>
-                          <div className="flex justify-between text-[10px] text-[#86868b] mb-1">
+                          <div className="flex justify-between text-[10px] text-ink-muted mb-1">
                             <span>Remote</span>
                             <span>{member.leaveBalance.remote?.remaining ?? 0}/{member.leaveBalance.remote?.total ?? 10}</span>
                           </div>
-                          <div className="h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-[#5856d6] rounded-full transition-all"
+                              className="h-full bg-brand rounded-full transition-all"
                               style={{ width: `${member.leaveBalance.remote?.total ? (member.leaveBalance.remote.remaining / member.leaveBalance.remote.total) * 100 : 100}%` }}
                             />
                           </div>
@@ -424,18 +392,18 @@ const TeamManagement = () => {
                     <div className="flex gap-1.5">
                       <button 
                         onClick={() => openEmployeeModal(member)}
-                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                        className="p-2 rounded-lg bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => openEmployeeModal(member)}
-                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                        className="p-2 rounded-lg bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                         title="View / edit details"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                      <button className="p-2 rounded-lg bg-surface-3 text-ink hover:bg-hairline-strong transition-colors">
                         <Mail className="w-4 h-4" />
                       </button>
                     </div>

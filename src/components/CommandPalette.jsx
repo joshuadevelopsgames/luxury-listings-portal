@@ -155,28 +155,28 @@ const CommandPalette = ({ isOpen, onClose, allPages = {}, clients = [], basePath
       />
 
       {/* Panel */}
-      <div className="relative w-full max-w-[560px] bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
+      <div className="relative w-full max-w-[560px] bg-surface rounded-xl shadow-lg border border-hairline-strong overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
 
         {/* Search Row */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-black/5 dark:border-white/5">
-          <Search className="w-[18px] h-[18px] text-[#86868b] flex-shrink-0" strokeWidth={1.5} />
+          <Search className="w-[18px] h-[18px] text-ink-muted flex-shrink-0" strokeWidth={1.5} />
           <input
             ref={inputRef}
             type="text"
             placeholder="Search pages, clients, actions…"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            className="flex-1 bg-transparent text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] outline-none"
+            className="flex-1 bg-transparent text-[15px] text-ink placeholder-ink-muted outline-none"
           />
           {query ? (
             <button
               onClick={() => setQuery('')}
-              className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              className="p-1 rounded-md hover:bg-surface-3 transition-colors"
             >
-              <X className="w-4 h-4 text-[#86868b]" />
+              <X className="w-4 h-4 text-ink-muted" />
             </button>
           ) : (
-            <kbd className="flex items-center px-1.5 py-0.5 bg-black/5 dark:bg-white/10 rounded text-[11px] text-[#86868b] font-medium">
+            <kbd className="flex items-center px-1.5 py-0.5 bg-surface-3 rounded text-[11px] text-ink-muted font-medium">
               esc
             </kbd>
           )}
@@ -186,14 +186,14 @@ const CommandPalette = ({ isOpen, onClose, allPages = {}, clients = [], basePath
         <div ref={listRef} className="max-h-[380px] overflow-y-auto py-2">
           {groups.length === 0 ? (
             <div className="py-14 text-center">
-              <Search className="w-10 h-10 text-[#86868b]/30 mx-auto mb-3" strokeWidth={1} />
-              <p className="text-[14px] text-[#86868b]">No results for "<span className="text-[#1d1d1f] dark:text-white">{query}</span>"</p>
-              <p className="text-[12px] text-[#86868b]/60 mt-1">Try a page name or client name</p>
+              <Search className="w-10 h-10 text-ink-muted/30 mx-auto mb-3" strokeWidth={1} />
+              <p className="text-[14px] text-ink-muted">No results for "<span className="text-ink">{query}</span>"</p>
+              <p className="text-[12px] text-ink-muted/60 mt-1">Try a page name or client name</p>
             </div>
           ) : (
             groups.map((group, gIdx) => (
               <div key={gIdx}>
-                <p className="px-4 pt-2 pb-1 text-[11px] font-semibold text-[#86868b] uppercase tracking-wider">
+                <p className="px-4 pt-2 pb-1 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">
                   {group.label}
                 </p>
                 {group.items.map((item) => {
@@ -211,34 +211,34 @@ const CommandPalette = ({ isOpen, onClose, allPages = {}, clients = [], basePath
                       onMouseEnter={() => setSelectedIndex(currentIdx)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                         isSelected
-                          ? 'bg-[#0071e3]/10'
+                          ? 'bg-brand/10'
                           : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
                       }`}
                     >
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        isSelected ? 'bg-[#0071e3]/15' : 'bg-black/5 dark:bg-white/10'
+                        isSelected ? 'bg-brand/15' : 'bg-surface-3'
                       }`}>
                         {Icon && (
                           <Icon
-                            className={`w-3.5 h-3.5 ${isSelected ? 'text-[#0071e3]' : 'text-[#86868b]'}`}
+                            className={`w-3.5 h-3.5 ${isSelected ? 'text-brand' : 'text-ink-muted'}`}
                             strokeWidth={1.5}
                           />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className={`text-[13px] font-medium truncate block ${
-                          isSelected ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-[#f5f5f7]'
+                          isSelected ? 'text-brand' : 'text-ink'
                         }`}>
                           {item.label}
                         </span>
                         {item.subtitle && (
-                          <span className="text-[11px] text-[#86868b] truncate block mt-0.5">
+                          <span className="text-[11px] text-ink-muted truncate block mt-0.5">
                             {item.subtitle}
                           </span>
                         )}
                       </div>
                       <ChevronRight
-                        className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-[#0071e3]' : 'text-[#86868b]/40'}`}
+                        className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-brand' : 'text-ink-muted/40'}`}
                         strokeWidth={1.5}
                       />
                     </button>
@@ -250,23 +250,23 @@ const CommandPalette = ({ isOpen, onClose, allPages = {}, clients = [], basePath
         </div>
 
         {/* Footer hint row */}
-        <div className="px-4 py-2.5 border-t border-black/5 dark:border-white/5 flex items-center gap-4 text-[11px] text-[#86868b]">
+        <div className="px-4 py-2.5 border-t border-black/5 dark:border-white/5 flex items-center gap-4 text-[11px] text-ink-muted">
           <span className="flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 bg-black/5 dark:bg-white/10 rounded text-[10px] font-mono">↑↓</kbd>
+            <kbd className="px-1.5 py-0.5 bg-surface-3 rounded text-[10px] font-mono">↑↓</kbd>
             navigate
           </span>
           <span className="flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 bg-black/5 dark:bg-white/10 rounded text-[10px] font-mono">↵</kbd>
+            <kbd className="px-1.5 py-0.5 bg-surface-3 rounded text-[10px] font-mono">↵</kbd>
             open
           </span>
           <span className="flex items-center gap-1.5">
-            <kbd className="px-1.5 py-0.5 bg-black/5 dark:bg-white/10 rounded text-[10px] font-mono">esc</kbd>
+            <kbd className="px-1.5 py-0.5 bg-surface-3 rounded text-[10px] font-mono">esc</kbd>
             close
           </span>
           <span className="ml-auto flex items-center gap-1">
             <Command className="w-3 h-3" strokeWidth={1.5} />
             <span>K</span>
-            <span className="text-[#86868b]/50 ml-1">anywhere</span>
+            <span className="text-ink-muted/50 ml-1">anywhere</span>
           </span>
         </div>
       </div>

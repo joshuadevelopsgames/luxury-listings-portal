@@ -111,33 +111,33 @@ const V3Tasks = () => {
   };
 
   const priorityStyles = {
-    high: 'bg-[#ff3b30]/10 text-[#ff3b30]',
-    urgent: 'bg-[#ff3b30]/10 text-[#ff3b30]',
-    medium: 'bg-[#ff9500]/10 text-[#ff9500]',
-    low: 'bg-[#34c759]/10 text-[#34c759]',
+    high: 'bg-danger/10 text-danger',
+    urgent: 'bg-danger/10 text-danger',
+    medium: 'bg-warning/10 text-warning',
+    low: 'bg-positive/10 text-positive',
   };
 
   const categoryColors = {
-    'Review': 'from-[#0071e3] to-[#5856d6]',
-    'Content': 'from-[#af52de] to-[#ff2d55]',
-    'Design': 'from-[#ff9500] to-[#ff3b30]',
-    'Meeting': 'from-[#34c759] to-[#30d158]',
-    'Analytics': 'from-[#5856d6] to-[#0071e3]',
-    'Admin': 'from-[#86868b] to-[#636366]',
+    'Review': 'from-brand to-brand',
+    'Content': 'from-brand to-[#ff2d55]',
+    'Design': 'from-warning to-danger',
+    'Meeting': 'from-positive to-positive',
+    'Analytics': 'from-brand to-brand',
+    'Admin': 'from-ink-muted to-[#636366]',
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-12 bg-black/5 dark:bg-white/5 rounded-2xl animate-pulse" />
+        <div className="h-12 bg-surface-3 rounded-xl animate-pulse" />
         <div className="grid grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 bg-black/5 dark:bg-white/5 rounded-2xl animate-pulse" />
+            <div key={i} className="h-24 bg-surface-3 rounded-xl animate-pulse" />
           ))}
         </div>
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-28 bg-black/5 dark:bg-white/5 rounded-2xl animate-pulse" />
+            <div key={i} className="h-28 bg-surface-3 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -149,18 +149,18 @@ const V3Tasks = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">Tasks</h1>
-          <p className="text-[17px] text-[#86868b]">Manage your tasks and stay organized.</p>
+          <h1 className="text-[34px] font-semibold text-ink tracking-[-0.02em] mb-1">Tasks</h1>
+          <p className="text-[17px] text-ink-muted">Manage your tasks and stay organized.</p>
         </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={loadTasks}
-            className="h-10 px-4 rounded-full bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-all flex items-center gap-2"
+            className="h-10 px-4 rounded-full bg-surface-3 text-[13px] font-medium text-ink hover:bg-black/10 dark:hover:bg-white/10 transition-all flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" strokeWidth={2} />
             Refresh
           </button>
-          <button className="flex items-center gap-2 h-10 px-5 rounded-full bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] active:scale-[0.98] transition-all">
+          <button className="flex items-center gap-2 h-10 px-5 rounded-full bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover active:scale-[0.98] transition-all">
             <Plus className="w-4 h-4" strokeWidth={2} />
             Add Task
           </button>
@@ -171,37 +171,37 @@ const V3Tasks = () => {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Total', value: stats.total },
-          { label: 'Completed', value: stats.completed, color: 'text-[#34c759]' },
-          { label: 'Pending', value: stats.pending, color: 'text-[#ff9500]' },
+          { label: 'Completed', value: stats.completed, color: 'text-positive' },
+          { label: 'Pending', value: stats.pending, color: 'text-warning' },
         ].map((stat, idx) => (
-          <div key={idx} className="p-4 rounded-2xl bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-xl border border-black/5 dark:border-white/5 text-center">
-            <p className={`text-[28px] font-semibold tracking-[-0.02em] ${stat.color || 'text-[#1d1d1f] dark:text-white'}`}>{stat.value}</p>
-            <p className="text-[13px] text-[#86868b]">{stat.label}</p>
+          <div key={idx} className="p-4 rounded-xl bg-white/80 dark:bg-surface backdrop-blur-xl border border-black/5 dark:border-white/5 text-center">
+            <p className={`text-[28px] font-semibold tracking-[-0.02em] ${stat.color || 'text-ink'}`}>{stat.value}</p>
+            <p className="text-[13px] text-ink-muted">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-xl border border-black/5 dark:border-white/5">
+      <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl bg-white/80 dark:bg-surface backdrop-blur-xl border border-black/5 dark:border-white/5">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" strokeWidth={1.5} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" strokeWidth={1.5} />
           <input
             type="text"
             placeholder="Search tasks..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-9 pl-9 pr-4 rounded-lg bg-black/5 dark:bg-white/5 border-0 text-[13px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+            className="w-full h-9 pl-9 pr-4 rounded-lg bg-surface border border-hairline-strong text-[13px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
           />
         </div>
-        <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-lg">
+        <div className="flex items-center gap-1 p-1 bg-surface-3 rounded-lg">
           {['all', 'pending', 'completed', 'starred'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-4 py-1.5 rounded-md text-[13px] font-medium capitalize transition-all ${
                 filter === f
-                  ? 'bg-white dark:bg-[#3d3d3d] text-[#1d1d1f] dark:text-white shadow-sm'
-                  : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#3d3d3d] text-ink shadow-sm'
+                  : 'text-ink-muted hover:text-ink dark:hover:text-white'
               }`}
             >
               {f}
@@ -212,14 +212,14 @@ const V3Tasks = () => {
 
       {/* Empty State */}
       {filteredTasks.length === 0 && (
-        <div className="p-12 rounded-2xl bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-xl border border-black/5 dark:border-white/5 text-center">
-          <div className="w-16 h-16 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-8 h-8 text-[#86868b]" />
+        <div className="p-12 rounded-xl bg-white/80 dark:bg-surface backdrop-blur-xl border border-black/5 dark:border-white/5 text-center">
+          <div className="w-16 h-16 rounded-full bg-surface-3 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-ink-muted" />
           </div>
-          <p className="text-[17px] font-medium text-[#1d1d1f] dark:text-white mb-1">
+          <p className="text-[17px] font-medium text-ink mb-1">
             {searchTerm || filter !== 'all' ? 'No tasks found' : 'No tasks yet'}
           </p>
-          <p className="text-[13px] text-[#86868b]">
+          <p className="text-[13px] text-ink-muted">
             {searchTerm || filter !== 'all' ? 'Try adjusting your filters' : 'Create a task to get started'}
           </p>
         </div>
@@ -236,13 +236,13 @@ const V3Tasks = () => {
             return (
               <div
                 key={task.id}
-                className="p-5 rounded-2xl bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-xl border border-black/5 dark:border-white/5 hover:shadow-lg transition-all"
+                className="p-5 rounded-xl bg-white/80 dark:bg-surface backdrop-blur-xl border border-black/5 dark:border-white/5 hover:shadow-md transition-all"
               >
                 <div className="flex items-start gap-4">
                   <button
                     onClick={() => toggleTask(task.id)}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                      isCompleted ? 'bg-[#34c759] border-[#34c759]' : 'border-[#d1d1d6] hover:border-[#0071e3]'
+                      isCompleted ? 'bg-positive border-positive' : 'border-[#d1d1d6] hover:border-brand'
                     }`}
                   >
                     {isCompleted && (
@@ -251,11 +251,11 @@ const V3Tasks = () => {
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className={`text-[15px] font-medium mb-1 ${isCompleted ? 'text-[#86868b] line-through' : 'text-[#1d1d1f] dark:text-white'}`}>
+                    <h3 className={`text-[15px] font-medium mb-1 ${isCompleted ? 'text-ink-muted line-through' : 'text-ink'}`}>
                       {task.title || task.name || 'Untitled Task'}
                     </h3>
                     {task.description && (
-                      <p className="text-[13px] text-[#86868b] mb-3">{task.description}</p>
+                      <p className="text-[13px] text-ink-muted mb-3">{task.description}</p>
                     )}
                     <div className="flex items-center gap-3 flex-wrap">
                       {task.category && (
@@ -268,7 +268,7 @@ const V3Tasks = () => {
                           {task.priority}
                         </span>
                       )}
-                      <span className={`flex items-center gap-1 text-[12px] ${isOverdue ? 'text-[#ff3b30]' : 'text-[#86868b]'}`}>
+                      <span className={`flex items-center gap-1 text-[12px] ${isOverdue ? 'text-danger' : 'text-ink-muted'}`}>
                         <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
                         {dueDateDisplay}
                       </span>
@@ -279,12 +279,12 @@ const V3Tasks = () => {
                     <button
                       onClick={(e) => toggleStar(task.id, e)}
                       className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                        task.starred ? 'text-[#ff9500]' : 'text-[#86868b] hover:text-[#ff9500]'
+                        task.starred ? 'text-warning' : 'text-ink-muted hover:text-warning'
                       }`}
                     >
                       <Star className={`w-[18px] h-[18px] ${task.starred ? 'fill-current' : ''}`} strokeWidth={1.5} />
                     </button>
-                    <button className="w-8 h-8 rounded-lg flex items-center justify-center text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-muted hover:text-ink dark:hover:text-white hover:bg-surface-3 transition-colors">
                       <MoreHorizontal className="w-[18px] h-[18px]" strokeWidth={1.5} />
                     </button>
                   </div>

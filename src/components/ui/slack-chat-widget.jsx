@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Users,
   LogOut,
-  LogIn
+  LogIn,
+  Lock
 } from 'lucide-react';
 
 /**
@@ -257,17 +258,17 @@ const SlackChatWidget = () => {
   };
 
   const getChannelIcon = (channel) => {
-    if (channel.is_im) return '💬';
-    if (channel.is_mpim) return '👥';
-    if (channel.is_private) return '🔒';
-    return '#';
+    if (channel.is_im) return MessageSquare;
+    if (channel.is_mpim) return Users;
+    if (channel.is_private) return Lock;
+    return Hash;
   };
 
   // Not connected UI
   const renderConnectPrompt = () => (
     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-        <LogIn className="w-8 h-8 text-purple-600" />
+      <div className="w-16 h-16 bg-brand-soft rounded-xl flex items-center justify-center mb-4">
+        <LogIn className="w-8 h-8 text-brand" />
       </div>
       <h3 className="font-semibold text-gray-900 mb-2">Connect Your Slack</h3>
       <p className="text-sm text-gray-600 mb-4">
@@ -291,21 +292,21 @@ const SlackChatWidget = () => {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="bg-[#4A154B] hover:bg-[#611f69] text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 relative"
+          className="bg-[#4A154B] hover:bg-[#611f69] text-white rounded-full p-3 shadow-lg hover:shadow-md transition-all duration-200 transform hover:scale-105 relative"
           title="Open Slack Chat"
         >
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
           </svg>
           {isConnected && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-positive rounded-full border-2 border-white" />
           )}
         </button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-96 h-[500px] flex flex-col overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 w-96 h-[500px] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="bg-[#4A154B] text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -358,7 +359,7 @@ const SlackChatWidget = () => {
           {/* Connection check loading */}
           {isCheckingConnection ? (
             <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-brand animate-spin" />
             </div>
           ) : !isConnected ? (
             renderConnectPrompt()
@@ -372,7 +373,7 @@ const SlackChatWidget = () => {
                     className="w-full px-4 py-2 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center text-sm">
-                      <span className="mr-2">{selectedChannel ? getChannelIcon(selectedChannel) : '#'}</span>
+                      <span className="mr-2 inline-flex">{React.createElement(selectedChannel ? getChannelIcon(selectedChannel) : Hash, { className: "w-3.5 h-3.5" })}</span>
                       <span className="font-medium text-gray-700">
                         {selectedChannel?.name || 'Select Channel'}
                       </span>
@@ -386,11 +387,11 @@ const SlackChatWidget = () => {
                         <button
                           key={channel.id}
                           onClick={() => selectChannel(channel)}
-                          className={`w-full px-4 py-2 text-left flex items-center text-sm hover:bg-purple-50 transition-colors ${
-                            selectedChannel?.id === channel.id ? 'bg-purple-100 text-purple-700' : 'text-gray-700'
+                          className={`w-full px-4 py-2 text-left flex items-center text-sm hover:bg-brand-soft transition-colors ${
+                            selectedChannel?.id === channel.id ? 'bg-brand-soft text-brand' : 'text-gray-700'
                           }`}
                         >
-                          <span className="mr-2">{getChannelIcon(channel)}</span>
+                          <span className="mr-2 inline-flex">{React.createElement(getChannelIcon(channel), { className: "w-3.5 h-3.5" })}</span>
                           {channel.name || channel.user}
                         </button>
                       ))}
@@ -404,7 +405,7 @@ const SlackChatWidget = () => {
                 {error ? (
                   <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                     <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-                    <p className="text-sm text-red-600">{error}</p>
+                    <p className="text-sm text-danger">{error}</p>
                     <Button
                       onClick={() => { setError(null); loadChannels(); }}
                       variant="outline"
@@ -416,7 +417,7 @@ const SlackChatWidget = () => {
                   </div>
                 ) : isLoading && messages.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center p-6">
-                    <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-brand animate-spin" />
                   </div>
                 ) : (
                   <div className="p-4 space-y-3">
@@ -440,7 +441,7 @@ const SlackChatWidget = () => {
                             />
                           ) : (
                             <div className="w-8 h-8 bg-purple-200 rounded flex items-center justify-center">
-                              <span className="text-xs font-medium text-purple-700">
+                              <span className="text-xs font-medium text-brand">
                                 {message.userName?.charAt(0) || '?'}
                               </span>
                             </div>
@@ -479,7 +480,7 @@ const SlackChatWidget = () => {
                       onChange={(e) => setInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder={`Message ${selectedChannel.is_im ? '' : '#'}${selectedChannel.name || ''}`}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
                       disabled={isSending}
                     />
                     <Button

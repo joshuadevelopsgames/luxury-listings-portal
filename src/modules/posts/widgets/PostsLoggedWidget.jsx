@@ -211,11 +211,11 @@ const PostsLoggedWidget = () => {
 
   if (loadingWidget) {
     return (
-      <div className="min-h-[320px] sm:min-h-[380px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
+      <div className="min-h-[320px] sm:min-h-[380px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
         <div className="space-y-3">
-          <div className="h-10 w-full bg-black/5 dark:bg-white/5 rounded" />
-          <div className="h-10 w-full bg-black/5 dark:bg-white/5 rounded" />
+          <div className="h-10 w-full bg-surface-3 rounded" />
+          <div className="h-10 w-full bg-surface-3 rounded" />
         </div>
       </div>
     );
@@ -223,22 +223,22 @@ const PostsLoggedWidget = () => {
 
   return (
     <>
-      <div className="min-h-[320px] sm:min-h-[380px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10">
+      <div className="min-h-[320px] sm:min-h-[380px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline">
         {/* Header: big tally total */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#34c759] to-[#30d158] flex items-center justify-center shadow-lg shadow-[#34c759]/20">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-positive to-positive flex items-center justify-center shadow-lg shadow-positive/20">
               <CheckCircle2 className="w-6 h-6 text-white" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Posts Today</h3>
-              <p className="text-2xl sm:text-3xl font-semibold tabular-nums text-[#1d1d1f] dark:text-white">{postsToday.length}</p>
-              <p className="text-[11px] text-[#86868b]">logged</p>
+              <h3 className="font-semibold text-[17px] text-ink">Posts Today</h3>
+              <p className="text-2xl sm:text-3xl font-semibold tabular-nums text-ink">{postsToday.length}</p>
+              <p className="text-[11px] text-ink-muted">logged</p>
             </div>
           </div>
           <button
             onClick={() => setShowLogModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Log (other)
@@ -247,9 +247,9 @@ const PostsLoggedWidget = () => {
 
         {/* Per client: only assigned platforms, round − and + per platform */}
         <div className="space-y-3">
-          <p className="text-[11px] font-medium text-[#86868b] uppercase tracking-wide mb-2">By client & platform</p>
+          <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wide mb-2">By client & platform</p>
           {clients.length === 0 ? (
-            <p className="text-[13px] text-[#86868b]">No clients assigned</p>
+            <p className="text-[13px] text-ink-muted">No clients assigned</p>
           ) : (
             clients.map(client => {
               const assigned = getAssignedPlatforms(client);
@@ -259,10 +259,10 @@ const PostsLoggedWidget = () => {
                     key={client.id}
                     className="flex items-center gap-3 py-2 px-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]"
                   >
-                    <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate flex-1">
+                    <span className="text-[13px] font-medium text-ink truncate flex-1">
                       {client.clientName}
                     </span>
-                    <span className="text-[11px] text-[#86868b]">No platforms assigned</span>
+                    <span className="text-[11px] text-ink-muted">No platforms assigned</span>
                   </div>
                 );
               }
@@ -272,7 +272,7 @@ const PostsLoggedWidget = () => {
                   className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] overflow-hidden"
                 >
                   <div className="px-3 py-2 border-b border-black/5 dark:border-white/5">
-                    <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                    <span className="text-[13px] font-medium text-ink">
                       {client.clientName}
                     </span>
                   </div>
@@ -286,17 +286,17 @@ const PostsLoggedWidget = () => {
                       return (
                         <div
                           key={platform}
-                          className="flex items-center gap-1.5 px-2 py-1.5 rounded-full bg-white dark:bg-white/10 border border-black/10 dark:border-white/10 shadow-sm"
+                          className="flex items-center gap-1.5 px-2 py-1.5 rounded-full bg-white dark:bg-white/10 border border-hairline-strong shadow-sm"
                         >
                           <Icon className="w-4 h-4 shrink-0" style={{ color }} />
-                          <span className="tabular-nums text-[12px] font-medium text-[#1d1d1f] dark:text-white min-w-[1rem] text-center">
+                          <span className="tabular-nums text-[12px] font-medium text-ink min-w-[1rem] text-center">
                             {count}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleRemovePost(client.id, platform)}
                             disabled={logging || count === 0}
-                            className="w-7 h-7 rounded-full bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white flex items-center justify-center hover:bg-black/20 dark:hover:bg-white/20 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                            className="w-7 h-7 rounded-full bg-black/10 dark:bg-white/10 text-ink flex items-center justify-center hover:bg-black/20 dark:hover:bg-white/20 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             title={`Remove 1 ${platform} post`}
                           >
                             <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
@@ -325,27 +325,27 @@ const PostsLoggedWidget = () => {
       {/* Log Post Modal */}
       {showLogModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl w-full max-w-sm overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10">
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Log Completed Post</h3>
+          <div className="bg-surface rounded-xl w-full max-w-sm overflow-hidden border border-hairline-strong shadow-lg">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-hairline">
+              <h3 className="text-[17px] font-semibold text-ink">Log Completed Post</h3>
               <button
                 onClick={() => setShowLogModal(false)}
-                className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                className="w-8 h-8 rounded-full hover:bg-surface-3 flex items-center justify-center"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
             
             <div className="p-5 space-y-4">
               {/* Client Select */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Client
                 </label>
                 <select
                   value={selectedClient}
                   onChange={(e) => setSelectedClient(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="">Select a client...</option>
                   {clients.map(client => (
@@ -358,7 +358,7 @@ const PostsLoggedWidget = () => {
 
               {/* Platform Select: only assigned when client selected */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Platform
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -377,8 +377,8 @@ const PostsLoggedWidget = () => {
                         onClick={() => setSelectedPlatform(platform)}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
                           selectedPlatform === platform
-                            ? 'bg-[#0071e3] text-white'
-                            : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                            ? 'bg-brand text-white'
+                            : 'bg-surface-3 text-ink hover:bg-hairline-strong'
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -390,17 +390,17 @@ const PostsLoggedWidget = () => {
               </div>
             </div>
 
-            <div className="flex gap-3 px-5 py-4 border-t border-black/5 dark:border-white/10">
+            <div className="flex gap-3 px-5 py-4 border-t border-hairline">
               <button
                 onClick={() => setShowLogModal(false)}
-                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogPost}
                 disabled={logging || !selectedClient}
-                className="flex-1 h-11 rounded-xl bg-[#34c759] text-white text-[14px] font-medium hover:bg-[#30d158] transition-colors disabled:opacity-50"
+                className="flex-1 h-11 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive transition-colors disabled:opacity-50"
               >
                 {logging ? 'Logging...' : 'Log Post'}
               </button>

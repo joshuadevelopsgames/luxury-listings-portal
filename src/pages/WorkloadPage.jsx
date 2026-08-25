@@ -31,9 +31,9 @@ function getWorkloadUnits(clients) {
 }
 
 function getCapacityColor(workloadUnits) {
-  if (workloadUnits <= WORKLOAD_LOW) return { bar: 'bg-[#34c759]', text: 'text-[#34c759]', label: 'Light' };
-  if (workloadUnits <= WORKLOAD_MED) return { bar: 'bg-[#ff9500]', text: 'text-[#ff9500]', label: 'Moderate' };
-  return { bar: 'bg-[#ff3b30]', text: 'text-[#ff3b30]', label: 'Heavy' };
+  if (workloadUnits <= WORKLOAD_LOW) return { bar: 'bg-positive', text: 'text-positive', label: 'Light' };
+  if (workloadUnits <= WORKLOAD_MED) return { bar: 'bg-warning', text: 'text-warning', label: 'Moderate' };
+  return { bar: 'bg-danger', text: 'text-danger', label: 'Heavy' };
 }
 
 // Bar scale 1–8: 8 = 100%
@@ -171,15 +171,15 @@ export default function WorkloadPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">Team Workload</h1>
-          <p className="text-[15px] text-[#86868b]">Workload by clients, posts per month, and platforms — not just client count</p>
+          <h1 className="text-[28px] font-semibold text-ink tracking-[-0.02em] mb-1">Team Workload</h1>
+          <p className="text-[15px] text-ink-muted">Workload by clients, posts per month, and platforms — not just client count</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1,2,3].map(i => (
-            <div key={i} className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-black/5 dark:border-white/10 animate-pulse">
-              <div className="h-6 bg-black/5 dark:bg-white/10 rounded-lg w-32 mb-4" />
-              <div className="h-4 bg-black/5 dark:bg-white/10 rounded-lg w-20 mb-2" />
-              <div className="h-3 bg-black/5 dark:bg-white/10 rounded-full w-full" />
+            <div key={i} className="bg-surface backdrop-blur-xl rounded-xl p-5 border border-hairline animate-pulse">
+              <div className="h-6 bg-surface-3 rounded-lg w-32 mb-4" />
+              <div className="h-4 bg-surface-3 rounded-lg w-20 mb-2" />
+              <div className="h-3 bg-surface-3 rounded-full w-full" />
             </div>
           ))}
         </div>
@@ -195,19 +195,19 @@ export default function WorkloadPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">Team Workload</h1>
-        <p className="text-[15px] text-[#86868b]">Workload by clients, posts per month, and platforms — not just client count</p>
+        <h1 className="text-[28px] font-semibold text-ink tracking-[-0.02em] mb-1">Team Workload</h1>
+        <p className="text-[15px] text-ink-muted">Workload by clients, posts per month, and platforms — not just client count</p>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Clients" value={totalClients} icon={<Users className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />} />
-        <StatCard label="Account Managers" value={managers.length} icon={<Users className="w-4 h-4 text-[#5856d6]" strokeWidth={1.5} />} color="#5856d6" />
-        <StatCard label="Assigned" value={assignedCount} icon={<BarChart3 className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />} color="#34c759" />
+        <StatCard label="Total Clients" value={totalClients} icon={<Users className="w-4 h-4 text-brand" strokeWidth={1.5} />} />
+        <StatCard label="Account Managers" value={managers.length} icon={<Users className="w-4 h-4 text-brand" strokeWidth={1.5} />} color="#5856d6" />
+        <StatCard label="Assigned" value={assignedCount} icon={<BarChart3 className="w-4 h-4 text-positive" strokeWidth={1.5} />} color="#34c759" />
         <StatCard
           label="Unassigned"
           value={unassignedCount}
-          icon={<BarChart3 className="w-4 h-4 text-[#ff3b30]" strokeWidth={1.5} />}
+          icon={<BarChart3 className="w-4 h-4 text-danger" strokeWidth={1.5} />}
           color="#ff3b30"
           highlight={unassignedCount > 0}
         />
@@ -228,7 +228,7 @@ export default function WorkloadPage() {
           const isExpanded = expandedManager === manager.email;
 
           return (
-            <div key={manager.email} className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border transition-all ${isExpanded ? 'border-[#0071e3]/30 shadow-lg md:col-span-2 lg:col-span-3' : 'border-black/5 dark:border-white/10 hover:shadow-md'}`}>
+            <div key={manager.email} className={`bg-surface backdrop-blur-xl rounded-xl border transition-all ${isExpanded ? 'border-brand/30 shadow-lg md:col-span-2 lg:col-span-3' : 'border-hairline hover:shadow-md'}`}>
               {/* Manager Header */}
               <button
                 onClick={() => setExpandedManager(isExpanded ? null : manager.email)}
@@ -236,7 +236,7 @@ export default function WorkloadPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-sm font-semibold">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center text-white text-sm font-semibold">
                       {manager.avatar && typeof manager.avatar === 'string' && manager.avatar.startsWith('http') ? (
                         <img src={manager.avatar} alt="" className="w-full h-full rounded-xl object-cover" />
                       ) : (
@@ -244,22 +244,22 @@ export default function WorkloadPage() {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{manager.displayName}</h3>
-                      <p className="text-[12px] text-[#86868b]">{count} client{count !== 1 ? 's' : ''} · {totalPostsPerMonth} posts/mo</p>
+                      <h3 className="text-[15px] font-semibold text-ink">{manager.displayName}</h3>
+                      <p className="text-[12px] text-ink-muted">{count} client{count !== 1 ? 's' : ''} · {totalPostsPerMonth} posts/mo</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-[12px] font-medium ${capacity.text}`}>{capacity.label}</span>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-[#86868b]" /> : <ChevronDown className="w-4 h-4 text-[#86868b]" />}
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-ink-muted" /> : <ChevronDown className="w-4 h-4 text-ink-muted" />}
                   </div>
                 </div>
 
                 {/* Capacity Bar (1–8 scale; 8 = max heaviness) */}
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1 h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-surface-3 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all ${capacity.bar}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-[11px] font-medium text-[#86868b] tabular-nums">{Math.round(equiv * 10) / 10} / {MAX_CLIENT_EQUIVALENTS}</span>
+                  <span className="text-[11px] font-medium text-ink-muted tabular-nums">{Math.round(equiv * 10) / 10} / {MAX_CLIENT_EQUIVALENTS}</span>
                 </div>
 
                 {/* Quick Stats Row */}
@@ -269,7 +269,7 @@ export default function WorkloadPage() {
                     {PLATFORMS.filter(p => platformCounts[p.key] > 0).map(({ key, Icon }) => (
                       <span key={key} className="flex items-center gap-0.5" title={`${platformCounts[key]} ${key}`}>
                         <Icon size={14} />
-                        <span className="text-[11px] font-medium text-[#86868b]">{platformCounts[key]}</span>
+                        <span className="text-[11px] font-medium text-ink-muted">{platformCounts[key]}</span>
                       </span>
                     ))}
                   </div>
@@ -277,7 +277,7 @@ export default function WorkloadPage() {
                   {/* Package breakdown */}
                   <div className="flex items-center gap-1 ml-auto">
                     {Object.entries(packageCounts).map(([pkg, cnt]) => (
-                      <span key={pkg} className="px-1.5 py-0.5 rounded bg-black/[0.03] dark:bg-white/[0.06] text-[10px] font-medium text-[#86868b]">
+                      <span key={pkg} className="px-1.5 py-0.5 rounded bg-black/[0.03] dark:bg-white/[0.06] text-[10px] font-medium text-ink-muted">
                         {cnt} {pkg}
                       </span>
                     ))}
@@ -287,7 +287,7 @@ export default function WorkloadPage() {
 
               {/* Expanded Client List */}
               {isExpanded && (
-                <div className="border-t border-black/5 dark:border-white/10 p-5">
+                <div className="border-t border-hairline p-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {managerClients.map(client => (
                       <ClientCard
@@ -301,7 +301,7 @@ export default function WorkloadPage() {
                       />
                     ))}
                     {managerClients.length === 0 && (
-                      <p className="text-[13px] text-[#86868b] col-span-full text-center py-8">No clients assigned</p>
+                      <p className="text-[13px] text-ink-muted col-span-full text-center py-8">No clients assigned</p>
                     )}
                   </div>
                 </div>
@@ -312,26 +312,26 @@ export default function WorkloadPage() {
 
         {/* Unassigned Card */}
         {(clientsByManager['unassigned'] || []).length > 0 && (
-          <div className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border transition-all ${expandedManager === 'unassigned' ? 'border-[#ff3b30]/30 shadow-lg md:col-span-2 lg:col-span-3' : 'border-[#ff3b30]/20 hover:shadow-md'}`}>
+          <div className={`bg-surface backdrop-blur-xl rounded-xl border transition-all ${expandedManager === 'unassigned' ? 'border-danger/30 shadow-lg md:col-span-2 lg:col-span-3' : 'border-danger/20 hover:shadow-md'}`}>
             <button
               onClick={() => setExpandedManager(expandedManager === 'unassigned' ? null : 'unassigned')}
               className="w-full p-5 text-left"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#ff3b30]/10 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-[#ff3b30]" strokeWidth={1.5} />
+                  <div className="w-10 h-10 rounded-xl bg-danger/10 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-danger" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h3 className="text-[15px] font-semibold text-[#ff3b30]">Unassigned</h3>
-                    <p className="text-[12px] text-[#86868b]">{clientsByManager['unassigned'].length} client{clientsByManager['unassigned'].length !== 1 ? 's' : ''} need a manager</p>
+                    <h3 className="text-[15px] font-semibold text-danger">Unassigned</h3>
+                    <p className="text-[12px] text-ink-muted">{clientsByManager['unassigned'].length} client{clientsByManager['unassigned'].length !== 1 ? 's' : ''} need a manager</p>
                   </div>
                 </div>
-                {expandedManager === 'unassigned' ? <ChevronUp className="w-4 h-4 text-[#86868b]" /> : <ChevronDown className="w-4 h-4 text-[#86868b]" />}
+                {expandedManager === 'unassigned' ? <ChevronUp className="w-4 h-4 text-ink-muted" /> : <ChevronDown className="w-4 h-4 text-ink-muted" />}
               </div>
             </button>
             {expandedManager === 'unassigned' && (
-              <div className="border-t border-black/5 dark:border-white/10 p-5">
+              <div className="border-t border-hairline p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {clientsByManager['unassigned'].map(client => (
                     <ClientCard
@@ -357,14 +357,14 @@ export default function WorkloadPage() {
 // Stat card component
 function StatCard({ label, value, icon, color = '#0071e3', highlight = false }) {
   return (
-    <div className={`bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border ${highlight ? 'border-[#ff3b30]/20' : 'border-black/5 dark:border-white/10'}`}>
+    <div className={`bg-surface backdrop-blur-xl rounded-xl p-5 border ${highlight ? 'border-danger/20' : 'border-hairline'}`}>
       <div className="flex items-center gap-3 mb-2">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${color}10` }}>
           {icon}
         </div>
       </div>
-      <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{value}</p>
-      <p className="text-[13px] text-[#86868b]">{label}</p>
+      <p className="text-[28px] font-semibold text-ink">{value}</p>
+      <p className="text-[13px] text-ink-muted">{label}</p>
     </div>
   );
 }
@@ -381,7 +381,7 @@ function ClientCard({ client, isAdmin, managers, onReassign, reassigning, setRea
           {client.profilePhoto ? (
             <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#86868b] text-sm font-semibold">
+            <div className="w-full h-full flex items-center justify-center text-ink-muted text-sm font-semibold">
               {client.clientName?.charAt(0)?.toUpperCase() || 'C'}
             </div>
           )}
@@ -391,7 +391,7 @@ function ClientCard({ client, isAdmin, managers, onReassign, reassigning, setRea
             <ClientLink client={client} showId />
           </h4>
           {client.brokerage && (
-            <p className="text-[11px] text-[#86868b] truncate">{client.brokerage}</p>
+            <p className="text-[11px] text-ink-muted truncate">{client.brokerage}</p>
           )}
         </div>
       </div>
@@ -405,17 +405,17 @@ function ClientCard({ client, isAdmin, managers, onReassign, reassigning, setRea
 
       {/* Package info */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="px-2 py-0.5 rounded-lg bg-[#0071e3]/10 text-[11px] font-medium text-[#0071e3]">
+        <span className="px-2 py-0.5 rounded-lg bg-brand/10 text-[11px] font-medium text-brand">
           {client.packageType || 'Standard'}
         </span>
-        <span className="text-[11px] text-[#86868b]">
+        <span className="text-[11px] text-ink-muted">
           {client.packageSize || 0} posts/mo
         </span>
       </div>
 
       {/* Admin-only: price */}
       {isAdmin && client.customPrice > 0 && (
-        <p className="text-[12px] font-medium text-[#34c759] mb-2">
+        <p className="text-[12px] font-medium text-positive mb-2">
           ${Number(client.customPrice).toLocaleString()}/mo
         </p>
       )}
@@ -424,7 +424,7 @@ function ClientCard({ client, isAdmin, managers, onReassign, reassigning, setRea
       {isReassigning ? (
         <div className="mt-2">
           <select
-            className="w-full px-2 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#1c1c1e] text-[12px] text-[#1d1d1f] dark:text-white"
+            className="w-full px-2 py-1.5 rounded-lg border border-hairline-strong bg-surface text-[12px] text-ink"
             defaultValue=""
             onChange={(e) => onReassign(client.id, e.target.value)}
           >
@@ -434,14 +434,14 @@ function ClientCard({ client, isAdmin, managers, onReassign, reassigning, setRea
               <option key={m.email} value={m.email}>{m.displayName}</option>
             ))}
           </select>
-          <button onClick={() => setReassigning(null)} className="text-[11px] text-[#86868b] mt-1 hover:text-[#1d1d1f] dark:hover:text-white">
+          <button onClick={() => setReassigning(null)} className="text-[11px] text-ink-muted mt-1 hover:text-ink dark:hover:text-white">
             Cancel
           </button>
         </div>
       ) : (
         <button
           onClick={() => setReassigning(client.id)}
-          className="flex items-center gap-1 text-[11px] text-[#0071e3] hover:text-[#0071e3]/80 mt-1"
+          className="flex items-center gap-1 text-[11px] text-brand hover:text-brand/80 mt-1"
         >
           <ArrowRight className="w-3 h-3" />
           Reassign

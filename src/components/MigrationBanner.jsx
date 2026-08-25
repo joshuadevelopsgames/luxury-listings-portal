@@ -68,13 +68,13 @@ const MigrationBanner = () => {
 
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4">
-      <Card className="p-6 border-2 border-blue-200 bg-blue-50">
+      <Card className="p-6 border-2 border-blue-200 bg-brand-soft">
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0">
             {migrationComplete ? (
-              <CheckCircle className="w-6 h-6 text-green-600" />
+              <CheckCircle className="w-6 h-6 text-positive" />
             ) : (
-              <Database className="w-6 h-6 text-blue-600" />
+              <Database className="w-6 h-6 text-brand" />
             )}
           </div>
           
@@ -102,10 +102,10 @@ const MigrationBanner = () => {
             )}
 
             {migrationError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+              <div className="mb-4 p-3 bg-danger-soft border border-red-300 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                  <span className="text-red-700 text-sm">
+                  <AlertCircle className="w-4 h-4 text-danger" />
+                  <span className="text-danger text-sm">
                     Migration failed: {migrationError}
                   </span>
                 </div>
@@ -127,7 +127,7 @@ const MigrationBanner = () => {
                   <Button
                     onClick={handleMigration}
                     disabled={isMigrating}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-brand hover:bg-brand-hover"
                   >
                     {isMigrating ? (
                       <>
@@ -148,7 +148,7 @@ const MigrationBanner = () => {
                       setShowBanner(false);
                     }}
                     variant="outline"
-                    className="border-orange-300 text-orange-600 hover:text-orange-700"
+                    className="border-orange-300 text-warning hover:text-warning"
                   >
                     Skip for Now
                   </Button>
@@ -156,7 +156,7 @@ const MigrationBanner = () => {
               )}
               
               {migrationComplete && (
-                <div className="flex items-center text-green-600">
+                <div className="flex items-center text-positive">
                   <CheckCircle className="w-4 h-4 mr-2" />
                   <span className="text-sm font-medium">Data migrated successfully!</span>
                 </div>
@@ -172,9 +172,9 @@ const MigrationBanner = () => {
             </div>
 
             {!migrationComplete && (
-              <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+              <div className="mt-4 p-3 bg-brand-soft rounded-lg">
                 <h4 className="font-medium text-blue-900 mb-2">What will be migrated:</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
+                <ul className="text-sm text-brand space-y-1">
                   <li>• Approved users and their roles</li>
                   <li>• Pending user approvals</li>
                   <li>• All tasks and assignments</li>

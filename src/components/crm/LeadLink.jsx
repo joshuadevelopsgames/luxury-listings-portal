@@ -32,7 +32,7 @@ const LeadLink = ({
           e.stopPropagation();
           setIsOpen(true);
         }}
-        className={`inline-flex items-center gap-1.5 text-[#ff9500] hover:text-[#e68600] hover:underline font-medium transition-colors cursor-pointer ${className}`}
+        className={`inline-flex items-center gap-1.5 text-warning hover:text-[#e68600] hover:underline font-medium transition-colors cursor-pointer ${className}`}
       >
         {children || displayName}
       </button>

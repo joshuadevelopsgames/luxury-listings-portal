@@ -507,9 +507,9 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
   };
 
   const priorities = [
-    { value: 'urgent', label: 'Priority 1', icon: <Flag className="w-4 h-4 fill-red-600 stroke-red-600" /> },
-    { value: 'high', label: 'Priority 2', icon: <Flag className="w-4 h-4 fill-orange-500 stroke-orange-500" /> },
-    { value: 'medium', label: 'Priority 3', icon: <Flag className="w-4 h-4 fill-blue-500 stroke-blue-500" /> },
+    { value: 'urgent', label: 'Priority 1', icon: <Flag className="w-4 h-4 fill-danger stroke-danger" /> },
+    { value: 'high', label: 'Priority 2', icon: <Flag className="w-4 h-4 fill-warning stroke-warning" /> },
+    { value: 'medium', label: 'Priority 3', icon: <Flag className="w-4 h-4 fill-brand stroke-brand" /> },
     { value: 'low', label: 'Priority 4', icon: <Flag className="w-4 h-4 stroke-gray-400" /> }
   ];
 
@@ -523,12 +523,12 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
     <>
     <div className="modal-overlay bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-white dark:bg-[#1d1d1f] w-full max-w-6xl shadow-2xl overflow-y-auto rounded-lg max-h-[90vh] border border-black/5 dark:border-white/10"
+        className="bg-surface w-full max-w-6xl shadow-lg overflow-y-auto rounded-lg max-h-[90vh] border border-hairline"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Bar */}
-        <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-gray-200 dark:border-white/10 px-6 py-4 flex items-center justify-between z-10">
-          <div className="flex items-center gap-2 text-gray-600 dark:text-[#a1a1a6]">
+        <div className="sticky top-0 bg-surface border-b border-gray-200 dark:border-white/10 px-6 py-4 flex items-center justify-between z-10">
+          <div className="flex items-center gap-2 text-gray-600 dark:text-ink-subtle">
             <Inbox className="w-4 h-4" />
             <span className="text-sm">{editForm.project}</span>
           </div>
@@ -579,7 +579,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               </Button>
               
               {showMoreMenu && (
-                <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 py-1 z-20">
+                <div className="absolute top-full right-0 mt-1 w-48 bg-surface rounded-lg shadow-lg border border-gray-200 dark:border-white/10 py-1 z-20">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -658,7 +658,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   const next = editForm.title.trim();
                   if (next && next !== task.title) persistInline({ title: next });
                 }}
-                className="flex-1 text-lg font-semibold border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
+                className="flex-1 text-lg font-semibold border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-ink-subtle bg-transparent"
                 placeholder="Task name"
               />
             </div>
@@ -672,7 +672,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   height="20" 
                   fill="currentColor" 
                   viewBox="0 0 20 20"
-                  className="text-gray-400 dark:text-[#a1a1a6] mt-1 flex-shrink-0"
+                  className="text-gray-400 dark:text-ink-subtle mt-1 flex-shrink-0"
                 >
                   <rect x="3" y="5" width="14" height="2" rx="1"/>
                   <rect x="3" y="9" width="14" height="2" rx="1"/>
@@ -686,7 +686,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       persistInline({ description: editForm.description });
                     }
                   }}
-                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 resize-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
+                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 resize-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-ink-subtle bg-transparent"
                   placeholder="Description"
                   rows={3}
                 />
@@ -697,7 +697,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
             <div
               className={`mb-6 rounded-xl border-2 border-dashed transition-colors ${
                 taskDropActive
-                  ? 'border-[#0071e3] bg-[#0071e3]/5 dark:bg-[#0071e3]/10'
+                  ? 'border-brand bg-brand/5 dark:bg-brand/10'
                   : 'border-gray-200 dark:border-white/10'
               } ${taskAttachmentUploading ? 'pointer-events-none opacity-70' : ''}`}
               onDragOver={(e) => { e.preventDefault(); setTaskDropActive(true); }}
@@ -718,7 +718,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                     type="button"
                     onClick={() => taskFileInputRef.current?.click()}
                     disabled={taskAttachmentUploading}
-                    className="flex items-center gap-1.5 text-xs text-[#0071e3] dark:text-blue-400 hover:underline disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-xs text-brand dark:text-blue-400 hover:underline disabled:opacity-50"
                   >
                     {taskAttachmentUploading ? (
                       <span className="animate-pulse">Uploading…</span>
@@ -737,14 +737,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       <button
                         type="button"
                         onClick={() => setImagePreviewUrl(url)}
-                        className="block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        className="block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand"
                       >
                         <img src={url} alt="Attachment" className="w-full h-full object-cover" />
                       </button>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); removeTaskAttachment(url); }}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-danger-hover text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -765,7 +765,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                         checked={subtask.completed}
                         onCheckedChange={() => toggleSubtask(subtask.id)}
                       />
-                      <span className={`flex-1 text-sm ${subtask.completed ? 'line-through text-gray-400 dark:text-[#a1a1a6]' : 'text-gray-700 dark:text-[#e5e5e7]'}`}>
+                      <span className={`flex-1 text-sm ${subtask.completed ? 'line-through text-gray-400 dark:text-ink-subtle' : 'text-gray-700 dark:text-[#e5e5e7]'}`}>
                         {subtask.text}
                       </span>
                       <button
@@ -777,7 +777,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           }));
                           await DailyTask.update(task.id, { subtasks: updatedSubtasks });
                         }}
-                        className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400 p-1"
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-ink-subtle hover:text-danger dark:hover:text-red-400 p-1"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -787,14 +787,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               )}
               
               <div className="flex items-center gap-2">
-                <Plus className="w-4 h-4 text-gray-400 dark:text-[#a1a1a6]" />
+                <Plus className="w-4 h-4 text-gray-400 dark:text-ink-subtle" />
                 <input
                   type="text"
                   value={newSubtask}
                   onChange={(e) => setNewSubtask(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddSubtask()}
                   placeholder="Add sub-task"
-                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
+                  className="flex-1 text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-ink-subtle bg-transparent"
                 />
               </div>
             </div>
@@ -806,7 +806,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 <div className="space-y-4 mb-4">
                   {task.comments.map((comment) => (
                     <div key={comment.id} className="flex gap-3 group">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-brand dark:bg-brand flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                         {comment.userName?.[0] || comment.user?.[0] || 'U'}
                       </div>
                       <div className="flex-1">
@@ -814,7 +814,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
                             {comment.userName || comment.user || 'User'}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-[#a1a1a6]">
+                          <span className="text-xs text-gray-500 dark:text-ink-subtle">
                             {new Date(comment.timestamp).toLocaleDateString('en-US', { 
                               month: 'short', 
                               day: 'numeric',
@@ -826,7 +826,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                             <button
                               type="button"
                               onClick={() => handleDeleteComment(comment.id)}
-                              className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400 ml-auto"
+                              className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-ink-subtle hover:text-danger dark:hover:text-red-400 ml-auto"
                               title="Delete comment"
                             >
                               <X className="w-3 h-3" />
@@ -841,7 +841,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                                 key={url}
                                 type="button"
                                 onClick={() => setImagePreviewUrl(url)}
-                                className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                                className="block w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-brand"
                               >
                                 <img src={url} alt="Comment attachment" className="w-full h-full object-cover" />
                               </button>
@@ -858,14 +858,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               <div
                 className={`flex items-start gap-3 p-3 border-2 rounded-lg transition-colors ${
                   commentDropActive
-                    ? 'border-[#0071e3] bg-[#0071e3]/5 dark:bg-[#0071e3]/10 border-dashed'
+                    ? 'border-brand bg-brand/5 dark:bg-brand/10 border-dashed'
                     : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5'
                 } ${commentUploading ? 'pointer-events-none opacity-70' : ''}`}
                 onDragOver={(e) => { e.preventDefault(); setCommentDropActive(true); }}
                 onDragLeave={() => setCommentDropActive(false)}
                 onDrop={handleCommentDrop}
               >
-                <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-brand dark:bg-brand flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                   {currentUser?.firstName?.[0] || 'U'}
                 </div>
                 <div className="flex-1 space-y-2 relative">
@@ -876,7 +876,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       onChange={(e) => setNewComment(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && !mentionOpen && handleAddComment()}
                       placeholder="Comment (type @ to mention)"
-                      className="flex-1 min-w-0 text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] bg-transparent"
+                      className="flex-1 min-w-0 text-sm border-none outline-none focus:ring-0 p-0 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-ink-subtle bg-transparent"
                     />
                     <input
                       type="file"
@@ -889,7 +889,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       type="button"
                       onClick={() => commentFileInputRef.current?.click()}
                       disabled={commentUploading}
-                      className="p-1.5 rounded-lg text-gray-500 dark:text-[#a1a1a6] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#0071e3] dark:hover:text-blue-400 disabled:opacity-50"
+                      className="p-1.5 rounded-lg text-gray-500 dark:text-ink-subtle hover:bg-surface-3 hover:text-brand dark:hover:text-blue-400 disabled:opacity-50"
                       title="Attach photo"
                     >
                       <ImagePlus className="w-4 h-4" />
@@ -898,20 +898,20 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       <button
                         type="button"
                         onClick={() => setShowPaperclipMenu((v) => !v)}
-                        className="p-1.5 rounded-lg text-gray-500 dark:text-[#a1a1a6] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#0071e3] dark:hover:text-blue-400"
+                        className="p-1.5 rounded-lg text-gray-500 dark:text-ink-subtle hover:bg-surface-3 hover:text-brand dark:hover:text-blue-400"
                         title="Add link"
                       >
                         <Paperclip className="w-4 h-4" />
                       </button>
                       {showPaperclipMenu && (
-                        <div className="absolute right-0 bottom-full mb-1 w-64 p-2 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 z-20">
-                          <label className="text-xs font-medium text-gray-500 dark:text-[#a1a1a6] block mb-1">Link or media URL</label>
+                        <div className="absolute right-0 bottom-full mb-1 w-64 p-2 bg-surface rounded-lg shadow-lg border border-gray-200 dark:border-white/10 z-20">
+                          <label className="text-xs font-medium text-gray-500 dark:text-ink-subtle block mb-1">Link or media URL</label>
                           <input
                             type="url"
                             value={commentLink}
                             onChange={(e) => setCommentLink(e.target.value)}
                             placeholder="https://..."
-                            className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-[#a1a1a6] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-ink-subtle focus:outline-none focus:ring-2 focus:ring-brand"
                             autoFocus
                           />
                         </div>
@@ -920,7 +920,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                     <button
                       onClick={handleAddComment}
                       disabled={(!newComment.trim() && !commentLink.trim() && commentAttachmentUrls.length === 0) || commentUploading}
-                      className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1.5 rounded-lg text-brand dark:text-blue-400 hover:bg-surface-3 hover:text-brand dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Send"
                     >
                       <Send className="w-4 h-4" />
@@ -928,14 +928,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   </div>
                   {mentionOpen && mentionItems.length > 0 && commentInputRef.current && (
                     <div
-                      className="absolute left-0 bottom-full mb-1 w-56 max-h-48 overflow-y-auto py-1.5 px-1.5 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 z-30"
+                      className="absolute left-0 bottom-full mb-1 w-56 max-h-48 overflow-y-auto py-1.5 px-1.5 bg-surface rounded-lg shadow-lg border border-gray-200 dark:border-white/10 z-30"
                       style={{ minWidth: commentInputRef.current.offsetWidth }}
                     >
                       {mentionItems.map((u, i) => (
                         <button
                           key={u.email || u.id || i}
                           type="button"
-                          className={`w-full flex items-center gap-2 py-2 px-3 rounded-md text-left text-sm ${i === mentionIndex ? 'bg-blue-100 dark:bg-blue-900/30' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
+                          className={`w-full flex items-center gap-2 py-2 px-3 rounded-md text-left text-sm ${i === mentionIndex ? 'bg-brand-soft dark:bg-blue-900/30' : 'hover:bg-surface-3'}`}
                           onClick={() => {
                             const displayName = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || '';
                             const token = `@[${displayName}](${u.email || u.id || ''})`;
@@ -945,12 +945,12 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                             });
                           }}
                         >
-                          <span className="w-7 h-7 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                          <span className="w-7 h-7 rounded-full bg-brand dark:bg-brand flex items-center justify-center text-white text-xs font-semibold shrink-0">
                             {(u.firstName?.[0] || u.email?.[0] || '?').toUpperCase()}
                           </span>
                           <div className="min-w-0 truncate">
                             <div className="font-medium truncate">{[u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || 'User'}</div>
-                            {u.email && <div className="text-xs text-gray-500 dark:text-[#a1a1a6] truncate">{u.email}</div>}
+                            {u.email && <div className="text-xs text-gray-500 dark:text-ink-subtle truncate">{u.email}</div>}
                           </div>
                         </button>
                       ))}
@@ -964,7 +964,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           <button
                             type="button"
                             onClick={() => setCommentAttachmentUrls(prev => prev.filter(u => u !== url))}
-                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px]"
+                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger text-white flex items-center justify-center text-[10px]"
                           >
                             <X className="w-2.5 h-2.5" />
                           </button>
@@ -986,14 +986,14 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               </div>
               <button
                 onClick={() => openDropdown(setShowProjectDropdown)}
-                className="w-full flex items-center gap-2 text-sm text-gray-600 dark:text-[#a1a1a6] px-2 mt-1 hover:bg-gray-50 dark:hover:bg-white/10 py-1 rounded"
+                className="w-full flex items-center gap-2 text-sm text-gray-600 dark:text-ink-subtle px-2 mt-1 hover:bg-gray-50 dark:hover:bg-white/10 py-1 rounded"
               >
                 <Inbox className="w-4 h-4" />
                 <span>{editForm.project}</span>
               </button>
               
               {showProjectDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 py-1 z-20">
+                <div className="absolute top-full left-0 mt-1 w-full bg-surface rounded-lg shadow-lg border border-gray-200 dark:border-white/10 py-1 z-20">
                   {projects.map((project) => (
                     <button
                       key={project}
@@ -1019,7 +1019,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 {!editForm.dueDate && (
                   <button 
                     onClick={() => openDropdown(setShowDatePicker)}
-                    className="text-gray-400 dark:text-[#a1a1a6] hover:text-gray-600 dark:hover:text-white"
+                    className="text-gray-400 dark:text-ink-subtle hover:text-gray-600 dark:hover:text-white"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -1029,13 +1029,13 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 <div className="flex items-center justify-between px-2 mt-1 group">
                   <button
                     onClick={() => openDropdown(setShowDatePicker)}
-                    className="flex items-center gap-2 text-sm text-gray-600 dark:text-[#a1a1a6] hover:bg-gray-50 dark:hover:bg-white/10 px-2 py-1 rounded flex-1"
+                    className="flex items-center gap-2 text-sm text-gray-600 dark:text-ink-subtle hover:bg-gray-50 dark:hover:bg-white/10 px-2 py-1 rounded flex-1"
                   >
                     <Calendar className="w-4 h-4" />
                     <div className="flex flex-col items-start">
                       <span>{new Date(editForm.dueDate + 'T00:00:00').toLocaleDateString()}</span>
                       {editForm.dueTime && (
-                        <span className="text-xs text-gray-500 dark:text-[#a1a1a6]">
+                        <span className="text-xs text-gray-500 dark:text-ink-subtle">
                           {new Date(`2000-01-01T${editForm.dueTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                         </span>
                       )}
@@ -1043,7 +1043,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   </button>
                   <button
                     onClick={removeDate}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400 p-1"
+                    className="opacity-0 group-hover:opacity-100 text-gray-400 dark:text-ink-subtle hover:text-danger dark:hover:text-red-400 p-1"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1051,23 +1051,23 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               ) : null}
               
               {showDatePicker && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-3 z-20">
+                <div className="absolute top-full left-0 mt-1 w-full bg-surface rounded-lg shadow-lg border border-gray-200 dark:border-white/10 p-3 z-20">
                   <input
                     type="date"
                     value={editForm.dueDate}
                     onChange={(e) => handleDateChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand mb-2"
                   />
                   
                   {/* Time picker */}
                   {editForm.dueDate && (
                     <div className="mb-2">
-                      <label className="text-xs text-gray-600 dark:text-[#a1a1a6] mb-1 block">Time (optional)</label>
+                      <label className="text-xs text-gray-600 dark:text-ink-subtle mb-1 block">Time (optional)</label>
                       <input
                         type="time"
                         value={editForm.dueTime}
                         onChange={(e) => handleTimeChange(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                     </div>
                   )}
@@ -1104,11 +1104,11 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 className="w-full flex items-center gap-2 text-sm text-gray-900 dark:text-white px-2 mt-1 hover:bg-gray-50 dark:hover:bg-white/10 py-1 rounded"
               >
                 {currentPriority.icon}
-                <span className="text-gray-600 dark:text-[#a1a1a6]">{currentPriority.label.replace('Priority ', 'P')}</span>
+                <span className="text-gray-600 dark:text-ink-subtle">{currentPriority.label.replace('Priority ', 'P')}</span>
               </button>
 
               {showPriorityDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 py-1 z-20">
+                <div className="absolute top-full left-0 mt-1 w-48 bg-surface rounded-lg shadow-lg border border-gray-200 dark:border-white/10 py-1 z-20">
                   {priorities.map((priority) => (
                     <button
                       key={priority.value}
@@ -1133,7 +1133,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 <span className="text-sm font-medium text-gray-700 dark:text-[#e5e5e7]">Labels</span>
                 <button 
                   onClick={() => openDropdown(setShowLabelInput)}
-                  className="text-gray-400 dark:text-[#a1a1a6] hover:text-gray-600 dark:hover:text-white"
+                  className="text-gray-400 dark:text-ink-subtle hover:text-gray-600 dark:hover:text-white"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -1148,13 +1148,13 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                       onChange={(e) => setNewLabel(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleAddLabel()}
                       placeholder="Label name..."
-                      className="flex-1 text-sm px-2 py-1 border border-gray-200 dark:border-white/10 rounded bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 text-sm px-2 py-1 border border-gray-200 dark:border-white/10 rounded bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand"
                       autoFocus
                     />
                     <Button
                       onClick={handleAddLabel}
                       size="sm"
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="bg-brand hover:bg-brand-hover"
                     >
                       Add
                     </Button>
@@ -1167,7 +1167,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   {editForm.labels.map((label, idx) => (
                     <span 
                       key={idx} 
-                      className="group text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded flex items-center gap-1 hover:bg-purple-200 dark:hover:bg-purple-800/50"
+                      className="group text-xs bg-brand-soft dark:bg-purple-900/40 text-brand dark:text-purple-300 px-2 py-1 rounded flex items-center gap-1 hover:bg-purple-200 dark:hover:bg-brand-hover/50"
                     >
                       {label}
                       <button
@@ -1188,7 +1188,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                 <span className="text-sm font-medium text-gray-700 dark:text-[#e5e5e7]">Reminders</span>
                 <button 
                   onClick={() => openDropdown(setShowReminderPicker)}
-                  className="text-gray-400 dark:text-[#a1a1a6] hover:text-gray-600 dark:hover:text-white"
+                  className="text-gray-400 dark:text-ink-subtle hover:text-gray-600 dark:hover:text-white"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -1199,12 +1199,12 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   {editForm.reminders.map((reminder) => (
                     <div
                       key={reminder.id}
-                      className="flex items-center justify-between px-2 py-1 bg-yellow-50 dark:bg-amber-900/30 rounded text-xs"
+                      className="flex items-center justify-between px-2 py-1 bg-warning-soft dark:bg-amber-900/30 rounded text-xs"
                     >
-                      <span className="text-yellow-800 dark:text-amber-200">{reminder.label}</span>
+                      <span className="text-warning dark:text-amber-200">{reminder.label}</span>
                       <button
                         onClick={() => handleRemoveReminder(reminder.id)}
-                        className="text-gray-400 dark:text-[#a1a1a6] hover:text-red-600 dark:hover:text-red-400"
+                        className="text-gray-400 dark:text-ink-subtle hover:text-danger dark:hover:text-red-400"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -1214,7 +1214,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               )}
 
               {showReminderPicker && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-white dark:bg-[#2c2c2e] rounded-lg shadow-xl border border-gray-200 dark:border-white/10 p-4 z-20">
+                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-gray-200 dark:border-white/10 p-4 z-20">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2 text-gray-900 dark:text-white">Reminders</p>
                   </div>
@@ -1222,7 +1222,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                   {/* Relative reminders (if task has due date) */}
                   {editForm.dueDate && (
                     <div className="mb-3">
-                      <p className="text-xs text-gray-500 dark:text-[#a1a1a6] mb-2">Before due time:</p>
+                      <p className="text-xs text-gray-500 dark:text-ink-subtle mb-2">Before due time:</p>
                       <div className="space-y-1">
                         {[
                           { label: 'At due time', minutes: 0 },
@@ -1248,18 +1248,18 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
 
                   {/* Absolute time reminder */}
                   <div className="mb-3 pt-3 border-t border-gray-200 dark:border-white/10">
-                    <p className="text-xs text-gray-500 dark:text-[#a1a1a6] mb-2">At specific time:</p>
+                    <p className="text-xs text-gray-500 dark:text-ink-subtle mb-2">At specific time:</p>
                     <div className="space-y-2">
                       <input
                         type="date"
                         id="reminder-date-edit"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand"
                         min={new Date().toISOString().split('T')[0]}
                       />
                       <input
                         type="time"
                         id="reminder-time-edit"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-md text-sm bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                       <button
                         onClick={async () => {
@@ -1298,7 +1298,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
                           timeInput.value = '';
                           setShowReminderPicker(false);
                         }}
-                        className="w-full px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        className="w-full px-3 py-2 bg-brand text-white rounded text-sm hover:bg-brand-hover"
                       >
                         Add reminder
                       </button>
@@ -1313,7 +1313,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
               <Button
                 onClick={handleDelete}
                 variant="ghost"
-                className="w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 justify-start"
+                className="w-full text-danger dark:text-red-400 hover:bg-danger-soft dark:hover:bg-red-900/20 hover:text-danger dark:hover:text-red-300 justify-start"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete task
@@ -1341,7 +1341,7 @@ const TaskEditModal = ({ task, isOpen, onClose, onSave, onDelete, tasks = [], on
         <img
           src={imagePreviewUrl}
           alt="Preview"
-          className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+          className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-lg"
           onClick={(e) => e.stopPropagation()}
         />
       </div>

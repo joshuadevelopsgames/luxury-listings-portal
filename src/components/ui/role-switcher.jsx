@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES, ROLE_PERMISSIONS } from '../../entities/UserRoles';
-import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield, Edit, UserCircle } from 'lucide-react';
+import { ChevronDown, User, Users, BarChart3, FileText, Settings, Target, TrendingUp, Shield, Edit, UserCircle, Crown, Clapperboard, Smartphone, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import EditProfileModal from './EditProfileModal';
 import { toast } from 'react-hot-toast';
@@ -17,7 +17,7 @@ const RoleSwitcher = () => {
     {
       role: USER_ROLES.ADMIN,
       label: 'System Admin',
-      icon: '👑',
+      icon: Crown,
       color: 'red',
       description: 'Full system access & user management',
       features: ['User Management', 'Role Assignment', 'System Administration', 'All Profiles']
@@ -25,7 +25,7 @@ const RoleSwitcher = () => {
     {
       role: USER_ROLES.CONTENT_DIRECTOR,
       label: 'Content Manager',
-      icon: '🎥',
+      icon: Clapperboard,
       color: 'blue',
       description: 'Content strategy & creative direction',
       features: ['Content Strategy', 'Creative Direction', 'Team Management', 'Analytics']
@@ -33,7 +33,7 @@ const RoleSwitcher = () => {
     {
       role: USER_ROLES.SOCIAL_MEDIA_MANAGER,
       label: 'Social Media Manager',
-      icon: '📱',
+      icon: Smartphone,
       color: 'purple',
       description: 'Social media & engagement',
       features: ['Social Strategy', 'Content Creation', 'Community Management', 'Metrics']
@@ -41,7 +41,7 @@ const RoleSwitcher = () => {
     {
       role: USER_ROLES.HR_MANAGER,
       label: 'HR Manager',
-      icon: '👥',
+      icon: Users,
       color: 'green',
       description: 'Team development & HR',
       features: ['Team Development', 'Performance Management', 'HR Analytics', 'Training']
@@ -49,7 +49,7 @@ const RoleSwitcher = () => {
     {
       role: USER_ROLES.SALES_MANAGER,
       label: 'Sales Manager',
-      icon: '💼',
+      icon: Briefcase,
       color: 'orange',
       description: 'Sales pipeline & CRM',
       features: ['CRM Management', 'Lead Generation', 'Sales Pipeline', 'Deal Tracking']
@@ -85,22 +85,22 @@ const RoleSwitcher = () => {
 
   const getRoleColor = (color) => {
     const colors = {
-      red: 'bg-red-100 text-red-800 border-red-200',
-      blue: 'bg-blue-100 text-blue-800 border-blue-200',
-      purple: 'bg-purple-100 text-purple-800 border-purple-200',
-      green: 'bg-green-100 text-green-800 border-green-200',
-      orange: 'bg-orange-100 text-orange-800 border-orange-200'
+      red: 'bg-danger-soft text-danger border-red-200',
+      blue: 'bg-brand-soft text-brand border-blue-200',
+      purple: 'bg-brand-soft text-brand border-purple-200',
+      green: 'bg-positive-soft text-positive border-green-200',
+      orange: 'bg-warning-soft text-warning border-orange-200'
     };
     return colors[color] || colors.blue;
   };
 
   const getBadgeColor = (color) => {
     const colors = {
-      red: 'bg-red-500',
-      blue: 'bg-blue-500',
-      purple: 'bg-purple-500',
-      green: 'bg-green-500',
-      orange: 'bg-orange-500'
+      red: 'bg-danger',
+      blue: 'bg-brand',
+      purple: 'bg-brand',
+      green: 'bg-positive',
+      orange: 'bg-warning'
     };
     return colors[color] || colors.blue;
   };
@@ -119,23 +119,23 @@ const RoleSwitcher = () => {
 
   const getRoleIcon = (role) => {
     const iconMap = {
-      'admin': '👑',
-      'content_director': '🎥',
-      'social_media_manager': '📱',
-      'hr_manager': '👥',
-      'sales_manager': '💼'
+      'admin': Crown,
+      'content_director': Clapperboard,
+      'social_media_manager': Smartphone,
+      'hr_manager': Users,
+      'sales_manager': Briefcase
     };
-    return iconMap[role] || '👤';
+    return iconMap[role] || User;
   };
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center space-x-3 px-4 py-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${getRoleColor(currentRoleData.color)} hover:shadow-lg`}
+        className={`flex items-center space-x-3 px-4 py-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${getRoleColor(currentRoleData.color)} hover:shadow-md`}
         title="Switch Profile Role"
       >
-        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+        <div className="w-8 h-8 bg-brand rounded-full flex items-center justify-center overflow-hidden">
           {currentUser?.avatar ? (
             <img 
               src={currentUser.avatar} 
@@ -155,10 +155,10 @@ const RoleSwitcher = () => {
           <div className="font-medium text-sm flex items-center gap-2">
             {currentUser?.displayName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || 'Profile'}
             {isSystemAdmin && (
-              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Admin</span>
+              <span className="text-xs bg-danger-soft text-danger px-2 py-0.5 rounded-full">Admin</span>
             )}
             {!isSystemAdmin && safeUserAssignedRoles.length > 1 && (
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-brand-soft text-brand px-2 py-0.5 rounded-full">
                 {safeUserAssignedRoles.length} Roles
               </span>
             )}
@@ -196,11 +196,11 @@ const RoleSwitcher = () => {
                 </h3>
                 <p className="text-sm text-gray-600 truncate">{currentUser?.email}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-brand-soft text-brand px-2 py-1 rounded-full">
                     {currentUser?.department || 'General'}
                   </span>
                   {isSystemAdmin && (
-                    <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-danger-soft text-danger px-2 py-1 rounded-full">
                       Admin
                     </span>
                   )}
@@ -209,7 +209,7 @@ const RoleSwitcher = () => {
               <div>
                 <button
                   onClick={() => setIsEditOpen(true)}
-                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 p-2"
+                  className="inline-flex items-center gap-1 text-sm text-brand hover:text-brand p-2"
                   title="Edit Profile"
                 >
                   <Edit className="w-4 h-4" />
@@ -222,7 +222,7 @@ const RoleSwitcher = () => {
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
               <div className="text-xs text-gray-500 mb-1">Current Role</div>
               <div className="flex items-center gap-2">
-                <span className="text-lg">{getRoleIcon(currentRole)}</span>
+                {React.createElement(getRoleIcon(currentRole), { className: "w-4 h-4 text-ink-muted" })}
                 <span className="font-medium text-gray-900">{getRoleDisplayName(currentRole)}</span>
               </div>
             </div>
@@ -274,7 +274,7 @@ const RoleSwitcher = () => {
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <span className="text-lg">{option.icon}</span>
+                      {React.createElement(option.icon, { className: "w-4 h-4 text-ink-muted" })}
                     </div>
                     <div className="flex-1">
                       <div className={`font-medium text-sm ${isActive ? 'text-gray-900' : 'text-gray-900'}`}>
@@ -296,7 +296,7 @@ const RoleSwitcher = () => {
           <div className="px-4 py-3 bg-gray-50 rounded-b-lg border-t border-gray-200">
             {isSystemAdmin ? (
               <div className="text-xs text-gray-500">
-                <span className="font-medium text-red-600">Admin Access:</span> You can switch to any role and always return to admin.
+                <span className="font-medium text-danger">Admin Access:</span> You can switch to any role and always return to admin.
               </div>
             ) : (
               <div className="text-xs text-gray-500">

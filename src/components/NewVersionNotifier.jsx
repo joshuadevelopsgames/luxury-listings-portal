@@ -45,10 +45,10 @@ export default function NewVersionNotifier() {
           const id = toast.custom(
             (t) => (
               <div
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#1d1d1f] dark:bg-[#2c2c2e] text-white shadow-lg border border-white/10 min-w-[280px]"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-ink dark:bg-surface text-white shadow-lg border border-white/10 min-w-[280px]"
                 role="alert"
               >
-                <RefreshCw className="w-5 h-5 text-[#34c759] shrink-0" />
+                <RefreshCw className="w-5 h-5 text-positive shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-medium">New version available</p>
                   <p className="text-[12px] text-white/70 mt-0.5">Refresh to get the latest updates.</p>
@@ -66,7 +66,7 @@ export default function NewVersionNotifier() {
                       window.location.reload();
                     }
                   }}
-                  className="shrink-0 text-[13px] font-medium text-[#34c759] hover:text-[#30d158] underline"
+                  className="shrink-0 text-[13px] font-medium text-positive hover:text-positive underline"
                 >
                   See new version
                 </a>

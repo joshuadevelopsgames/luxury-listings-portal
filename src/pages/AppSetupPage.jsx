@@ -107,10 +107,10 @@ export default function AppSetupPage() {
   if (loading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="h-8 bg-black/5 dark:bg-white/10 rounded-xl animate-pulse"></div>
+        <div className="h-8 bg-surface-3 rounded-xl animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 bg-black/5 dark:bg-white/10 rounded-2xl animate-pulse"></div>
+            <div key={i} className="h-64 bg-surface-3 rounded-xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -121,31 +121,31 @@ export default function AppSetupPage() {
     <div className="p-6 space-y-8 max-w-6xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">Programs</h1>
-        <p className="text-[15px] text-[#86868b] mt-1">Get connected to all the tools you'll need for luxury real estate content excellence</p>
+        <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">Programs</h1>
+        <p className="text-[15px] text-ink-muted mt-1">Get connected to all the tools you'll need for luxury real estate content excellence</p>
       </div>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-2xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 p-4">
-          <p className="text-[28px] font-semibold text-[#0071e3]">{counts.all}</p>
-          <p className="text-[12px] font-medium text-[#0071e3]/80">Total Tools</p>
+        <div className="rounded-xl bg-brand/10 dark:bg-brand/20 p-4">
+          <p className="text-[28px] font-semibold text-brand">{counts.all}</p>
+          <p className="text-[12px] font-medium text-brand/80">Total Tools</p>
         </div>
-        <div className="rounded-2xl bg-[#ff3b30]/10 dark:bg-[#ff3b30]/20 p-4">
-          <p className="text-[28px] font-semibold text-[#ff3b30]">{counts.critical}</p>
-          <p className="text-[12px] font-medium text-[#ff3b30]/80">Critical Tools</p>
+        <div className="rounded-xl bg-danger/10 dark:bg-danger/20 p-4">
+          <p className="text-[28px] font-semibold text-danger">{counts.critical}</p>
+          <p className="text-[12px] font-medium text-danger/80">Critical Tools</p>
         </div>
-        <div className="rounded-2xl bg-[#34c759]/10 dark:bg-[#34c759]/20 p-4">
-          <p className="text-[28px] font-semibold text-[#34c759]">
+        <div className="rounded-xl bg-positive/10 dark:bg-positive/20 p-4">
+          <p className="text-[28px] font-semibold text-positive">
             {integrations.filter(app => app.status === 'active').length}
           </p>
-          <p className="text-[12px] font-medium text-[#34c759]/80">Active Tools</p>
+          <p className="text-[12px] font-medium text-positive/80">Active Tools</p>
         </div>
-        <div className="rounded-2xl bg-[#af52de]/10 dark:bg-[#af52de]/20 p-4">
-          <p className="text-[28px] font-semibold text-[#af52de]">
+        <div className="rounded-xl bg-brand/10 dark:bg-brand/20 p-4">
+          <p className="text-[28px] font-semibold text-brand">
             {integrations.filter(app => app.setup_required).length}
           </p>
-          <p className="text-[12px] font-medium text-[#af52de]/80">Setup Required</p>
+          <p className="text-[12px] font-medium text-brand/80">Setup Required</p>
         </div>
       </div>
 
@@ -157,8 +157,8 @@ export default function AppSetupPage() {
             onClick={() => setActiveFilter(filter.value)}
             className={`px-4 py-2 rounded-xl text-[13px] font-medium transition-all ${
               activeFilter === filter.value
-                ? 'bg-[#0071e3] text-white'
-                : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-brand text-white'
+                : 'bg-surface-3 text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             {filter.label} ({filter.count})
@@ -170,11 +170,11 @@ export default function AppSetupPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredIntegrations.length === 0 ? (
           <div className="col-span-full text-center py-12">
-            <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Settings className="w-8 h-8 text-[#86868b]" />
+            <div className="w-16 h-16 bg-surface-3 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Settings className="w-8 h-8 text-ink-muted" />
             </div>
-            <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">No integrations found for this filter</p>
-            <p className="text-[13px] text-[#86868b]">Try selecting a different category</p>
+            <p className="text-[15px] font-medium text-ink">No integrations found for this filter</p>
+            <p className="text-[13px] text-ink-muted">Try selecting a different category</p>
           </div>
         ) : (
           filteredIntegrations.map((integration) => (
@@ -184,7 +184,7 @@ export default function AppSetupPage() {
       </div>
 
       {/* Setup Guide */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] p-6 text-white">
+      <div className="rounded-xl bg-gradient-to-br from-brand to-brand p-6 text-white">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-sm">
             <Settings className="w-5 h-5" />
@@ -246,24 +246,24 @@ function AppCard({ integration }) {
   const getStatusStyles = (status) => {
     switch (status) {
       case 'active':
-        return { icon: CheckCircle2, color: 'text-[#34c759]', bg: 'bg-[#34c759]/10' };
+        return { icon: CheckCircle2, color: 'text-positive', bg: 'bg-positive/10' };
       case 'pending':
-        return { icon: Clock, color: 'text-[#ff9500]', bg: 'bg-[#ff9500]/10' };
+        return { icon: Clock, color: 'text-warning', bg: 'bg-warning/10' };
       case 'error':
-        return { icon: AlertTriangle, color: 'text-[#ff3b30]', bg: 'bg-[#ff3b30]/10' };
+        return { icon: AlertTriangle, color: 'text-danger', bg: 'bg-danger/10' };
       default:
-        return { icon: Info, color: 'text-[#86868b]', bg: 'bg-black/5 dark:bg-white/10' };
+        return { icon: Info, color: 'text-ink-muted', bg: 'bg-surface-3' };
     }
   };
 
   const getPriorityStyles = (priority) => {
     switch (priority) {
       case 'critical':
-        return 'bg-[#ff3b30]/10 text-[#ff3b30]';
+        return 'bg-danger/10 text-danger';
       case 'important':
-        return 'bg-[#ff9500]/10 text-[#ff9500]';
+        return 'bg-warning/10 text-warning';
       default:
-        return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
+        return 'bg-surface-3 text-ink-muted';
     }
   };
 
@@ -295,8 +295,8 @@ function AppCard({ integration }) {
       <div className="space-y-2">
         {configItems.map((item, i) => (
           <div key={i} className="flex items-center justify-between text-[12px]">
-            <span className="text-[#86868b]">{item.label}</span>
-            <span className="font-medium text-[#1d1d1f] dark:text-white">{item.value}</span>
+            <span className="text-ink-muted">{item.label}</span>
+            <span className="font-medium text-ink">{item.value}</span>
           </div>
         ))}
       </div>
@@ -304,19 +304,19 @@ function AppCard({ integration }) {
   };
 
   return (
-    <div className={`rounded-2xl backdrop-blur-xl border p-5 transition-all duration-300 hover:shadow-lg ${
+    <div className={`rounded-xl backdrop-blur-xl border p-5 transition-all duration-300 hover:shadow-md ${
       integration.isCritical 
-        ? 'bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 border-[#ff3b30]/20' 
-        : 'bg-white/80 dark:bg-[#1d1d1f]/80 border-black/5 dark:border-white/10 hover:border-[#0071e3]/30'
+        ? 'bg-danger/5 dark:bg-danger/10 border-danger/20' 
+        : 'bg-surface border-hairline hover:border-brand/30'
     }`}>
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
         <div className="text-2xl">{integration.icon}</div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+          <h3 className="text-[15px] font-semibold text-ink">
             {integration.name}
           </h3>
-          <p className="text-[12px] text-[#86868b] mt-0.5 line-clamp-2">
+          <p className="text-[12px] text-ink-muted mt-0.5 line-clamp-2">
             {integration.description}
           </p>
         </div>
@@ -331,27 +331,27 @@ function AppCard({ integration }) {
         <span className={`inline-flex px-2 py-1 rounded-lg text-[11px] font-medium ${getPriorityStyles(integration.priority)}`}>
           {priorityLabels[integration.priority] || integration.priority}
         </span>
-        <span className="inline-flex px-2 py-1 rounded-lg text-[11px] font-medium bg-black/5 dark:bg-white/10 text-[#86868b]">
+        <span className="inline-flex px-2 py-1 rounded-lg text-[11px] font-medium bg-surface-3 text-ink-muted">
           {categoryLabels[integration.category] || integration.category}
         </span>
       </div>
 
       {/* Configuration Details (Expandable) */}
       {showDetails && integration.configuration && (
-        <div className="mb-4 p-3 rounded-xl bg-black/[0.02] dark:bg-white/5 border border-black/5 dark:border-white/5">
-          <h4 className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wide mb-2">Configuration</h4>
+        <div className="mb-4 p-3 rounded-xl bg-surface-2 border border-black/5 dark:border-white/5">
+          <h4 className="text-[11px] font-semibold text-ink-muted uppercase tracking-wide mb-2">Configuration</h4>
           {renderConfigurationDetails()}
         </div>
       )}
       
       {/* Last Sync & Setup Required */}
-      <div className="flex items-center justify-between text-[11px] text-[#86868b] mb-4">
+      <div className="flex items-center justify-between text-[11px] text-ink-muted mb-4">
         <span className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
           Last sync: {integration.lastSyncFormatted}
         </span>
         {integration.setup_required && (
-          <span className="px-2 py-0.5 rounded-md bg-[#ff3b30]/10 text-[#ff3b30] font-medium">
+          <span className="px-2 py-0.5 rounded-md bg-danger/10 text-danger font-medium">
             Setup Required
           </span>
         )}
@@ -361,7 +361,7 @@ function AppCard({ integration }) {
       <div className="flex items-center gap-2">
         <button 
           onClick={() => setShowDetails(!showDetails)}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
         >
           {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           {showDetails ? 'Hide Details' : 'Show Details'}
@@ -371,7 +371,7 @@ function AppCard({ integration }) {
           href={integration.url} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-brand text-white text-[12px] font-medium hover:bg-brand-hover transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           Open
@@ -380,8 +380,8 @@ function AppCard({ integration }) {
       
       {/* Critical Warning */}
       {integration.isCritical && (
-        <div className="mt-4 p-2.5 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20">
-          <p className="text-[11px] text-[#ff3b30] font-medium flex items-center gap-1.5">
+        <div className="mt-4 p-2.5 rounded-xl bg-danger/10 border border-danger/20">
+          <p className="text-[11px] text-danger font-medium flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
             Critical tool for content workflow. Ensure this is properly configured.
           </p>

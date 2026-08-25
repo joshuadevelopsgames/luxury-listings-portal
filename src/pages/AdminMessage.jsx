@@ -30,7 +30,7 @@ export default function AdminMessage() {
 
       <div className="space-y-6">
         {/* Main Message Card */}
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
+        <Card className="border-red-200 bg-danger-soft dark:bg-red-950/20 dark:border-danger">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-900 dark:text-red-400">
               <MessageSquare className="h-5 w-5" />
@@ -38,7 +38,7 @@ export default function AdminMessage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-red-200 dark:border-red-800">
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-red-200 dark:border-danger">
               <p className="text-gray-800 dark:text-gray-200 leading-relaxed">
                 As System Administrator, you hold the keys to our entire platform. Your role is critical 
                 in maintaining system security, user management, and ensuring smooth operations across 
@@ -61,21 +61,21 @@ export default function AdminMessage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">User Access Management</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Approve new users, assign roles, and manage permissions across the platform</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Security Oversight</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Monitor for suspicious activity, manage API keys, and ensure data protection</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">System Configuration</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Manage integrations, configure system settings, and maintain platform health</p>
@@ -84,21 +84,21 @@ export default function AdminMessage() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Data Integrity</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Ensure database consistency, manage backups, and protect sensitive information</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">User Support</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Help team members with access issues, account recovery, and technical problems</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-positive mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-white">Audit & Compliance</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Review access logs, generate reports, and maintain compliance standards</p>
@@ -110,7 +110,7 @@ export default function AdminMessage() {
         </Card>
 
         {/* Critical Reminders */}
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+        <Card className="border-amber-200 bg-warning-soft dark:bg-amber-950/20 dark:border-warning">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-400">
               <AlertTriangle className="h-5 w-5" />
@@ -121,33 +121,33 @@ export default function AdminMessage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Lock className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <Lock className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">Credential Security</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Never share admin credentials. Use secure password practices and enable 2FA</p>
+                    <p className="text-sm text-warning dark:text-warning">Never share admin credentials. Use secure password practices and enable 2FA</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <Clock className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">Pending User Reviews</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Check for pending user approvals daily - don't leave people waiting</p>
+                    <p className="text-sm text-warning dark:text-warning">Check for pending user approvals daily - don't leave people waiting</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Activity className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <Activity className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">System Monitoring</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Regularly check system health, error logs, and API rate limits</p>
+                    <p className="text-sm text-warning dark:text-warning">Regularly check system health, error logs, and API rate limits</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Bell className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <Bell className="h-5 w-5 text-warning mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-amber-900 dark:text-amber-400">Alert Response</h4>
-                    <p className="text-sm text-amber-800 dark:text-amber-500">Respond promptly to security alerts and user escalations</p>
+                    <p className="text-sm text-warning dark:text-warning">Respond promptly to security alerts and user escalations</p>
                   </div>
                 </div>
               </div>
@@ -166,17 +166,17 @@ export default function AdminMessage() {
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="text-center p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                <Users className="h-8 w-8 text-brand mx-auto mb-2" />
                 <h4 className="font-semibold text-gray-900 dark:text-white">User Management</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Manage users and roles</p>
               </div>
               <div className="text-center p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <Settings className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                <Settings className="h-8 w-8 text-positive mx-auto mb-2" />
                 <h4 className="font-semibold text-gray-900 dark:text-white">Permissions</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Configure access controls</p>
               </div>
               <div className="text-center p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <Database className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                <Database className="h-8 w-8 text-brand mx-auto mb-2" />
                 <h4 className="font-semibold text-gray-900 dark:text-white">System Health</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Monitor platform status</p>
               </div>

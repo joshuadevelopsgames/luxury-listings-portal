@@ -44,28 +44,28 @@ const TasksSummaryWidget = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
+      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
         <div className="space-y-3">
-          <div className="h-4 w-full bg-black/5 dark:bg-white/5 rounded" />
+          <div className="h-4 w-full bg-surface-3 rounded" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10">
+    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#34c759] to-[#30d158] flex items-center justify-center shadow-lg shadow-[#34c759]/20">
-            <CheckSquare className="w-4 h-4 text-white" strokeWidth={1.5} />
+          <div className="w-9 h-9 rounded-lg bg-surface-3 flex items-center justify-center">
+            <CheckSquare className="w-4 h-4 text-ink" strokeWidth={1.5} />
           </div>
-          <h3 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white">Tasks</h3>
+          <h3 className="font-semibold text-[15px] text-ink">Tasks</h3>
         </div>
         <button
           onClick={() => navigate('/tasks')}
-          className="text-[13px] text-[#0071e3] hover:text-[#0077ed] font-medium flex items-center gap-1 transition-colors"
+          className="text-[13px] text-brand hover:text-brand-hover font-medium flex items-center gap-1 transition-colors"
         >
           View All
           <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
@@ -75,16 +75,16 @@ const TasksSummaryWidget = () => {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center">
-          <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{stats.total}</p>
-          <p className="text-[11px] text-[#86868b]">Total</p>
+          <p className="text-[24px] font-semibold text-ink">{stats.total}</p>
+          <p className="text-[11px] text-ink-muted">Total</p>
         </div>
         <div className="text-center">
-          <p className="text-[24px] font-semibold text-[#34c759]">{stats.completed}</p>
-          <p className="text-[11px] text-[#86868b]">Completed</p>
+          <p className="text-[24px] font-semibold text-positive">{stats.completed}</p>
+          <p className="text-[11px] text-ink-muted">Completed</p>
         </div>
         <div className="text-center">
-          <p className="text-[24px] font-semibold text-[#ff9500]">{stats.dueToday}</p>
-          <p className="text-[11px] text-[#86868b]">Due Today</p>
+          <p className="text-[24px] font-semibold text-warning">{stats.dueToday}</p>
+          <p className="text-[11px] text-ink-muted">Due Today</p>
         </div>
       </div>
     </div>

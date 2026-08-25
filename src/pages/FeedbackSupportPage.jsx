@@ -138,98 +138,98 @@ export default function FeedbackSupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f]">
+    <div className="min-h-screen bg-surface-2 dark:bg-ink">
       <div className="max-w-3xl mx-auto px-6 py-8">
         <Link
           to="/resources"
-          className="inline-flex items-center gap-2 text-[13px] text-[#0071e3] dark:text-[#0a84ff] font-medium mb-8 hover:underline"
+          className="inline-flex items-center gap-2 text-[13px] text-brand dark:text-[#0a84ff] font-medium mb-8 hover:underline"
         >
           <ArrowRight className="w-4 h-4 rotate-180" />
           Back to Resources
         </Link>
 
         <header className="mb-10">
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">
             Feedback and Technical Support
           </h1>
-          <p className="text-[15px] text-[#86868b] mt-1">
+          <p className="text-[15px] text-ink-muted mt-1">
             Submit a bug report, feature request, or chat with the developer.
           </p>
         </header>
 
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
           <div className="p-5">
-            <p className="text-[13px] text-[#86868b] mb-4">Choose how you’d like to reach out:</p>
+            <p className="text-[13px] text-ink-muted mb-4">Choose how you’d like to reach out:</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
                 type="button"
                 onClick={() => setFeedbackCard(feedbackCard === 'bug' ? null : 'bug')}
                 className={`flex flex-col items-start gap-2 p-5 rounded-xl text-left border-2 transition-all ${
                   feedbackCard === 'bug'
-                    ? 'border-[#ff3b30] bg-[#ff3b30]/5'
-                    : 'border-transparent bg-black/[0.02] dark:bg-white/5 hover:bg-black/[0.04] dark:hover:bg-white/10'
+                    ? 'border-danger bg-danger/5'
+                    : 'border-transparent bg-surface-2 hover:bg-surface-3'
                 }`}
               >
-                <div className="p-2 rounded-lg bg-[#ff3b30]/10">
-                  <Bug className="w-5 h-5 text-[#ff3b30]" />
+                <div className="p-2 rounded-lg bg-danger/10">
+                  <Bug className="w-5 h-5 text-danger" />
                 </div>
-                <span className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Report a Bug</span>
-                <span className="text-[12px] text-[#86868b]">Something broken? Send details and we’ll fix it.</span>
+                <span className="text-[15px] font-semibold text-ink">Report a Bug</span>
+                <span className="text-[12px] text-ink-muted">Something broken? Send details and we’ll fix it.</span>
               </button>
               <button
                 type="button"
                 onClick={() => setFeedbackCard(feedbackCard === 'feature' ? null : 'feature')}
                 className={`flex flex-col items-start gap-2 p-5 rounded-xl text-left border-2 transition-all ${
                   feedbackCard === 'feature'
-                    ? 'border-[#ff9500] bg-[#ff9500]/5'
-                    : 'border-transparent bg-black/[0.02] dark:bg-white/5 hover:bg-black/[0.04] dark:hover:bg-white/10'
+                    ? 'border-warning bg-warning/5'
+                    : 'border-transparent bg-surface-2 hover:bg-surface-3'
                 }`}
               >
-                <div className="p-2 rounded-lg bg-[#ff9500]/10">
-                  <Lightbulb className="w-5 h-5 text-[#ff9500]" />
+                <div className="p-2 rounded-lg bg-warning/10">
+                  <Lightbulb className="w-5 h-5 text-warning" />
                 </div>
-                <span className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Feature Request</span>
-                <span className="text-[12px] text-[#86868b]">Have an idea? We’d love to hear it.</span>
+                <span className="text-[15px] font-semibold text-ink">Feature Request</span>
+                <span className="text-[12px] text-ink-muted">Have an idea? We’d love to hear it.</span>
               </button>
               <button
                 type="button"
                 onClick={() => setFeedbackCard(feedbackCard === 'chat' ? null : 'chat')}
                 className={`flex flex-col items-start gap-2 p-5 rounded-xl text-left border-2 transition-all ${
                   feedbackCard === 'chat'
-                    ? 'border-[#0071e3] bg-[#0071e3]/5'
-                    : 'border-transparent bg-black/[0.02] dark:bg-white/5 hover:bg-black/[0.04] dark:hover:bg-white/10'
+                    ? 'border-brand bg-brand/5'
+                    : 'border-transparent bg-surface-2 hover:bg-surface-3'
                 }`}
               >
-                <div className="p-2 rounded-lg bg-[#0071e3]/10">
-                  <MessageSquare className="w-5 h-5 text-[#0071e3]" />
+                <div className="p-2 rounded-lg bg-brand/10">
+                  <MessageSquare className="w-5 h-5 text-brand" />
                 </div>
-                <span className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Chat with Developer</span>
-                <span className="text-[12px] text-[#86868b]">Talk directly with the developer.</span>
+                <span className="text-[15px] font-semibold text-ink">Chat with Developer</span>
+                <span className="text-[12px] text-ink-muted">Talk directly with the developer.</span>
               </button>
             </div>
 
             {feedbackCard === 'bug' && (
-              <div className="mt-6 p-5 rounded-xl bg-[#ff3b30]/5 border border-[#ff3b30]/20 space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Bug Report</h3>
+              <div className="mt-6 p-5 rounded-xl bg-danger/5 border border-danger/20 space-y-4">
+                <h3 className="text-[15px] font-semibold text-ink">Bug Report</h3>
                 <input
                   type="text"
                   placeholder="Short title"
                   value={pageBugForm.title}
                   onChange={(e) => setPageBugForm((p) => ({ ...p, title: e.target.value }))}
-                  className="w-full h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff3b30]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-danger"
                 />
                 <textarea
                   placeholder="What happened? Steps to reproduce, page URL, etc."
                   value={pageBugForm.description}
                   onChange={(e) => setPageBugForm((p) => ({ ...p, description: e.target.value }))}
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff3b30] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-danger resize-none"
                 />
                 <div className="flex gap-2">
                   <select
                     value={pageBugForm.priority}
                     onChange={(e) => setPageBugForm((p) => ({ ...p, priority: e.target.value }))}
-                    className="h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#ff3b30]"
+                    className="h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-danger"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -239,7 +239,7 @@ export default function FeedbackSupportPage() {
                     type="button"
                     onClick={handlePageSubmitBug}
                     disabled={pageSubmitting}
-                    className="px-5 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
                   >
                     {pageSubmitting ? 'Sending…' : 'Submit'}
                   </button>
@@ -248,27 +248,27 @@ export default function FeedbackSupportPage() {
             )}
 
             {feedbackCard === 'feature' && (
-              <div className="mt-6 p-5 rounded-xl bg-[#ff9500]/5 border border-[#ff9500]/20 space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Feature Request</h3>
+              <div className="mt-6 p-5 rounded-xl bg-warning/5 border border-warning/20 space-y-4">
+                <h3 className="text-[15px] font-semibold text-ink">Feature Request</h3>
                 <input
                   type="text"
                   placeholder="Short title"
                   value={pageFeatureForm.title}
                   onChange={(e) => setPageFeatureForm((p) => ({ ...p, title: e.target.value }))}
-                  className="w-full h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff9500]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-warning"
                 />
                 <textarea
                   placeholder="Describe your idea and why it would help."
                   value={pageFeatureForm.description}
                   onChange={(e) => setPageFeatureForm((p) => ({ ...p, description: e.target.value }))}
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff9500] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-warning resize-none"
                 />
                 <button
                   type="button"
                   onClick={handlePageSubmitFeature}
                   disabled={pageSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-[#ff9500] text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
                 >
                   {pageSubmitting ? 'Sending…' : 'Submit'}
                 </button>
@@ -276,8 +276,8 @@ export default function FeedbackSupportPage() {
             )}
 
             {feedbackCard === 'chat' && (
-              <div className="mt-6 p-5 rounded-xl bg-[#0071e3]/5 border border-[#0071e3]/20 space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Chat with Developer</h3>
+              <div className="mt-6 p-5 rounded-xl bg-brand/5 border border-brand/20 space-y-4">
+                <h3 className="text-[15px] font-semibold text-ink">Chat with Developer</h3>
                 {!pageSelectedChat ? (
                   <>
                     <textarea
@@ -285,19 +285,19 @@ export default function FeedbackSupportPage() {
                       value={pageChatMessage}
                       onChange={(e) => setPageChatMessage(e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                     />
                     <button
                       type="button"
                       onClick={handlePageStartChat}
                       disabled={pageSubmitting}
-                      className="px-5 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] disabled:opacity-50"
+                      className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover disabled:opacity-50"
                     >
                       {pageSubmitting ? 'Starting…' : 'Start chat'}
                     </button>
                     {pageUserChats.length > 0 && (
-                      <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                        <p className="text-[12px] font-medium text-[#86868b] mb-2">Or continue an existing chat:</p>
+                      <div className="pt-4 border-t border-hairline">
+                        <p className="text-[12px] font-medium text-ink-muted mb-2">Or continue an existing chat:</p>
                         <div className="space-y-2">
                           {pageUserChats.map((c) => (
                             <button
@@ -310,10 +310,10 @@ export default function FeedbackSupportPage() {
                                   supabaseService.updateFeedbackChatUserLastRead(c.id).catch(() => {});
                                 }
                               }}
-                              className="w-full text-left px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15"
+                              className="w-full text-left px-4 py-2 rounded-lg bg-surface-3 text-[13px] text-ink hover:bg-hairline-strong"
                             >
-                              <span className={c.status === 'closed' ? 'text-[#86868b]' : ''}>{c.lastMessage?.substring(0, 60)}…</span>
-                              {c.status === 'closed' && <span className="text-[11px] text-[#86868b] ml-1">(closed)</span>}
+                              <span className={c.status === 'closed' ? 'text-ink-muted' : ''}>{c.lastMessage?.substring(0, 60)}…</span>
+                              {c.status === 'closed' && <span className="text-[11px] text-ink-muted ml-1">(closed)</span>}
                             </button>
                           ))}
                         </div>
@@ -325,15 +325,15 @@ export default function FeedbackSupportPage() {
                     <button
                       type="button"
                       onClick={() => setPageSelectedChat(null)}
-                      className="text-[12px] text-[#0071e3] hover:underline"
+                      className="text-[12px] text-brand hover:underline"
                     >
                       ← Back to chats
                     </button>
-                    <div className="max-h-60 overflow-y-auto space-y-2 p-3 rounded-lg bg-black/5 dark:bg-white/5">
+                    <div className="max-h-60 overflow-y-auto space-y-2 p-3 rounded-lg bg-surface-3">
                       {(pageSelectedChat.messages || []).map((m, i) => (
                         <div key={i} className="text-[13px]">
-                          <span className="font-medium text-[#86868b]">{m.senderName || 'Developer'}:</span>{' '}
-                          <span className="text-[#1d1d1f] dark:text-white">{m.message}</span>
+                          <span className="font-medium text-ink-muted">{m.senderName || 'Developer'}:</span>{' '}
+                          <span className="text-ink">{m.message}</span>
                         </div>
                       ))}
                     </div>
@@ -345,24 +345,24 @@ export default function FeedbackSupportPage() {
                           value={pageChatMessage}
                           onChange={(e) => setPageChatMessage(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handlePageSendMessage()}
-                          className="flex-1 h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          className="flex-1 h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                         />
                         <button
                           type="button"
                           onClick={handlePageSendMessage}
                           disabled={pageSubmitting}
-                          className="px-5 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium disabled:opacity-50"
+                          className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium disabled:opacity-50"
                         >
                           Send
                         </button>
                       </div>
                     ) : (
-                      <div className="pt-3 border-t border-black/5 dark:border-white/10 text-center">
-                        <p className="text-[13px] text-[#86868b]">This chat was closed. Start a new chat to message again.</p>
+                      <div className="pt-3 border-t border-hairline text-center">
+                        <p className="text-[13px] text-ink-muted">This chat was closed. Start a new chat to message again.</p>
                         <button
                           type="button"
                           onClick={() => { setPageSelectedChat(null); setPageChatMessage(''); }}
-                          className="mt-2 px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed]"
+                          className="mt-2 px-4 py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover"
                         >
                           Start new chat
                         </button>

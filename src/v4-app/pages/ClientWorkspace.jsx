@@ -13,10 +13,10 @@ import { openaiService } from '../services/openaiService';
 
 // ── Style constants ──────────────────────────────────────────────────────────
 
-const INPUT = 'w-full h-10 px-3 rounded-lg bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[13px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/40 transition-all';
-const TEXTAREA = 'w-full px-3 py-2.5 rounded-lg bg-[#f5f5f7] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[13px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/40 resize-none transition-all';
-const BTN_PRIMARY = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-[#0071e3] text-white text-[13px] font-semibold hover:bg-[#0077ed] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shadow-[#0071e3]/20';
-const BTN_GHOST = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-[13px] font-medium text-[#1d1d1f] dark:text-white bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed';
+const INPUT = 'w-full h-10 px-3 rounded-lg bg-surface-2 dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[13px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/40 transition-all';
+const TEXTAREA = 'w-full px-3 py-2.5 rounded-lg bg-surface-2 dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[13px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/40 resize-none transition-all';
+const BTN_PRIMARY = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-brand text-white text-[13px] font-semibold hover:bg-brand-hover active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shadow-brand/20';
+const BTN_GHOST = 'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-[13px] font-medium text-ink bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,9 +61,9 @@ function folderSourceLabel(source) {
 }
 
 function folderSourceColor(source) {
-  if (source === 'google_drive') return 'text-[#34c759]';
-  if (source === 'dropbox') return 'text-[#0071e3]';
-  return 'text-[#ff9500]';
+  if (source === 'google_drive') return 'text-positive';
+  if (source === 'dropbox') return 'text-brand';
+  return 'text-warning';
 }
 
 function listingStatus(listing, folders, assets) {
@@ -81,10 +81,10 @@ function listingStatus(listing, folders, assets) {
 
 function ScoreBadge({ score }) {
   const color = score >= 80
-    ? 'bg-[#34c759]/15 text-[#34c759]'
+    ? 'bg-positive/15 text-positive'
     : score >= 50
-      ? 'bg-[#ff9500]/15 text-[#ff9500]'
-      : 'bg-[#ff3b30]/15 text-[#ff3b30]';
+      ? 'bg-warning/15 text-warning'
+      : 'bg-danger/15 text-danger';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${color}`}>
       <Star className="w-2.5 h-2.5" />
@@ -96,20 +96,20 @@ function ScoreBadge({ score }) {
 function StatusChip({ status }) {
   if (status === 'ready') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#34c759]/15 text-[#34c759]">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-positive/15 text-positive">
         <Check className="w-2.5 h-2.5" /> Ready
       </span>
     );
   }
   if (status === 'needs_assets') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#ff9500]/15 text-[#ff9500]">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning/15 text-warning">
         <ImageIcon className="w-2.5 h-2.5" /> No Assets
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#ff3b30]/15 text-[#ff3b30]">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-danger/15 text-danger">
       <AlertCircle className="w-2.5 h-2.5" /> Needs Folder
     </span>
   );
@@ -535,11 +535,11 @@ export default function ClientWorkspace() {
       <div className="flex items-center gap-3 mb-4 flex-shrink-0">
         <button
           onClick={() => navigate('/my-clients')}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.1] transition-colors shadow-sm flex-shrink-0"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[13px] font-medium text-ink hover:bg-black/[0.03] dark:hover:bg-white/[0.1] transition-colors shadow-sm flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4" /> My Clients
         </button>
-        <ChevronRight className="w-3.5 h-3.5 text-[#86868b] flex-shrink-0" />
+        <ChevronRight className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
         {/* Client identity */}
         <div className="flex items-center gap-3 min-w-0">
           {clientPhoto ? (
@@ -549,16 +549,16 @@ export default function ClientWorkspace() {
               className="w-9 h-9 rounded-xl object-cover border border-black/[0.06] dark:border-white/[0.1] flex-shrink-0"
             />
           ) : (
-            <div className="w-9 h-9 rounded-xl bg-[#0071e3]/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-[14px] font-bold text-[#0071e3]">{clientName.charAt(0)}</span>
+            <div className="w-9 h-9 rounded-xl bg-brand/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-[14px] font-bold text-brand">{clientName.charAt(0)}</span>
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-[20px] font-bold tracking-tight text-[#1d1d1f] dark:text-white leading-tight truncate">
+            <h1 className="text-[20px] font-bold tracking-tight text-ink leading-tight truncate">
               {clientName}
             </h1>
             {clientBrokerage && (
-              <p className="text-[11px] text-[#86868b] truncate">{clientBrokerage}</p>
+              <p className="text-[11px] text-ink-muted truncate">{clientBrokerage}</p>
             )}
           </div>
         </div>
@@ -573,7 +573,7 @@ export default function ClientWorkspace() {
           {/* Add Listing button */}
           <button
             onClick={() => setShowAddListing((v) => !v)}
-            className="w-full flex items-center justify-center gap-2 h-10 rounded-xl border-2 border-dashed border-[#0071e3]/40 text-[#0071e3] text-[13px] font-semibold hover:bg-[#0071e3]/5 active:scale-[0.98] transition-all flex-shrink-0"
+            className="w-full flex items-center justify-center gap-2 h-10 rounded-xl border-2 border-dashed border-brand/40 text-brand text-[13px] font-semibold hover:bg-brand/5 active:scale-[0.98] transition-all flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             {showAddListing ? 'Cancel' : 'Add Listing'}
@@ -581,8 +581,8 @@ export default function ClientWorkspace() {
 
           {/* Add Listing form */}
           {showAddListing && (
-            <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm p-4 space-y-2.5 flex-shrink-0">
-              <p className="text-[12px] font-semibold text-[#86868b] uppercase tracking-wide">New Listing</p>
+            <div className="bg-surface rounded-xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm p-4 space-y-2.5 flex-shrink-0">
+              <p className="text-[12px] font-semibold text-ink-muted uppercase tracking-wide">New Listing</p>
               <input
                 value={newListingUrl}
                 onChange={(e) => setNewListingUrl(e.target.value)}
@@ -617,13 +617,13 @@ export default function ClientWorkspace() {
           {/* Listing cards */}
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <RefreshCw className="w-5 h-5 text-[#86868b] animate-spin" />
+              <RefreshCw className="w-5 h-5 text-ink-muted animate-spin" />
             </div>
           ) : listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Globe className="w-8 h-8 text-[#86868b] mb-2" />
-              <p className="text-[13px] text-[#86868b]">No listings yet</p>
-              <p className="text-[11px] text-[#86868b]/70 mt-1">Add a listing to get started</p>
+              <Globe className="w-8 h-8 text-ink-muted mb-2" />
+              <p className="text-[13px] text-ink-muted">No listings yet</p>
+              <p className="text-[11px] text-ink-muted/70 mt-1">Add a listing to get started</p>
             </div>
           ) : (
             listings.map((listing) => {
@@ -637,30 +637,30 @@ export default function ClientWorkspace() {
                     setSelectedListingId(listing.id);
                     setActiveTab('assets');
                   }}
-                  className={`w-full text-left p-3.5 rounded-2xl border transition-all active:scale-[0.98] ${
+                  className={`w-full text-left p-3.5 rounded-xl border transition-all active:scale-[0.98] ${
                     active
-                      ? 'bg-[#0071e3] border-[#0071e3] shadow-sm shadow-[#0071e3]/25'
-                      : 'bg-white dark:bg-[#1c1c1e] border-black/[0.04] dark:border-white/[0.06] hover:border-black/[0.08] dark:hover:border-white/[0.1] shadow-sm'
+                      ? 'bg-brand border-brand shadow-sm shadow-brand/25'
+                      : 'bg-surface border-black/[0.04] dark:border-white/[0.06] hover:border-black/[0.08] dark:hover:border-white/[0.1] shadow-sm'
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${active ? 'bg-white/20' : 'bg-[#0071e3]/10'}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${active ? 'bg-white/20' : 'bg-brand/10'}`}>
                       {isScraping
-                        ? <RefreshCw className={`w-4 h-4 animate-spin ${active ? 'text-white' : 'text-[#0071e3]'}`} />
-                        : <Globe className={`w-4 h-4 ${active ? 'text-white' : 'text-[#0071e3]'}`} />
+                        ? <RefreshCw className={`w-4 h-4 animate-spin ${active ? 'text-white' : 'text-brand'}`} />
+                        : <Globe className={`w-4 h-4 ${active ? 'text-white' : 'text-brand'}`} />
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[13px] font-semibold truncate leading-tight ${active ? 'text-white' : 'text-[#1d1d1f] dark:text-white'}`}>
+                      <p className={`text-[13px] font-semibold truncate leading-tight ${active ? 'text-white' : 'text-ink'}`}>
                         {listing.title || listing.address || (isScraping ? 'Fetching details…' : 'Untitled Listing')}
                       </p>
                       {listing.address && listing.title && (
-                        <p className={`text-[11px] truncate mt-0.5 ${active ? 'text-white/70' : 'text-[#86868b]'}`}>
+                        <p className={`text-[11px] truncate mt-0.5 ${active ? 'text-white/70' : 'text-ink-muted'}`}>
                           {listing.address}
                         </p>
                       )}
                       {listing.price && (
-                        <p className={`text-[11px] font-medium mt-0.5 ${active ? 'text-white/80' : 'text-[#34c759]'}`}>
+                        <p className={`text-[11px] font-medium mt-0.5 ${active ? 'text-white/80' : 'text-positive'}`}>
                           {listing.price}
                         </p>
                       )}
@@ -685,7 +685,7 @@ export default function ClientWorkspace() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className={`mt-2 inline-flex items-center gap-1 text-[11px] ${active ? 'text-white/60 hover:text-white/90' : 'text-[#86868b] hover:text-[#0071e3]'} transition-colors`}
+                      className={`mt-2 inline-flex items-center gap-1 text-[11px] ${active ? 'text-white/60 hover:text-white/90' : 'text-ink-muted hover:text-brand'} transition-colors`}
                     >
                       <ExternalLink className="w-3 h-3" /> View listing
                     </a>
@@ -700,11 +700,11 @@ export default function ClientWorkspace() {
         <main className="flex-1 min-w-0 overflow-y-auto">
           {!selectedListing ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <Globe className="w-14 h-14 text-[#86868b]/40 mb-4" />
-              <p className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">
+              <Globe className="w-14 h-14 text-ink-muted/40 mb-4" />
+              <p className="text-[17px] font-semibold text-ink mb-1">
                 Select a listing
               </p>
-              <p className="text-[13px] text-[#86868b]">
+              <p className="text-[13px] text-ink-muted">
                 Choose a listing from the left rail to manage its workspace.
               </p>
             </div>
@@ -712,20 +712,20 @@ export default function ClientWorkspace() {
             <div className="space-y-4">
 
               {/* ── Listing context bar ──────────────────────────────── */}
-              <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm px-5 py-3.5 flex items-center gap-4 flex-wrap">
+              <div className="bg-surface rounded-xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm px-5 py-3.5 flex items-center gap-4 flex-wrap">
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-[16px] font-bold text-[#1d1d1f] dark:text-white truncate">
+                  <h2 className="text-[16px] font-bold text-ink truncate">
                     {selectedListing.title || selectedListing.address || 'Untitled Listing'}
                   </h2>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                     {selectedListing.address && selectedListing.title && (
-                      <span className="text-[12px] text-[#86868b]">{selectedListing.address}</span>
+                      <span className="text-[12px] text-ink-muted">{selectedListing.address}</span>
                     )}
                     {selectedListing.price && (
-                      <span className="text-[12px] font-semibold text-[#34c759]">{selectedListing.price}</span>
+                      <span className="text-[12px] font-semibold text-positive">{selectedListing.price}</span>
                     )}
                     {selectedListing.beds && (
-                      <span className="text-[12px] text-[#86868b]">{selectedListing.beds} bd · {selectedListing.baths} ba</span>
+                      <span className="text-[12px] text-ink-muted">{selectedListing.beds} bd · {selectedListing.baths} ba</span>
                     )}
                   </div>
                 </div>
@@ -734,7 +734,7 @@ export default function ClientWorkspace() {
                     href={selectedListing.listingUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0071e3]/8 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/15 transition-colors flex-shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand/8 text-brand text-[12px] font-medium hover:bg-brand/15 transition-colors flex-shrink-0"
                   >
                     <ExternalLink className="w-3.5 h-3.5" /> View
                   </a>
@@ -753,8 +753,8 @@ export default function ClientWorkspace() {
                     onClick={() => setActiveTab(id)}
                     className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[13px] font-semibold transition-all ${
                       activeTab === id
-                        ? 'bg-white dark:bg-[#1c1c1e] text-[#1d1d1f] dark:text-white shadow-sm'
-                        : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                        ? 'bg-surface text-ink shadow-sm'
+                        : 'text-ink-muted hover:text-ink dark:hover:text-white'
                     }`}
                   >
                     {icon} {label}
@@ -767,23 +767,23 @@ export default function ClientWorkspace() {
                 <div className="space-y-4">
 
                   {/* Folder panel */}
-                  <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm overflow-hidden">
+                  <div className="bg-surface rounded-xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm overflow-hidden">
                     <div className="px-5 py-3.5 border-b border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <FolderOpen className="w-4 h-4 text-[#ff9500]" />
-                        <span className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">
+                        <FolderOpen className="w-4 h-4 text-warning" />
+                        <span className="text-[14px] font-semibold text-ink">
                           Asset Folder
                         </span>
                       </div>
                       {listingFolders.length === 0 ? (
                         <button
                           onClick={() => setShowAttachFolder((v) => !v)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[12px] font-semibold hover:bg-[#0077ed] transition-colors active:scale-[0.98]"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-[12px] font-semibold hover:bg-brand-hover transition-colors active:scale-[0.98]"
                         >
                           <Plus className="w-3.5 h-3.5" /> Attach Folder
                         </button>
                       ) : (
-                        <span className="text-[12px] text-[#86868b]">
+                        <span className="text-[12px] text-ink-muted">
                           {listingFolders.length} folder{listingFolders.length > 1 ? 's' : ''}
                         </span>
                       )}
@@ -791,8 +791,8 @@ export default function ClientWorkspace() {
 
                     {/* Attach folder form */}
                     {showAttachFolder && (
-                      <div className="px-5 py-4 border-b border-black/[0.04] dark:border-white/[0.06] space-y-3 bg-[#f5f5f7]/50 dark:bg-white/[0.02]">
-                        <p className="text-[12px] text-[#86868b]">
+                      <div className="px-5 py-4 border-b border-black/[0.04] dark:border-white/[0.06] space-y-3 bg-surface-2 dark:bg-white/[0.02]">
+                        <p className="text-[12px] text-ink-muted">
                           Paste a Google Drive or Dropbox share link, or leave blank to upload photos directly.
                         </p>
                         <input
@@ -840,8 +840,8 @@ export default function ClientWorkspace() {
                             onClick={() => { setSelectedFolderId(f.id); loadAssets(f.id); }}
                             className={`px-3 py-1.5 rounded-lg text-[12px] font-medium whitespace-nowrap transition-all ${
                               selectedFolder?.id === f.id
-                                ? 'bg-[#0071e3] text-white'
-                                : 'bg-black/[0.04] dark:bg-white/[0.06] text-[#86868b] hover:text-[#1d1d1f]'
+                                ? 'bg-brand text-white'
+                                : 'bg-black/[0.04] dark:bg-white/[0.06] text-ink-muted hover:text-ink'
                             }`}
                           >
                             {f.name}
@@ -853,16 +853,16 @@ export default function ClientWorkspace() {
                     {/* Folder info or empty */}
                     {listingFolders.length === 0 && !showAttachFolder ? (
                       <div className="px-5 py-8 flex flex-col items-center text-center">
-                        <FolderOpen className="w-10 h-10 text-[#86868b]/40 mb-3" />
-                        <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white mb-1">No folder attached</p>
-                        <p className="text-[12px] text-[#86868b] max-w-[280px]">
+                        <FolderOpen className="w-10 h-10 text-ink-muted/40 mb-3" />
+                        <p className="text-[14px] font-semibold text-ink mb-1">No folder attached</p>
+                        <p className="text-[12px] text-ink-muted max-w-[280px]">
                           Attach a Google Drive or Dropbox folder, or create an upload folder to store photos.
                         </p>
                       </div>
                     ) : selectedFolder ? (
                       <div className="px-5 py-3 flex items-center gap-3">
                         <div className="flex-1 min-w-0">
-                          <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{selectedFolder.name}</span>
+                          <span className="text-[13px] font-medium text-ink">{selectedFolder.name}</span>
                           <span className={`ml-2 text-[11px] font-medium ${folderSourceColor(selectedFolder.folderSource)}`}>
                             {folderSourceLabel(selectedFolder.folderSource)}
                           </span>
@@ -872,7 +872,7 @@ export default function ClientWorkspace() {
                             href={selectedFolder.externalUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[12px] text-[#0071e3] hover:underline"
+                            className="inline-flex items-center gap-1 text-[12px] text-brand hover:underline"
                           >
                             <ExternalLink className="w-3.5 h-3.5" /> Open
                           </a>
@@ -883,19 +883,19 @@ export default function ClientWorkspace() {
 
                   {/* Asset gallery */}
                   {selectedFolder && (
-                    <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm overflow-hidden">
+                    <div className="bg-surface rounded-xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm overflow-hidden">
                       {/* Gallery toolbar */}
                       <div className="px-5 py-3.5 border-b border-black/[0.04] dark:border-white/[0.06] flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <ImageIcon className="w-4 h-4 text-[#34c759]" />
-                          <span className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">
+                          <ImageIcon className="w-4 h-4 text-positive" />
+                          <span className="text-[14px] font-semibold text-ink">
                             Photos
                           </span>
-                          <span className="text-[11px] text-[#86868b] bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded-full">
+                          <span className="text-[11px] text-ink-muted bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded-full">
                             {allAssets.length}
                           </span>
                           {selectedAssetIds.size > 0 && (
-                            <span className="text-[11px] text-[#0071e3] bg-[#0071e3]/10 px-2 py-0.5 rounded-full">
+                            <span className="text-[11px] text-brand bg-brand/10 px-2 py-0.5 rounded-full">
                               {selectedAssetIds.size} selected
                             </span>
                           )}
@@ -905,7 +905,7 @@ export default function ClientWorkspace() {
                             <button
                               onClick={rankWithAI}
                               disabled={rankingPhotos}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[12px] font-semibold hover:bg-purple-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand/10 text-brand dark:text-purple-400 text-[12px] font-semibold hover:bg-brand/20 active:scale-[0.98] transition-all disabled:opacity-50"
                             >
                               {rankingPhotos ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                               {rankingPhotos ? 'Ranking…' : 'Rank with AI'}
@@ -938,14 +938,14 @@ export default function ClientWorkspace() {
                         className="p-5"
                       >
                         {allAssets.length === 0 ? (
-                          <div className={`flex flex-col items-center justify-center py-14 rounded-2xl border-2 border-dashed transition-colors ${
-                            dropActive ? 'border-[#0071e3] bg-[#0071e3]/5' : 'border-black/[0.06] dark:border-white/[0.08]'
+                          <div className={`flex flex-col items-center justify-center py-14 rounded-xl border-2 border-dashed transition-colors ${
+                            dropActive ? 'border-brand bg-brand/5' : 'border-black/[0.06] dark:border-white/[0.08]'
                           }`}>
                             {selectedFolder.externalUrl ? (
                               <>
-                                <ExternalLink className="w-10 h-10 text-[#86868b]/40 mb-3" />
-                                <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white mb-1">External folder</p>
-                                <p className="text-[12px] text-[#86868b] mb-3">
+                                <ExternalLink className="w-10 h-10 text-ink-muted/40 mb-3" />
+                                <p className="text-[14px] font-semibold text-ink mb-1">External folder</p>
+                                <p className="text-[12px] text-ink-muted mb-3">
                                   Photos are stored in {folderSourceLabel(selectedFolder.folderSource)}
                                 </p>
                                 <a
@@ -960,11 +960,11 @@ export default function ClientWorkspace() {
                               </>
                             ) : (
                               <>
-                                <Upload className="w-10 h-10 text-[#86868b]/40 mb-3" />
-                                <p className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white mb-1">
+                                <Upload className="w-10 h-10 text-ink-muted/40 mb-3" />
+                                <p className="text-[14px] font-semibold text-ink mb-1">
                                   Drop photos here
                                 </p>
-                                <p className="text-[12px] text-[#86868b]">or click Upload above</p>
+                                <p className="text-[12px] text-ink-muted">or click Upload above</p>
                               </>
                             )}
                           </div>
@@ -977,13 +977,13 @@ export default function ClientWorkspace() {
                                 <div
                                   key={asset.id}
                                   onClick={() => toggleAsset(asset.id)}
-                                  className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all ${
+                                  className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all ${
                                     isSelected
-                                      ? 'ring-2 ring-[#0071e3] shadow-lg shadow-[#0071e3]/20 scale-[1.02]'
+                                      ? 'ring-2 ring-brand shadow-lg shadow-brand/20 scale-[1.02]'
                                       : 'hover:scale-[1.02] hover:shadow-md'
                                   }`}
                                 >
-                                  <div className="relative aspect-square bg-[#f5f5f7] dark:bg-white/[0.04]">
+                                  <div className="relative aspect-square bg-surface-2 dark:bg-white/[0.04]">
                                     {asset.mediaType === 'video' ? (
                                       <video src={asset.fileUrl} className="w-full h-full object-cover" muted />
                                     ) : (
@@ -999,7 +999,7 @@ export default function ClientWorkspace() {
                                     {/* Top pick star */}
                                     {isTopPick && (
                                       <div className="absolute top-2 right-2">
-                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#ff9500] text-white text-[9px] font-bold shadow-sm">
+                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-warning text-white text-[9px] font-bold shadow-sm">
                                           <Star className="w-2.5 h-2.5 fill-white" /> Top
                                         </span>
                                       </div>
@@ -1007,7 +1007,7 @@ export default function ClientWorkspace() {
 
                                     {/* Selection check */}
                                     <div className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                                      isSelected ? 'bg-[#0071e3] opacity-100' : 'bg-black/40 opacity-0 group-hover:opacity-100'
+                                      isSelected ? 'bg-brand opacity-100' : 'bg-black/40 opacity-0 group-hover:opacity-100'
                                     }`} style={{ top: isTopPick ? 'auto' : '8px', bottom: isTopPick ? 'auto' : 'auto' }}>
                                       {isSelected && <Check className="w-3 h-3 text-white" />}
                                     </div>
@@ -1036,16 +1036,16 @@ export default function ClientWorkspace() {
 
               {/* ══ CAPTION TAB ═════════════════════════════════════════ */}
               {activeTab === 'caption' && (
-                <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm overflow-hidden">
+                <div className="bg-surface rounded-xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm overflow-hidden">
                   <div className="px-5 py-3.5 border-b border-black/[0.04] dark:border-white/[0.06] flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-500" />
-                    <span className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Caption Generator</span>
+                    <Sparkles className="w-4 h-4 text-brand" />
+                    <span className="text-[14px] font-semibold text-ink">Caption Generator</span>
                   </div>
 
                   <div className="p-5 space-y-4">
                     {/* Platform switcher */}
                     <div>
-                      <p className="text-[12px] font-semibold text-[#86868b] mb-2 uppercase tracking-wide">Platform</p>
+                      <p className="text-[12px] font-semibold text-ink-muted mb-2 uppercase tracking-wide">Platform</p>
                       <div className="flex gap-2">
                         {[
                           { id: 'instagram', label: 'Instagram' },
@@ -1057,8 +1057,8 @@ export default function ClientWorkspace() {
                             onClick={() => setCaptionPlatform(id)}
                             className={`px-4 py-2 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.97] ${
                               captionPlatform === id
-                                ? 'bg-[#0071e3] text-white shadow-sm shadow-[#0071e3]/20'
-                                : 'bg-black/[0.04] dark:bg-white/[0.06] text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                                ? 'bg-brand text-white shadow-sm shadow-brand/20'
+                                : 'bg-black/[0.04] dark:bg-white/[0.06] text-ink-muted hover:text-ink dark:hover:text-white'
                             }`}
                           >
                             {label}
@@ -1069,13 +1069,13 @@ export default function ClientWorkspace() {
 
                     {/* Listing description preview */}
                     {selectedListing?.description ? (
-                      <div className="p-3 rounded-xl bg-[#f5f5f7] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
-                        <p className="text-[11px] font-semibold text-[#86868b] mb-1 uppercase tracking-wide">Source: Listing Description</p>
-                        <p className="text-[13px] text-[#1d1d1f] dark:text-white/80 line-clamp-3">{selectedListing.description}</p>
+                      <div className="p-3 rounded-xl bg-surface-2 dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
+                        <p className="text-[11px] font-semibold text-ink-muted mb-1 uppercase tracking-wide">Source: Listing Description</p>
+                        <p className="text-[13px] text-ink/80 line-clamp-3">{selectedListing.description}</p>
                       </div>
                     ) : (
-                      <div className="p-3 rounded-xl bg-[#ff9500]/8 border border-[#ff9500]/20">
-                        <p className="text-[12px] text-[#ff9500]">
+                      <div className="p-3 rounded-xl bg-warning/8 border border-warning/20">
+                        <p className="text-[12px] text-warning">
                           <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
                           No description on this listing — add one when saving for better caption quality.
                         </p>
@@ -1086,7 +1086,7 @@ export default function ClientWorkspace() {
                     <button
                       onClick={generateCaption}
                       disabled={generatingCaption}
-                      className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-sm shadow-purple-500/20"
+                      className="w-full h-11 rounded-xl bg-gradient-to-r from-brand to-pink-500 text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-sm shadow-brand/20"
                     >
                       {generatingCaption ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       {generatingCaption ? 'Generating…' : `Generate ${captionPlatform.charAt(0).toUpperCase() + captionPlatform.slice(1)} Caption`}
@@ -1104,7 +1104,7 @@ export default function ClientWorkspace() {
                         />
                         {generatedCaption && (
                           <>
-                            <span className="absolute bottom-3 left-3 text-[10px] text-[#86868b]">
+                            <span className="absolute bottom-3 left-3 text-[10px] text-ink-muted">
                               {generatedCaption.length} chars
                             </span>
                             <button
@@ -1112,7 +1112,7 @@ export default function ClientWorkspace() {
                               className="absolute top-3 right-3 p-1.5 rounded-lg bg-black/[0.06] dark:bg-white/[0.1] hover:bg-black/[0.1] dark:hover:bg-white/[0.15] transition-colors"
                               title="Copy"
                             >
-                              <Copy className="w-3.5 h-3.5 text-[#86868b]" />
+                              <Copy className="w-3.5 h-3.5 text-ink-muted" />
                             </button>
                           </>
                         )}
@@ -1120,7 +1120,7 @@ export default function ClientWorkspace() {
 
                       <div className="relative">
                         <div className="absolute left-3 top-3 pointer-events-none">
-                          <Hash className="w-3.5 h-3.5 text-[#86868b]" />
+                          <Hash className="w-3.5 h-3.5 text-ink-muted" />
                         </div>
                         <textarea
                           value={generatedHashtags}
@@ -1135,7 +1135,7 @@ export default function ClientWorkspace() {
                             className="absolute top-3 right-3 p-1.5 rounded-lg bg-black/[0.06] dark:bg-white/[0.1] hover:bg-black/[0.1] dark:hover:bg-white/[0.15] transition-colors"
                             title="Copy hashtags"
                           >
-                            <Copy className="w-3.5 h-3.5 text-[#86868b]" />
+                            <Copy className="w-3.5 h-3.5 text-ink-muted" />
                           </button>
                         )}
                       </div>
@@ -1161,11 +1161,11 @@ export default function ClientWorkspace() {
                 <div className="space-y-4">
 
                   {/* Selected assets summary */}
-                  <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm p-5">
+                  <div className="bg-surface rounded-xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm p-5">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Selected Assets</h3>
-                        <p className="text-[12px] text-[#86868b] mt-0.5">
+                        <h3 className="text-[14px] font-semibold text-ink">Selected Assets</h3>
+                        <p className="text-[12px] text-ink-muted mt-0.5">
                           {selectedAssetIds.size} of {allAssets.length} photos selected
                         </p>
                       </div>
@@ -1186,7 +1186,7 @@ export default function ClientWorkspace() {
                         {selectedAssets.slice(0, 12).map((asset) => (
                           <div
                             key={asset.id}
-                            className="w-14 h-14 rounded-xl overflow-hidden border border-[#0071e3]/30 relative group"
+                            className="w-14 h-14 rounded-xl overflow-hidden border border-brand/30 relative group"
                           >
                             <img src={asset.fileUrl} alt={asset.fileName} className="w-full h-full object-cover" />
                             <button
@@ -1198,15 +1198,15 @@ export default function ClientWorkspace() {
                           </div>
                         ))}
                         {selectedAssets.length > 12 && (
-                          <div className="w-14 h-14 rounded-xl bg-[#f5f5f7] dark:bg-white/[0.04] flex items-center justify-center border border-black/[0.04] dark:border-white/[0.06]">
-                            <span className="text-[12px] font-semibold text-[#86868b]">+{selectedAssets.length - 12}</span>
+                          <div className="w-14 h-14 rounded-xl bg-surface-2 dark:bg-white/[0.04] flex items-center justify-center border border-black/[0.04] dark:border-white/[0.06]">
+                            <span className="text-[12px] font-semibold text-ink-muted">+{selectedAssets.length - 12}</span>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="flex items-center gap-3 py-4 px-4 rounded-xl bg-[#f5f5f7] dark:bg-white/[0.04]">
-                        <AlertCircle className="w-5 h-5 text-[#86868b]" />
-                        <p className="text-[13px] text-[#86868b]">
+                      <div className="flex items-center gap-3 py-4 px-4 rounded-xl bg-surface-2 dark:bg-white/[0.04]">
+                        <AlertCircle className="w-5 h-5 text-ink-muted" />
+                        <p className="text-[13px] text-ink-muted">
                           Go to the Assets tab and click photos to select them.
                         </p>
                       </div>
@@ -1214,27 +1214,27 @@ export default function ClientWorkspace() {
                   </div>
 
                   {/* Calendar push */}
-                  <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm p-5 space-y-4">
+                  <div className="bg-surface rounded-xl border border-black/[0.04] dark:border-white/[0.06] shadow-sm p-5 space-y-4">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[#0071e3]" />
-                      <h3 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Push to Content Calendar</h3>
+                      <Calendar className="w-4 h-4 text-brand" />
+                      <h3 className="text-[14px] font-semibold text-ink">Push to Content Calendar</h3>
                     </div>
 
                     {/* Caption preview */}
                     {generatedCaption ? (
-                      <div className="p-3 rounded-xl bg-[#f5f5f7] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
-                        <p className="text-[11px] font-semibold text-[#86868b] mb-1 uppercase tracking-wide">Caption Preview</p>
-                        <p className="text-[13px] text-[#1d1d1f] dark:text-white/80 line-clamp-3">{generatedCaption}</p>
+                      <div className="p-3 rounded-xl bg-surface-2 dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
+                        <p className="text-[11px] font-semibold text-ink-muted mb-1 uppercase tracking-wide">Caption Preview</p>
+                        <p className="text-[13px] text-ink/80 line-clamp-3">{generatedCaption}</p>
                         <button
                           onClick={() => setActiveTab('caption')}
-                          className="mt-2 text-[11px] text-[#0071e3] hover:underline"
+                          className="mt-2 text-[11px] text-brand hover:underline"
                         >
                           Edit in Caption tab →
                         </button>
                       </div>
                     ) : (
-                      <div className="p-3 rounded-xl bg-[#ff9500]/8 border border-[#ff9500]/20">
-                        <p className="text-[12px] text-[#ff9500]">
+                      <div className="p-3 rounded-xl bg-warning/8 border border-warning/20">
+                        <p className="text-[12px] text-warning">
                           <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
                           No caption yet —{' '}
                           <button onClick={() => setActiveTab('caption')} className="underline font-medium">
@@ -1247,7 +1247,7 @@ export default function ClientWorkspace() {
                     {/* Platform + date */}
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[12px] font-semibold text-[#86868b] mb-1.5 uppercase tracking-wide">Platform</label>
+                        <label className="block text-[12px] font-semibold text-ink-muted mb-1.5 uppercase tracking-wide">Platform</label>
                         <select
                           value={captionPlatform}
                           onChange={(e) => setCaptionPlatform(e.target.value)}
@@ -1259,7 +1259,7 @@ export default function ClientWorkspace() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[12px] font-semibold text-[#86868b] mb-1.5 uppercase tracking-wide">Schedule Date</label>
+                        <label className="block text-[12px] font-semibold text-ink-muted mb-1.5 uppercase tracking-wide">Schedule Date</label>
                         <input
                           type="date"
                           value={scheduleDate}

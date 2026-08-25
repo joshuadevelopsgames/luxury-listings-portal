@@ -62,14 +62,14 @@ const UserLink = ({
           e.stopPropagation();
           setIsOpen(true);
         }}
-        className={`inline-flex items-center gap-1.5 text-[#5856d6] hover:text-[#6e6ce8] hover:underline font-medium transition-colors cursor-pointer ${className}`}
+        className={`inline-flex items-center gap-1.5 text-brand hover:text-[#6e6ce8] hover:underline font-medium transition-colors cursor-pointer ${className}`}
       >
         {showAvatar && (
           <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
             {userPhoto ? (
               <img src={userPhoto} alt="" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#5856d6] to-[#af52de] flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-to-br from-brand to-brand flex items-center justify-center">
                 <span className="text-white text-[10px] font-semibold">{initials}</span>
               </div>
             )}
@@ -77,12 +77,12 @@ const UserLink = ({
         )}
         {children || displayName}
         {showId && (localUser.uid || localUser.id || localUser.email) && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] font-mono">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand/10 text-brand font-mono">
             USR-{String(localUser.uid || localUser.id || localUser.email).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0).toString().slice(-4).padStart(4, '0')}
           </span>
         )}
         {showRole && localUser.role && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-normal">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-3 text-ink-muted font-normal">
             {roleDisplay}
           </span>
         )}

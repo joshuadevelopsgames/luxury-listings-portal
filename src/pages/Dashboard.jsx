@@ -335,7 +335,7 @@ export default function Dashboard() {
   const getRoleSpecificFeatures = () => {
     return rolePermissions.features.map((feature, index) => (
       <div key={index} className="flex items-center space-x-2">
-        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+        <div className="w-2 h-2 bg-brand rounded-full"></div>
         <span className="text-sm text-gray-600">{feature}</span>
       </div>
     ));
@@ -365,8 +365,8 @@ export default function Dashboard() {
           onClick={() => setTodayFocus(f => !f)}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium transition-colors flex-shrink-0 mt-1 ${
             todayFocus
-              ? 'bg-[#ff9500] text-white shadow-sm'
-              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+              ? 'bg-warning text-white shadow-sm'
+              : 'bg-surface-3 text-ink hover:bg-hairline-strong'
           }`}
         >
           <Sun className="w-4 h-4" />
@@ -376,11 +376,11 @@ export default function Dashboard() {
 
       {/* ── Today Focus View */}
       {todayFocus && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-[#ff9500]/30 p-6 space-y-4">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-warning/30 p-6 space-y-4">
           <div className="flex items-center gap-2">
-            <Sun className="w-5 h-5 text-[#ff9500]" />
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Today's Focus</h2>
-            <span className="text-[12px] text-[#86868b] ml-1">{format(new Date(), 'EEEE, MMMM d')}</span>
+            <Sun className="w-5 h-5 text-warning" />
+            <h2 className="text-[17px] font-semibold text-ink">Today's Focus</h2>
+            <span className="text-[12px] text-ink-muted ml-1">{format(new Date(), 'EEEE, MMMM d')}</span>
           </div>
           {(() => {
             const overdue = todaysTasks.filter(t => t.status !== 'completed' && t.due_date && isPast(new Date(t.due_date)) && !isToday(new Date(t.due_date)));
@@ -388,22 +388,22 @@ export default function Dashboard() {
             const all = [...overdue, ...todayOnly];
             if (all.length === 0) return (
               <div className="text-center py-6">
-                <CheckCircle2 className="w-12 h-12 text-[#34c759] mx-auto mb-2 opacity-60" />
-                <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">All clear!</p>
-                <p className="text-[13px] text-[#86868b]">No tasks due today or overdue.</p>
+                <CheckCircle2 className="w-12 h-12 text-positive mx-auto mb-2 opacity-60" />
+                <p className="text-[15px] font-medium text-ink">All clear!</p>
+                <p className="text-[13px] text-ink-muted">No tasks due today or overdue.</p>
               </div>
             );
             return (
               <div className="space-y-2">
-                {overdue.length > 0 && <p className="text-[11px] font-semibold text-[#ff3b30] uppercase tracking-wider">Overdue ({overdue.length})</p>}
+                {overdue.length > 0 && <p className="text-[11px] font-semibold text-danger uppercase tracking-wider">Overdue ({overdue.length})</p>}
                 {all.map(task => (
-                  <div key={task.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${overdue.includes(task) ? 'border-[#ff3b30]/20 bg-[#ff3b30]/5' : 'border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]'}`}>
-                    <CheckSquare className={`w-4 h-4 flex-shrink-0 ${overdue.includes(task) ? 'text-[#ff3b30]' : 'text-[#86868b]'}`} />
-                    <span className="text-[14px] text-[#1d1d1f] dark:text-white flex-1 truncate">{task.title}</span>
-                    {overdue.includes(task) && <span className="text-[11px] text-[#ff3b30] font-medium flex-shrink-0">Overdue</span>}
+                  <div key={task.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${overdue.includes(task) ? 'border-danger/20 bg-danger/5' : 'border-hairline bg-black/[0.02] dark:bg-white/[0.02]'}`}>
+                    <CheckSquare className={`w-4 h-4 flex-shrink-0 ${overdue.includes(task) ? 'text-danger' : 'text-ink-muted'}`} />
+                    <span className="text-[14px] text-ink flex-1 truncate">{task.title}</span>
+                    {overdue.includes(task) && <span className="text-[11px] text-danger font-medium flex-shrink-0">Overdue</span>}
                   </div>
                 ))}
-                <button onClick={() => navigate('/tasks')} className="w-full mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors">
+                <button onClick={() => navigate('/tasks')} className="w-full mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand/10 text-brand text-[13px] font-medium hover:bg-brand/20 transition-colors">
                   View All Tasks <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -414,21 +414,21 @@ export default function Dashboard() {
 
       {/* ── Onboarding Checklist Widget */}
       {showOnboardingWidget && (
-        <div className="rounded-2xl bg-gradient-to-br from-[#0071e3]/5 to-[#5856d6]/5 border border-[#0071e3]/20 p-6 relative">
-          <button onClick={dismissOnboarding} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[#86868b]">
+        <div className="rounded-xl bg-surface border border-hairline p-6 relative">
+          <button onClick={dismissOnboarding} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-surface-3 transition-colors text-ink-muted">
             <X className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-[#0071e3] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-brand flex items-center justify-center">
               <Trophy className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Get started</h2>
-              <p className="text-[12px] text-[#86868b]">{onboardingChecked.length}/{defaultOnboardingItems.length} steps complete</p>
+              <h2 className="text-[15px] font-semibold text-ink">Get started</h2>
+              <p className="text-[12px] text-ink-muted">{onboardingChecked.length}/{defaultOnboardingItems.length} steps complete</p>
             </div>
             <div className="ml-auto w-24 h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#0071e3] rounded-full transition-all duration-500"
+                className="h-full bg-brand rounded-full transition-all duration-500"
                 style={{ width: `${Math.round((onboardingChecked.length / defaultOnboardingItems.length) * 100)}%` }}
               />
             </div>
@@ -441,18 +441,18 @@ export default function Dashboard() {
                   <button
                     onClick={() => toggleOnboardingItem(item.id)}
                     className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                      checked ? 'bg-[#34c759] border-[#34c759]' : 'border-black/20 dark:border-white/20 hover:border-[#0071e3]'
+                      checked ? 'bg-positive border-positive' : 'border-black/20 dark:border-white/20 hover:border-brand'
                     }`}
                   >
                     {checked && <CheckCircle2 className="w-3 h-3 text-white" />}
                   </button>
                   <button
                     onClick={() => navigate(item.path)}
-                    className={`text-[13px] text-left transition-colors flex-1 ${checked ? 'line-through text-[#86868b]' : 'text-[#1d1d1f] dark:text-white hover:text-[#0071e3]'}`}
+                    className={`text-[13px] text-left transition-colors flex-1 ${checked ? 'line-through text-ink-muted' : 'text-ink hover:text-brand'}`}
                   >
                     {item.label}
                   </button>
-                  <ChevronRight className="w-3.5 h-3.5 text-[#86868b]/40 flex-shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-ink-muted/40 flex-shrink-0" />
                 </div>
               );
             })}
@@ -466,12 +466,12 @@ export default function Dashboard() {
 
       {/* Admin Note - Only show for admin users */}
       {currentRole === 'admin' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-brand-soft border border-blue-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <Shield className="w-5 h-5 text-brand mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-blue-900">Admin Dashboard</h3>
-              <p className="text-sm text-blue-700 mt-1">
+              <p className="text-sm text-brand mt-1">
                 You're viewing the admin dashboard. Use the <strong>Profile Switcher</strong> in the top-right corner 
                 to switch to other roles (Content Manager, HR Manager, Sales Manager) and access their specific features.
               </p>
@@ -528,7 +528,7 @@ export default function Dashboard() {
       </div>
 
       {/* Role Information Card - Profile overview */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <Card className="bg-surface border-hairline">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <span className="text-2xl">{rolePermissions.icon}</span>

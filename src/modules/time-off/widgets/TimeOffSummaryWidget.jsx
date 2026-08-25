@@ -72,29 +72,29 @@ const TimeOffSummaryWidget = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
+      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
         <div className="space-y-3">
-          <div className="h-4 w-full bg-black/5 dark:bg-white/5 rounded" />
-          <div className="h-4 w-3/4 bg-black/5 dark:bg-white/5 rounded" />
+          <div className="h-4 w-full bg-surface-3 rounded" />
+          <div className="h-4 w-3/4 bg-surface-3 rounded" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10">
+    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5856d6] to-[#af52de] flex items-center justify-center shadow-lg shadow-[#5856d6]/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center shadow-lg shadow-brand/20">
             <Calendar className="w-4 h-4 text-white" strokeWidth={1.5} />
           </div>
-          <h3 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white">Time Off</h3>
+          <h3 className="font-semibold text-[15px] text-ink">Time Off</h3>
         </div>
         <button
           onClick={() => navigate('/my-time-off')}
-          className="w-8 h-8 rounded-lg bg-[#0071e3] hover:bg-[#0077ed] flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg bg-brand hover:bg-brand-hover flex items-center justify-center transition-colors"
         >
           <Plus className="w-4 h-4 text-white" strokeWidth={2} />
         </button>
@@ -103,40 +103,40 @@ const TimeOffSummaryWidget = () => {
       {/* Balances */}
       <div className="space-y-3 mb-5">
         <div className="flex items-center justify-between">
-          <span className="text-[13px] text-[#86868b]">Vacation Days</span>
-          <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+          <span className="text-[13px] text-ink-muted">Vacation Days</span>
+          <span className="text-[13px] font-medium text-ink">
             {vacationRemaining} remaining
           </span>
         </div>
-        <div className="h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+        <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-[#34c759] rounded-full transition-all"
+            className="h-full bg-positive rounded-full transition-all"
             style={{ width: `${(vacationRemaining / balances.vacation.total) * 100}%` }}
           />
         </div>
         
         <div className="flex items-center justify-between mt-4">
-          <span className="text-[13px] text-[#86868b]">Sick Days</span>
-          <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+          <span className="text-[13px] text-ink-muted">Sick Days</span>
+          <span className="text-[13px] font-medium text-ink">
             {sickRemaining} remaining
           </span>
         </div>
-        <div className="h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+        <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#ff9500] rounded-full transition-all"
+            className="h-full bg-warning rounded-full transition-all"
             style={{ width: `${balances.sick?.total ? (sickRemaining / balances.sick.total) * 100 : 0}%` }}
           />
         </div>
 
         <div className="flex items-center justify-between mt-4">
-          <span className="text-[13px] text-[#86868b]">Remote Days</span>
-          <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+          <span className="text-[13px] text-ink-muted">Remote Days</span>
+          <span className="text-[13px] font-medium text-ink">
             {remoteRemaining} remaining
           </span>
         </div>
-        <div className="h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+        <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#5856d6] rounded-full transition-all"
+            className="h-full bg-brand rounded-full transition-all"
             style={{ width: `${balances.remote?.total ? (remoteRemaining / balances.remote.total) * 100 : 0}%` }}
           />
         </div>
@@ -145,17 +145,17 @@ const TimeOffSummaryWidget = () => {
       {/* Admin: Pending Approvals Badge */}
       {isAdmin && pendingApprovals > 0 && (
         <div 
-          className="mb-4 p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20 cursor-pointer hover:bg-[#ff3b30]/15 transition-colors"
+          className="mb-4 p-3 rounded-xl bg-danger/10 border border-danger/20 cursor-pointer hover:bg-danger/15 transition-colors"
           onClick={() => navigate('/hr-calendar')}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-[#ff3b30]" strokeWidth={1.5} />
-              <span className="text-[13px] font-medium text-[#ff3b30]">
+              <AlertCircle className="w-4 h-4 text-danger" strokeWidth={1.5} />
+              <span className="text-[13px] font-medium text-danger">
                 {pendingApprovals} request{pendingApprovals > 1 ? 's' : ''} awaiting approval
               </span>
             </div>
-            <Users className="w-4 h-4 text-[#ff3b30]" strokeWidth={1.5} />
+            <Users className="w-4 h-4 text-danger" strokeWidth={1.5} />
           </div>
         </div>
       )}
@@ -164,8 +164,8 @@ const TimeOffSummaryWidget = () => {
       <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-2">
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 text-[13px]">
-            <Clock className="w-4 h-4 text-[#ff9500]" strokeWidth={1.5} />
-            <span className="text-[#1d1d1f] dark:text-white">
+            <Clock className="w-4 h-4 text-warning" strokeWidth={1.5} />
+            <span className="text-ink">
               {pendingCount} pending request{pendingCount > 1 ? 's' : ''} (your requests)
             </span>
           </div>
@@ -173,19 +173,19 @@ const TimeOffSummaryWidget = () => {
         
         {upcomingTimeOff && (
           <div className="flex items-center gap-2 text-[13px]">
-            <Calendar className="w-4 h-4 text-[#34c759]" strokeWidth={1.5} />
-            <span className="text-[#86868b]">
+            <Calendar className="w-4 h-4 text-positive" strokeWidth={1.5} />
+            <span className="text-ink-muted">
               Next: {new Date(upcomingTimeOff.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </div>
         )}
         
         {pendingCount === 0 && !upcomingTimeOff && !isAdmin && (
-          <p className="text-[13px] text-[#86868b]">No upcoming time off scheduled</p>
+          <p className="text-[13px] text-ink-muted">No upcoming time off scheduled</p>
         )}
         
         {pendingCount === 0 && !upcomingTimeOff && isAdmin && pendingApprovals === 0 && (
-          <p className="text-[13px] text-[#86868b]">All caught up! No pending approvals.</p>
+          <p className="text-[13px] text-ink-muted">All caught up! No pending approvals.</p>
         )}
       </div>
     </div>

@@ -38,27 +38,27 @@ const LeadManagementPage = () => {
 
   const getSourceColor = (source) => {
     const colors = {
-      website: 'bg-blue-100 text-blue-800',
-      referral: 'bg-green-100 text-green-800',
-      social_media: 'bg-purple-100 text-purple-800',
+      website: 'bg-brand-soft text-brand',
+      referral: 'bg-positive-soft text-positive',
+      social_media: 'bg-brand-soft text-brand',
       cold_call: 'bg-gray-100 text-gray-800',
-      event: 'bg-orange-100 text-orange-800'
+      event: 'bg-warning-soft text-warning'
     };
     return colors[source] || colors.website;
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return 'bg-green-100 text-green-800';
-    if (score >= 60) return 'bg-yellow-100 text-yellow-800';
-    if (score >= 40) return 'bg-orange-100 text-orange-800';
-    return 'bg-red-100 text-red-800';
+    if (score >= 80) return 'bg-positive-soft text-positive';
+    if (score >= 60) return 'bg-warning-soft text-warning';
+    if (score >= 40) return 'bg-warning-soft text-warning';
+    return 'bg-danger-soft text-danger';
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      hot: 'bg-red-100 text-red-800',
-      qualified: 'bg-green-100 text-green-800',
-      warm: 'bg-yellow-100 text-yellow-800',
+      hot: 'bg-danger-soft text-danger',
+      qualified: 'bg-positive-soft text-positive',
+      warm: 'bg-warning-soft text-warning',
       cold: 'bg-gray-100 text-gray-800'
     };
     return colors[status] || colors.cold;
@@ -103,7 +103,7 @@ const LeadManagementPage = () => {
           <h1 className="text-3xl font-bold text-gray-900">Lead Management</h1>
           <p className="text-gray-600 mt-2">Track and nurture your sales leads</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setShowAddModal(true)} className="bg-brand hover:bg-brand-hover">
           <Plus className="w-4 h-4 mr-2" />
           Add New Lead
         </Button>
@@ -111,57 +111,57 @@ const LeadManagementPage = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-gradient-to-r from-brand-soft to-brand-soft border-blue-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-600 mb-2">Total Leads</p>
+                <p className="text-sm font-medium text-brand mb-2">Total Leads</p>
                 <p className="text-3xl font-bold text-blue-900">{totalLeads}</p>
               </div>
               <div className="p-3 rounded-full bg-blue-200">
-                <Target className="w-6 h-6 text-blue-600" />
+                <Target className="w-6 h-6 text-brand" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+        <Card className="bg-gradient-to-r from-positive-soft to-positive-soft border-green-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600 mb-2">Qualified Leads</p>
+                <p className="text-sm font-medium text-positive mb-2">Qualified Leads</p>
                 <p className="text-3xl font-bold text-green-900">{qualifiedLeads}</p>
               </div>
               <div className="p-3 rounded-full bg-green-200">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+                <CheckCircle className="w-6 h-6 text-positive" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+        <Card className="bg-gradient-to-r from-brand-soft to-brand-soft border-purple-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-600 mb-2">Total Value</p>
+                <p className="text-sm font-medium text-brand mb-2">Total Value</p>
                 <p className="text-3xl font-bold text-purple-900">${(totalValue / 1000000).toFixed(1)}M</p>
               </div>
               <div className="p-3 rounded-full bg-purple-200">
-                <DollarSign className="w-6 h-6 text-purple-600" />
+                <DollarSign className="w-6 h-6 text-brand" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+        <Card className="bg-gradient-to-r from-warning-soft to-warning-soft border-orange-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-600 mb-2">Avg. Lead Score</p>
+                <p className="text-sm font-medium text-warning mb-2">Avg. Lead Score</p>
                 <p className="text-3xl font-bold text-orange-900">{avgScore}</p>
               </div>
               <div className="p-3 rounded-full bg-orange-200">
-                <Star className="w-6 h-6 text-orange-600" />
+                <Star className="w-6 h-6 text-warning" />
               </div>
             </div>
           </CardContent>
@@ -177,13 +177,13 @@ const LeadManagementPage = () => {
             placeholder="Search leads by name, company, or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
           />
         </div>
         <select
           value={filterSource}
           onChange={(e) => setFilterSource(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
         >
           <option value="all">All Sources</option>
           <option value="website">Website</option>
@@ -195,7 +195,7 @@ const LeadManagementPage = () => {
         <select
           value={filterScore}
           onChange={(e) => setFilterScore(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
         >
           <option value="all">All Scores</option>
           <option value="high">High (80+)</option>
@@ -263,21 +263,21 @@ const LeadManagementPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => setSelectedLead(lead)}
-                          className="text-blue-600 hover:text-blue-700"
+                          className="text-brand hover:text-brand"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-green-600 hover:text-green-700"
+                          className="text-positive hover:text-positive"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600 hover:text-red-700"
+                          className="text-danger hover:text-danger"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -358,7 +358,7 @@ const LeadManagementPage = () => {
               </div>
               
               <div className="flex items-center gap-2 pt-4">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-brand hover:bg-brand-hover">
                   <Phone className="w-4 h-4 mr-2" />
                   Call Lead
                 </Button>

@@ -150,20 +150,20 @@ export default function ContentCalendarPostDue() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-surface-2 dark:bg-ink flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-surface-2 dark:bg-ink flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-[#1d1d1f] dark:text-white font-medium">Post not found</p>
+          <p className="text-ink font-medium">Post not found</p>
           <button
             onClick={() => navigate('/content-calendar')}
-            className="mt-4 px-4 py-2 rounded-xl bg-[#0071e3] text-white text-sm font-medium"
+            className="mt-4 px-4 py-2 rounded-xl bg-brand text-white text-sm font-medium"
           >
             Back to Content Calendar
           </button>
@@ -176,7 +176,7 @@ export default function ContentCalendarPostDue() {
   const showInstagramQuickPost = IS_MOBILE && isInstagram;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f] p-4 md:p-6">
+    <div className="min-h-screen bg-surface-2 dark:bg-ink p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
         <Breadcrumb items={[
           { label: 'Content Calendar', path: '/content-calendar' },
@@ -184,14 +184,14 @@ export default function ContentCalendarPostDue() {
         ]} />
         <button
           onClick={() => navigate('/content-calendar')}
-          className="flex items-center gap-2 text-[#0071e3] text-sm font-medium mb-6"
+          className="flex items-center gap-2 text-brand text-sm font-medium mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Content Calendar
         </button>
 
-        <h1 className="text-xl font-semibold text-[#1d1d1f] dark:text-white mb-2">Post due today</h1>
-        <p className="text-[#86868b] text-sm mb-6">
+        <h1 className="text-xl font-semibold text-ink mb-2">Post due today</h1>
+        <p className="text-ink-muted text-sm mb-6">
           {showInstagramQuickPost
             ? 'Tap below to load the photo into Instagram, then paste the caption.'
             : 'Copy the caption and open the app to post.'}
@@ -201,10 +201,10 @@ export default function ContentCalendarPostDue() {
           <PostPreviewCard item={item} variant={item.platform} />
         </div>
 
-        <div className="rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 p-4 space-y-4">
+        <div className="rounded-xl bg-surface border border-hairline-strong p-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[#86868b] mb-1">Caption</label>
-            <div className="p-3 rounded-lg bg-black/5 dark:bg-black/20 text-[#1d1d1f] dark:text-white text-sm whitespace-pre-wrap max-h-32 overflow-y-auto">
+            <label className="block text-xs font-medium text-ink-muted mb-1">Caption</label>
+            <div className="p-3 rounded-lg bg-black/5 dark:bg-black/20 text-ink text-sm whitespace-pre-wrap max-h-32 overflow-y-auto">
               {item.description || 'No caption'}
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function ContentCalendarPostDue() {
             <button
               type="button"
               onClick={postToInstagram}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold hover:from-purple-600 hover:to-pink-600 transition-all"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-brand to-pink-500 text-white text-sm font-semibold hover:from-brand hover:to-pink-600 transition-all"
             >
               <Instagram className="w-5 h-5" />
               {shareFile ? 'Open Instagram & add photo' : 'Save photo & open Instagram'}
@@ -224,7 +224,7 @@ export default function ContentCalendarPostDue() {
             <button
               type="button"
               onClick={copyCaption}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-sm font-medium hover:bg-[#0077ed]"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover"
             >
               <Copy className="w-4 h-4" />
               Copy caption
@@ -232,7 +232,7 @@ export default function ContentCalendarPostDue() {
             <button
               type="button"
               onClick={showInstagramQuickPost ? openInstagramApp : openPlatform}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-sm font-medium hover:bg-black/15 dark:hover:bg-white/15"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-ink text-sm font-medium hover:bg-black/15 dark:hover:bg-white/15"
             >
               {showInstagramQuickPost ? <Share2 className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
               Open in {platform === 'instagram' ? 'Instagram' : platform === 'facebook' ? 'Facebook' : platform === 'tiktok' ? 'TikTok' : item.platform}
@@ -241,7 +241,7 @@ export default function ContentCalendarPostDue() {
               <button
                 type="button"
                 onClick={markPublished}
-                className="px-4 py-2.5 rounded-xl border border-[#34c759] text-[#34c759] text-sm font-medium hover:bg-[#34c759]/10"
+                className="px-4 py-2.5 rounded-xl border border-positive text-positive text-sm font-medium hover:bg-positive/10"
               >
                 Mark as published
               </button>

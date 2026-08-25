@@ -64,8 +64,8 @@ const SlackCallback = () => {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-surface-2">
+      <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full mx-4 text-center">
         {/* Slack Logo */}
         <div className="mb-6">
           <svg className="w-16 h-16 mx-auto" viewBox="0 0 24 24" fill="#4A154B">
@@ -79,17 +79,17 @@ const SlackCallback = () => {
             <Loader2 className="w-12 h-12 mx-auto text-[#4A154B] animate-spin" />
           )}
           {status === 'success' && (
-            <CheckCircle className="w-12 h-12 mx-auto text-green-500" />
+            <CheckCircle className="w-12 h-12 mx-auto text-positive" />
           )}
           {status === 'error' && (
-            <XCircle className="w-12 h-12 mx-auto text-red-500" />
+            <XCircle className="w-12 h-12 mx-auto text-danger" />
           )}
         </div>
 
         {/* Message */}
         <h2 className={`text-xl font-semibold mb-2 ${
-          status === 'success' ? 'text-green-600' : 
-          status === 'error' ? 'text-red-600' : 
+          status === 'success' ? 'text-positive' : 
+          status === 'error' ? 'text-danger' : 
           'text-gray-900'
         }`}>
           {status === 'processing' ? 'Connecting...' :

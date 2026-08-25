@@ -215,11 +215,11 @@ const OnboardingPage = () => {
       icon: Sparkles,
       content: (
         <div className="space-y-8">
-          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#1d1d1f] p-10 text-center">
-            <div className="inline-flex h-20 w-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center mb-6 shadow-lg shadow-[#0071e3]/20">
+          <div className="rounded-xl bg-surface-2 dark:bg-ink p-10 text-center">
+            <div className="inline-flex h-20 w-20 rounded-xl bg-gradient-to-br from-brand to-brand items-center justify-center mb-6 shadow-lg shadow-brand/20">
               <Sparkles className="h-10 w-10 text-white" />
             </div>
-            <h3 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">
+            <h3 className="text-2xl font-semibold text-ink mb-2">
               {(() => {
                 const allRoles = (currentUser?.roles || userData?.roles || []).filter(r => r && r.toLowerCase() !== 'pending');
                 const position = userData?.position || currentUser?.position;
@@ -231,7 +231,7 @@ const OnboardingPage = () => {
                 return 'Team Member';
               })()}
             </h3>
-            <p className="text-[15px] text-[#86868b] max-w-md mx-auto">
+            <p className="text-[15px] text-ink-muted max-w-md mx-auto">
               You’ll see your tools in the sidebar. We’ll walk you through each one in the next step.
             </p>
           </div>
@@ -245,12 +245,12 @@ const OnboardingPage = () => {
       icon: LayoutDashboard,
       content: (
         <div className="space-y-6">
-          <p className="text-[15px] text-[#86868b]">
+          <p className="text-[15px] text-ink-muted">
             These modules appear in your sidebar. Use them to manage your work and collaborate with the team.
           </p>
           {onboardingModules.length === 0 ? (
-            <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] p-8 text-center">
-              <p className="text-[15px] text-[#86868b]">Your modules are still being set up. You can explore the Dashboard after finishing this setup.</p>
+            <div className="rounded-xl bg-surface-2 p-8 text-center">
+              <p className="text-[15px] text-ink-muted">Your modules are still being set up. You can explore the Dashboard after finishing this setup.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -259,14 +259,14 @@ const OnboardingPage = () => {
                 return (
                   <div
                     key={mod.id}
-                    className="rounded-2xl bg-[#f5f5f7] dark:bg-[#2c2c2e] p-4 flex items-start space-x-4"
+                    className="rounded-xl bg-surface-2 p-4 flex items-start space-x-4"
                   >
-                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-brand to-brand flex items-center justify-center shadow-lg shadow-brand/20">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white mb-0.5">{mod.name}</h4>
-                      <p className="text-[13px] text-[#86868b]">{mod.howTo}</p>
+                      <h4 className="text-[15px] font-semibold text-ink mb-0.5">{mod.name}</h4>
+                      <p className="text-[13px] text-ink-muted">{mod.howTo}</p>
                     </div>
                   </div>
                 );
@@ -283,16 +283,16 @@ const OnboardingPage = () => {
       icon: Calendar,
       content: (
         <div className="space-y-6">
-          <div className="rounded-2xl bg-[#f5f5f7] dark:bg-[#1d1d1f] p-8 text-center">
-            <div className="inline-flex h-20 w-20 rounded-2xl bg-gradient-to-br from-[#db4437] to-[#f4b400] items-center justify-center mb-6 shadow-lg shadow-[#db4437]/20">
+          <div className="rounded-xl bg-surface-2 dark:bg-ink p-8 text-center">
+            <div className="inline-flex h-20 w-20 rounded-xl bg-gradient-to-br from-[#db4437] to-[#f4b400] items-center justify-center mb-6 shadow-lg shadow-[#db4437]/20">
               <Calendar className="h-10 w-10 text-white" />
             </div>
-            <h3 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">Google Calendar</h3>
-            <p className="text-[15px] text-[#86868b] max-w-md mx-auto mb-6">
+            <h3 className="text-2xl font-semibold text-ink mb-2">Google Calendar</h3>
+            <p className="text-[15px] text-ink-muted max-w-md mx-auto mb-6">
               Connect your Google Calendar to view your schedule and manage events within the app.
             </p>
             {isGoogleConnected ? (
-              <div className="flex items-center justify-center gap-2 text-[#34c759] font-medium text-[15px]">
+              <div className="flex items-center justify-center gap-2 text-positive font-medium text-[15px]">
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Connected</span>
               </div>
@@ -300,7 +300,7 @@ const OnboardingPage = () => {
               <button
                 onClick={handleConnectCalendar}
                 disabled={connectingCalendar}
-                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-[#0071e3] hover:bg-[#0077ed] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-brand hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {connectingCalendar ? (
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -326,73 +326,73 @@ const OnboardingPage = () => {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-[13px] font-medium text-[#86868b] mb-1">First Name</label>
+              <label htmlFor="firstName" className="block text-[13px] font-medium text-ink-muted mb-1">First Name</label>
               <input
                 type="text"
                 id="firstName"
-                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-3 border-none text-[15px] text-ink focus:ring-2 focus:ring-brand"
                 value={profileData.firstName}
                 onChange={(e) => handleProfileInputChange('firstName', e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="lastName" className="block text-[13px] font-medium text-[#86868b] mb-1">Last Name</label>
+              <label htmlFor="lastName" className="block text-[13px] font-medium text-ink-muted mb-1">Last Name</label>
               <input
                 type="text"
                 id="lastName"
-                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-3 border-none text-[15px] text-ink focus:ring-2 focus:ring-brand"
                 value={profileData.lastName}
                 onChange={(e) => handleProfileInputChange('lastName', e.target.value)}
               />
             </div>
           </div>
           <div>
-            <label htmlFor="email" className="block text-[13px] font-medium text-[#86868b] mb-1">Email</label>
+            <label htmlFor="email" className="block text-[13px] font-medium text-ink-muted mb-1">Email</label>
             <input
               type="email"
               id="email"
-              className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+              className="w-full px-4 py-2.5 rounded-xl bg-surface-3 border-none text-[15px] text-ink focus:ring-2 focus:ring-brand"
               value={profileData.email}
               disabled
             />
           </div>
           <div>
-            <label htmlFor="phone" className="block text-[13px] font-medium text-[#86868b] mb-1">Phone (Optional)</label>
+            <label htmlFor="phone" className="block text-[13px] font-medium text-ink-muted mb-1">Phone (Optional)</label>
             <input
               type="tel"
               id="phone"
-              className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+              className="w-full px-4 py-2.5 rounded-xl bg-surface-3 border-none text-[15px] text-ink focus:ring-2 focus:ring-brand"
               value={profileData.phone}
               onChange={(e) => handleProfileInputChange('phone', e.target.value)}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="city" className="block text-[13px] font-medium text-[#86868b] mb-1">City (Optional)</label>
+              <label htmlFor="city" className="block text-[13px] font-medium text-ink-muted mb-1">City (Optional)</label>
               <input
                 type="text"
                 id="city"
-                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-3 border-none text-[15px] text-ink focus:ring-2 focus:ring-brand"
                 value={profileData.city}
                 onChange={(e) => handleProfileInputChange('city', e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="state" className="block text-[13px] font-medium text-[#86868b] mb-1">State/Province (Optional)</label>
+              <label htmlFor="state" className="block text-[13px] font-medium text-ink-muted mb-1">State/Province (Optional)</label>
               <input
                 type="text"
                 id="state"
-                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-3 border-none text-[15px] text-ink focus:ring-2 focus:ring-brand"
                 value={profileData.state}
                 onChange={(e) => handleProfileInputChange('state', e.target.value)}
               />
             </div>
             <div>
-              <label htmlFor="zipCode" className="block text-[13px] font-medium text-[#86868b] mb-1">Zip/Postal Code (Optional)</label>
+              <label htmlFor="zipCode" className="block text-[13px] font-medium text-ink-muted mb-1">Zip/Postal Code (Optional)</label>
               <input
                 type="text"
                 id="zipCode"
-                className="w-full px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border-none text-[15px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full px-4 py-2.5 rounded-xl bg-surface-3 border-none text-[15px] text-ink focus:ring-2 focus:ring-brand"
                 value={profileData.zipCode}
                 onChange={(e) => handleProfileInputChange('zipCode', e.target.value)}
               />
@@ -405,13 +405,13 @@ const OnboardingPage = () => {
 
   if (checkingCompleted) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#f5f5f7] dark:bg-[#1c1c1e]">
+      <div className="flex items-center justify-center min-h-screen bg-surface-2">
         <div className="text-center">
-          <div className="inline-flex h-20 w-20 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center mb-6 shadow-lg shadow-[#0071e3]/20">
+          <div className="inline-flex h-20 w-20 rounded-xl bg-gradient-to-br from-brand to-brand items-center justify-center mb-6 shadow-lg shadow-brand/20">
             <Sparkles className="h-10 w-10 text-white" />
           </div>
-          <h2 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white mb-2">Loading your workspace...</h2>
-          <p className="text-[15px] text-[#86868b]">Please wait a moment while we prepare your experience.</p>
+          <h2 className="text-2xl font-semibold text-ink mb-2">Loading your workspace...</h2>
+          <p className="text-[15px] text-ink-muted">Please wait a moment while we prepare your experience.</p>
         </div>
       </div>
     );
@@ -420,36 +420,36 @@ const OnboardingPage = () => {
   const currentStepContent = steps[currentStep];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1c1c1e] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-3xl bg-white dark:bg-[#1d1d1f] rounded-3xl shadow-xl border border-black/5 dark:border-white/5 overflow-hidden flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-surface-2 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-3xl bg-surface rounded-xl shadow-lg border border-black/5 dark:border-white/5 overflow-hidden flex flex-col lg:flex-row">
         {/* Left Sidebar (Steps) */}
-        <div className="lg:w-1/3 bg-black/5 dark:bg-white/5 p-6 lg:p-8 flex flex-col justify-between">
+        <div className="lg:w-1/3 bg-surface-3 p-6 lg:p-8 flex flex-col justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-[#1d1d1f] dark:text-white mb-6">Onboarding</h2>
+            <h2 className="text-xl font-semibold text-ink mb-6">Onboarding</h2>
             <ul className="space-y-4">
               {steps.map((step, index) => (
                 <li key={step.id} className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === currentStep ? 'bg-[#0071e3]' : 'bg-[#86868b]'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${index === currentStep ? 'bg-brand' : 'bg-ink-muted'}`}>
                     {index + 1}
                   </div>
-                  <span className={`text-[15px] font-medium ${index === currentStep ? 'text-[#1d1d1f] dark:text-white' : 'text-[#86868b]'}`}>{step.title}</span>
+                  <span className={`text-[15px] font-medium ${index === currentStep ? 'text-ink' : 'text-ink-muted'}`}>{step.title}</span>
                 </li>
               ))}
             </ul>
           </div>
           <div className="mt-8 lg:mt-0">
-            <p className="text-[13px] text-[#86868b]">Need help? Contact IT Support.</p>
+            <p className="text-[13px] text-ink-muted">Need help? Contact IT Support.</p>
           </div>
         </div>
 
         {/* Right Content (Current Step) */}
         <div className="lg:w-2/3 p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] text-white mb-6 shadow-lg shadow-[#0071e3]/20">
+            <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-brand to-brand text-white mb-6 shadow-lg shadow-brand/20">
               <currentStepContent.icon className="w-8 h-8" />
             </div>
-            <h2 className="text-3xl font-semibold text-[#1d1d1f] dark:text-white mb-2">{currentStepContent.title}</h2>
-            <p className="text-[17px] text-[#86868b] mb-8">{currentStepContent.description}</p>
+            <h2 className="text-3xl font-semibold text-ink mb-2">{currentStepContent.title}</h2>
+            <p className="text-[17px] text-ink-muted mb-8">{currentStepContent.description}</p>
             
             {currentStepContent.content}
           </div>
@@ -459,7 +459,7 @@ const OnboardingPage = () => {
             {currentStep > 0 && (
               <button
                 onClick={() => setCurrentStep(prev => prev - 1)}
-                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-[#1d1d1f] dark:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] transition-colors"
+                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-ink bg-surface-3 hover:bg-black/10 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Previous
@@ -468,7 +468,7 @@ const OnboardingPage = () => {
             {currentStep < steps.length - 1 && (
               <button
                 onClick={() => setCurrentStep(prev => prev + 1)}
-                className="ml-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-[#0071e3] hover:bg-[#0077ed] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] transition-colors"
+                className="ml-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-brand hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition-colors"
               >
                 Next
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -478,7 +478,7 @@ const OnboardingPage = () => {
               <button
                 onClick={handleCompleteOnboarding}
                 disabled={completing}
-                className="ml-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-[#0071e3] hover:bg-[#0077ed] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0071e3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="ml-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-[15px] font-medium rounded-xl shadow-sm text-white bg-brand hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {completing ? (
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -495,7 +495,7 @@ const OnboardingPage = () => {
             <div className="mt-4 text-center">
               <button
                 onClick={handleSkip}
-                className="text-[13px] text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+                className="text-[13px] text-ink-muted hover:text-ink dark:hover:text-white transition-colors"
               >
                 Skip for now
               </button>

@@ -25,11 +25,11 @@ const NextTutorials = ({ tutorials }) => {
   const getDifficultyIcon = (difficulty) => {
     switch (difficulty) {
       case 'beginner':
-        return <Star className="w-4 h-4 text-green-500 fill-current" />;
+        return <Star className="w-4 h-4 text-positive fill-current" />;
       case 'intermediate':
-        return <Star className="w-4 h-4 text-yellow-500 fill-current" />;
+        return <Star className="w-4 h-4 text-warning fill-current" />;
       case 'advanced':
-        return <Star className="w-4 h-4 text-red-500 fill-current" />;
+        return <Star className="w-4 h-4 text-danger fill-current" />;
       default:
         return <Star className="w-4 h-4 text-gray-500" />;
     }
@@ -43,7 +43,7 @@ const NextTutorials = ({ tutorials }) => {
 
   const getTutorialStatus = (tutorial) => {
     if (getPrerequisitesMet(tutorial)) {
-      return { status: 'available', color: 'text-green-600', bgColor: 'bg-green-50' };
+      return { status: 'available', color: 'text-positive', bgColor: 'bg-positive-soft' };
     } else {
       return { status: 'locked', color: 'text-gray-500', bgColor: 'bg-gray-50' };
     }
@@ -137,9 +137,9 @@ const NextTutorials = ({ tutorials }) => {
                         <Badge 
                           variant="outline" 
                           className={`text-xs ${
-                            tutorial.difficulty === 'beginner' ? 'border-green-200 text-green-700' :
-                            tutorial.difficulty === 'intermediate' ? 'border-yellow-200 text-yellow-700' :
-                            'border-red-200 text-red-700'
+                            tutorial.difficulty === 'beginner' ? 'border-green-200 text-positive' :
+                            tutorial.difficulty === 'intermediate' ? 'border-yellow-200 text-warning' :
+                            'border-red-200 text-danger'
                           }`}
                         >
                           {tutorial.difficulty}
@@ -193,8 +193,8 @@ const NextTutorials = ({ tutorials }) => {
                     
                     {/* Prerequisites info */}
                     {tutorial.prerequisites.length > 0 && !isAvailable && (
-                      <div className="mt-3 p-2 bg-yellow-50 rounded border border-yellow-200">
-                        <p className="text-xs text-yellow-800">
+                      <div className="mt-3 p-2 bg-warning-soft rounded border border-yellow-200">
+                        <p className="text-xs text-warning">
                           Complete prerequisite tutorials to unlock this content
                         </p>
                       </div>

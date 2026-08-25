@@ -115,9 +115,9 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
 
   const getEventColor = (event) => {
     switch (event.type) {
-      case 'leave': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
-      case 'meeting': return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
-      case 'training': return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case 'leave': return 'bg-warning-soft text-warning hover:bg-yellow-200';
+      case 'meeting': return 'bg-brand-soft text-brand hover:bg-blue-200';
+      case 'training': return 'bg-positive-soft text-positive hover:bg-green-200';
       default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
   };
@@ -205,13 +205,13 @@ const Calendar = ({ events = [], onDateClick, onEventClick }) => {
                     <div
                       key={dayIndex}
                       className={`min-h-[128px] border-r border-b border-gray-200 p-2 cursor-pointer hover:bg-gray-50 transition-colors ${
-                        isSelected ? 'bg-blue-50 border-blue-300' : ''
+                        isSelected ? 'bg-brand-soft border-blue-300' : ''
                       } ${!isCurrentMonth(date) ? 'bg-gray-50 text-gray-400' : ''}`}
                       onClick={() => handleDateClick(date)}
                     >
                       <div className="flex items-center justify-between h-6">
                         <span className={`text-sm font-medium ${
-                          isToday(date) ? 'bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
+                          isToday(date) ? 'bg-brand text-white rounded-full w-6 h-6 flex items-center justify-center' : ''
                         }`}>
                           {date.getDate()}
                         </span>

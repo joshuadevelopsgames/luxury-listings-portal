@@ -63,13 +63,13 @@ const Login = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] relative overflow-hidden">
+    <div className="min-h-screen bg-surface-2 relative overflow-hidden">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-soft/80 via-transparent to-brand-soft/50" />
       
       {/* Gradient shapes */}
-      <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl" />
-      <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl" />
+      <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-brand/10 to-brand/10 blur-3xl" />
+      <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-brand/10 to-[#ff2d55]/10 blur-3xl" />
 
       <div className="min-h-screen flex relative z-10">
         {/* Left Side - Branding & Features */}
@@ -82,23 +82,23 @@ const Login = () => {
               className="h-10 w-auto"
             />
             <div>
-              <h1 className="text-xl font-semibold text-[#1d1d1f] tracking-[-0.02em]">
+              <h1 className="text-xl font-semibold text-ink tracking-[-0.02em]">
                 Luxury Listings
               </h1>
-              <p className="text-[13px] text-[#86868b]">Professional Portal</p>
+              <p className="text-[13px] text-ink-muted">Professional Portal</p>
             </div>
           </div>
 
           {/* Hero Content */}
           <div className="max-w-lg">
-            <h2 className="text-[56px] font-semibold text-[#1d1d1f] leading-[1.05] tracking-[-0.03em] mb-6">
+            <h2 className="text-[56px] font-semibold text-ink leading-[1.05] tracking-[-0.03em] mb-6">
               Your team's workspace,
               <br />
-              <span className="bg-gradient-to-r from-[#0071e3] to-[#5856d6] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-brand to-brand bg-clip-text text-transparent">
                 all in one place.
               </span>
             </h2>
-            <p className="text-[19px] text-[#86868b] leading-relaxed font-normal mb-8">
+            <p className="text-[19px] text-ink-muted leading-relaxed font-normal mb-8">
               Manage clients, content calendars, tasks, and team operations from a single dashboard.
             </p>
           </div>
@@ -108,13 +108,13 @@ const Login = () => {
             {features.map((feature, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-2xl bg-white/60 backdrop-blur-xl border border-black/5"
+                className="p-4 rounded-xl bg-white/60 backdrop-blur-xl border border-black/5"
               >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center mb-3 shadow-lg shadow-[#0071e3]/20">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center mb-3 shadow-lg shadow-brand/20">
                   <feature.icon className="w-4 h-4 text-white" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-semibold text-[13px] text-[#1d1d1f] mb-0.5">{feature.title}</h3>
-                <p className="text-[12px] text-[#86868b]">{feature.desc}</p>
+                <h3 className="font-semibold text-[13px] text-ink mb-0.5">{feature.title}</h3>
+                <p className="text-[12px] text-ink-muted">{feature.desc}</p>
               </div>
             ))}
           </div>
@@ -131,26 +131,26 @@ const Login = () => {
                 className="h-10 w-auto"
               />
               <div>
-                <h1 className="text-xl font-semibold text-[#1d1d1f] tracking-[-0.02em]">
+                <h1 className="text-xl font-semibold text-ink tracking-[-0.02em]">
                   Luxury Listings
                 </h1>
-                <p className="text-[13px] text-[#86868b]">Professional Portal</p>
+                <p className="text-[13px] text-ink-muted">Professional Portal</p>
               </div>
             </div>
 
             {/* Login Card */}
-            <div className="bg-white/80 backdrop-blur-2xl rounded-3xl p-10 border border-black/5 shadow-2xl shadow-black/5">
+            <div className="bg-white/80 backdrop-blur-2xl rounded-xl p-10 border border-black/5 shadow-lg shadow-black/5">
               <div className="text-center mb-10">
-                <h2 className="text-[28px] font-semibold text-[#1d1d1f] tracking-[-0.02em] mb-2">
+                <h2 className="text-[28px] font-semibold text-ink tracking-[-0.02em] mb-2">
                   Welcome back
                 </h2>
-                <p className="text-[15px] text-[#86868b]">
+                <p className="text-[15px] text-ink-muted">
                   Sign in to access your dashboard
                 </p>
               </div>
 
               {error && (
-                <div className="mb-6 p-4 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] text-center font-medium">
+                <div className="mb-6 p-4 rounded-xl bg-danger/10 text-danger text-[13px] text-center font-medium">
                   {error}
                 </div>
               )}
@@ -158,7 +158,7 @@ const Login = () => {
               {/* Email/Password Form */}
               <form onSubmit={handleEmailSignIn} className="space-y-4 mb-6">
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868b]" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-muted" />
                   <input
                     type="email"
                     value={email}
@@ -166,16 +166,16 @@ const Login = () => {
                     placeholder="Email address"
                     className="
                       w-full h-[50px] pl-12 pr-4 rounded-xl
-                      bg-[#f5f5f7] border border-black/5
-                      text-[15px] text-[#1d1d1f]
-                      placeholder:text-[#86868b]
-                      focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]
+                      bg-surface-2 border border-black/5
+                      text-[15px] text-ink
+                      placeholder:text-ink-muted
+                      focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand
                       transition-all duration-200
                     "
                   />
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868b]" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-muted" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
@@ -183,17 +183,17 @@ const Login = () => {
                     placeholder="Password"
                     className="
                       w-full h-[50px] pl-12 pr-12 rounded-xl
-                      bg-[#f5f5f7] border border-black/5
-                      text-[15px] text-[#1d1d1f]
-                      placeholder:text-[#86868b]
-                      focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 focus:border-[#0071e3]
+                      bg-surface-2 border border-black/5
+                      text-[15px] text-ink
+                      placeholder:text-ink-muted
+                      focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand
                       transition-all duration-200
                     "
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -204,11 +204,11 @@ const Login = () => {
                   className="
                     w-full flex items-center justify-center gap-3
                     h-[50px] rounded-xl
-                    bg-[#0071e3]
+                    bg-brand
                     text-white
                     text-[15px] font-medium
-                    shadow-lg shadow-[#0071e3]/20
-                    hover:shadow-xl hover:bg-[#0077ed]
+                    shadow-lg shadow-brand/20
+                    hover:shadow-md hover:bg-brand-hover
                     active:scale-[0.98]
                     transition-all duration-200 ease-out
                     disabled:opacity-50 disabled:cursor-not-allowed
@@ -228,7 +228,7 @@ const Login = () => {
               {/* Divider */}
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex-1 h-px bg-black/10" />
-                <span className="text-[13px] text-[#86868b]">or</span>
+                <span className="text-[13px] text-ink-muted">or</span>
                 <div className="flex-1 h-px bg-black/10" />
               </div>
 
@@ -240,7 +240,7 @@ const Login = () => {
                   w-full flex items-center justify-center gap-3
                   h-[50px] rounded-xl
                   bg-white border border-black/10
-                  text-[#1d1d1f]
+                  text-ink
                   text-[15px] font-medium
                   shadow-sm
                   hover:shadow-md hover:border-black/20
@@ -251,7 +251,7 @@ const Login = () => {
                 "
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-[#1d1d1f]/30 border-t-[#1d1d1f] rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-ink/30 border-t-[#1d1d1f] rounded-full animate-spin" />
                 ) : (
                   <>
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -266,17 +266,17 @@ const Login = () => {
               </button>
 
               <div className="mt-10 pt-8 border-t border-black/5">
-                <p className="text-center text-[12px] text-[#86868b]">
+                <p className="text-center text-[12px] text-ink-muted">
                   By signing in, you agree to our{' '}
-                  <a href="#" className="text-[#0071e3] hover:underline">Terms</a>
+                  <a href="#" className="text-brand hover:underline">Terms</a>
                   {' '}and{' '}
-                  <a href="#" className="text-[#0071e3] hover:underline">Privacy Policy</a>
+                  <a href="#" className="text-brand hover:underline">Privacy Policy</a>
                 </p>
               </div>
             </div>
 
             {/* Security Badge */}
-            <div className="mt-8 flex items-center justify-center gap-2 text-[12px] text-[#86868b]">
+            <div className="mt-8 flex items-center justify-center gap-2 text-[12px] text-ink-muted">
               <Shield className="w-4 h-4" />
               <span>Secured with enterprise-grade encryption</span>
             </div>

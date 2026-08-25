@@ -143,15 +143,15 @@ const ClientCheckIn = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-positive-soft text-positive border-green-200';
       case 'completed':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-brand-soft text-brand border-blue-200';
       case 'pending_payment':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-warning-soft text-warning border-orange-200';
       case 'pending_approval':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-warning-soft text-warning border-yellow-200';
       case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-danger-soft text-danger border-red-200';
       case 'unknown':
         return 'bg-gray-100 text-gray-600 border-gray-200';
       default:
@@ -162,15 +162,15 @@ const ClientCheckIn = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'active':
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+        return <CheckCircle2 className="w-4 h-4 text-positive" />;
       case 'completed':
-        return <CheckCircle2 className="w-4 h-4 text-blue-500" />;
+        return <CheckCircle2 className="w-4 h-4 text-brand" />;
       case 'pending_payment':
-        return <DollarSign className="w-4 h-4 text-orange-500" />;
+        return <DollarSign className="w-4 h-4 text-warning" />;
       case 'pending_approval':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
+        return <Clock className="w-4 h-4 text-warning" />;
       case 'rejected':
-        return <XCircle className="w-4 h-4 text-red-500" />;
+        return <XCircle className="w-4 h-4 text-danger" />;
       case 'unknown':
         return <Clock className="w-4 h-4 text-gray-500" />;
       default:
@@ -186,9 +186,9 @@ const ClientCheckIn = () => {
     const diffTime = postingDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays < 0) return { text: 'Overdue', color: 'text-red-600' };
-    if (diffDays === 0) return { text: 'Due today', color: 'text-purple-600' };
-    if (diffDays === 1) return { text: 'Due tomorrow', color: 'text-indigo-600' };
+    if (diffDays < 0) return { text: 'Overdue', color: 'text-danger' };
+    if (diffDays === 0) return { text: 'Due today', color: 'text-brand' };
+    if (diffDays === 1) return { text: 'Due tomorrow', color: 'text-brand' };
     return { text: `${diffDays} days`, color: 'text-gray-600' };
   };
 
@@ -387,7 +387,7 @@ Joshua@luxury-listings.com`);
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
+            <Users className="w-5 h-5 text-brand" />
             Social Media Packages Dashboard
           </CardTitle>
           <Button 
@@ -404,7 +404,7 @@ Joshua@luxury-listings.com`);
                       <span>Last synced: {lastSync ? lastSync.toLocaleTimeString() : 'Never'}</span>
                       <span>• {clients.length} clients loaded</span>
                       <span>• {clients.filter(c => c.status === 'active').length} active packages</span>
-                      {error && <span className="text-red-600">• {error}</span>}
+                      {error && <span className="text-danger">• {error}</span>}
                     </div>
       </CardHeader>
       
@@ -451,7 +451,7 @@ Joshua@luxury-listings.com`);
                         {client.status.replace('_', ' ')}
                       </Badge>
                       {client.pricePaid && (
-                        <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-200">
+                        <Badge variant="outline" className="text-xs bg-positive-soft text-positive border-green-200">
                           {client.pricePaid}
                         </Badge>
                       )}
@@ -501,7 +501,7 @@ Joshua@luxury-listings.com`);
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="text-xs bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                          className="text-xs bg-positive-soft text-positive border-green-200 hover:bg-positive-soft"
                           onClick={() => openApprovalModal(client, 'approve')}
                           disabled={approvalLoading[client.id]}
                         >
@@ -511,7 +511,7 @@ Joshua@luxury-listings.com`);
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="text-xs bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                          className="text-xs bg-danger-soft text-danger border-red-200 hover:bg-danger-soft"
                           onClick={() => openApprovalModal(client, 'reject')}
                           disabled={approvalLoading[client.id]}
                         >
@@ -526,7 +526,7 @@ Joshua@luxury-listings.com`);
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="text-xs bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                        className="text-xs bg-brand-soft text-brand border-blue-200 hover:bg-brand-soft"
                         onClick={() => openClientCard(client)}
                         disabled={approvalLoading[client.id]}
                       >
@@ -629,7 +629,7 @@ Joshua@luxury-listings.com`);
                 <textarea
                   value={approvalNotes}
                   onChange={(e) => setApprovalNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                   rows={3}
                   placeholder="Add any notes about this approval..."
                 />
@@ -642,7 +642,7 @@ Joshua@luxury-listings.com`);
                   <Button
                     onClick={() => handleApproval(true)}
                     disabled={approvalLoading[selectedClient.id]}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    className="flex-1 bg-positive hover:bg-positive-hover text-white"
                   >
                     <ThumbsUp className="w-4 h-4 mr-2" />
                     {approvalLoading[selectedClient.id] ? 'Approving...' : 'Approve'}
@@ -650,7 +650,7 @@ Joshua@luxury-listings.com`);
                   <Button
                     onClick={() => handleApproval(false)}
                     disabled={approvalLoading[selectedClient.id]}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    className="flex-1 bg-danger hover:bg-danger-hover text-white"
                   >
                     <ThumbsDown className="w-4 h-4 mr-2" />
                     {approvalLoading[selectedClient.id] ? 'Rejecting...' : 'Reject'}
@@ -659,7 +659,7 @@ Joshua@luxury-listings.com`);
               ) : (
                 <Button
                   onClick={() => setShowApprovalModal(false)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 bg-brand hover:bg-brand-hover text-white"
                 >
                   Close
                 </Button>
@@ -707,7 +707,7 @@ Joshua@luxury-listings.com`);
                 <select
                   value={editForm.packageType}
                   onChange={(e) => setEditForm({...editForm, packageType: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="Standard">Standard</option>
                   <option value="Silver">Silver</option>
@@ -734,7 +734,7 @@ Joshua@luxury-listings.com`);
                       postsRemaining: Math.max(0, newRemaining)
                     });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   {[...Array(15)].map((_, i) => (
                     <option key={i + 1} value={i + 1}>{i + 1} post{i + 1 !== 1 ? 's' : ''}</option>
@@ -758,7 +758,7 @@ Joshua@luxury-listings.com`);
                       postsRemaining: Math.max(0, newRemaining)
                     });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   {[...Array(editForm.packageSize + 1)].map((_, i) => (
                     <option key={i} value={i}>{i} post{i !== 1 ? 's' : ''}</option>
@@ -788,7 +788,7 @@ Joshua@luxury-listings.com`);
                 <select
                   value={editForm.postedOn}
                   onChange={(e) => setEditForm({...editForm, postedOn: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="Luxury Listings">Luxury Listings</option>
                   <option value="Mansions">Mansions</option>
@@ -807,7 +807,7 @@ Joshua@luxury-listings.com`);
                 <select
                   value={editForm.paymentStatus}
                   onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="Pending">Pending</option>
                   <option value="Paid">Paid</option>
@@ -825,7 +825,7 @@ Joshua@luxury-listings.com`);
               <textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 rows={4}
                 placeholder="Add or update notes about this client package..."
               />
@@ -833,8 +833,8 @@ Joshua@luxury-listings.com`);
 
             {/* Validation Message */}
             {editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">
+              <div className="mt-4 p-3 bg-danger-soft border border-red-200 rounded-md">
+                <p className="text-sm text-danger">
                   ⚠️ Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
                 </p>
               </div>
@@ -845,7 +845,7 @@ Joshua@luxury-listings.com`);
               <Button
                 onClick={handleEditSubmit}
                 disabled={approvalLoading[editingClient.id] || editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400"
+                className="flex-1 bg-brand hover:bg-brand-hover text-white disabled:bg-gray-400"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 {approvalLoading[editingClient.id] ? 'Updating...' : 'Update Package'}

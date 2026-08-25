@@ -38,29 +38,29 @@ const SalesPipelinePage = () => {
       id: 'proposal',
       name: 'Proposal',
       deals: [],
-      color: 'bg-blue-100',
-      textColor: 'text-blue-800'
+      color: 'bg-brand-soft',
+      textColor: 'text-brand'
     },
     {
       id: 'negotiation',
       name: 'Negotiation',
       deals: [],
-      color: 'bg-yellow-100',
-      textColor: 'text-yellow-800'
+      color: 'bg-warning-soft',
+      textColor: 'text-warning'
     },
     {
       id: 'closing',
       name: 'Closing',
       deals: [],
-      color: 'bg-green-100',
-      textColor: 'text-green-800'
+      color: 'bg-positive-soft',
+      textColor: 'text-positive'
     }
   ]);
 
   const getProbabilityColor = (probability) => {
-    if (probability >= 80) return 'bg-green-100 text-green-800';
-    if (probability >= 60) return 'bg-yellow-100 text-yellow-800';
-    if (probability >= 40) return 'bg-blue-100 text-blue-800';
+    if (probability >= 80) return 'bg-positive-soft text-positive';
+    if (probability >= 60) return 'bg-warning-soft text-warning';
+    if (probability >= 40) return 'bg-brand-soft text-brand';
     return 'bg-gray-100 text-gray-800';
   };
 
@@ -87,7 +87,7 @@ const SalesPipelinePage = () => {
           <h1 className="text-3xl font-bold text-gray-900">Sales Pipeline</h1>
           <p className="text-gray-600 mt-2">Track your deals through the sales process</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setShowAddModal(true)} className="bg-brand hover:bg-brand-hover">
           <Plus className="w-4 h-4 mr-2" />
           Add New Deal
         </Button>
@@ -95,57 +95,57 @@ const SalesPipelinePage = () => {
 
       {/* Pipeline Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-gradient-to-r from-brand-soft to-brand-soft border-blue-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-600 mb-2">Total Pipeline Value</p>
+                <p className="text-sm font-medium text-brand mb-2">Total Pipeline Value</p>
                 <p className="text-3xl font-bold text-blue-900">${(totalPipelineValue / 1000000).toFixed(1)}M</p>
               </div>
               <div className="p-3 rounded-full bg-blue-200">
-                <DollarSign className="w-6 h-6 text-blue-600" />
+                <DollarSign className="w-6 h-6 text-brand" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+        <Card className="bg-gradient-to-r from-positive-soft to-positive-soft border-green-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600 mb-2">Active Deals</p>
+                <p className="text-sm font-medium text-positive mb-2">Active Deals</p>
                 <p className="text-3xl font-bold text-green-900">{totalDeals}</p>
               </div>
               <div className="p-3 rounded-full bg-green-200">
-                <Target className="w-6 h-6 text-green-600" />
+                <Target className="w-6 h-6 text-positive" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+        <Card className="bg-gradient-to-r from-brand-soft to-brand-soft border-purple-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-600 mb-2">Weighted Value</p>
+                <p className="text-sm font-medium text-brand mb-2">Weighted Value</p>
                 <p className="text-3xl font-bold text-purple-900">${(weightedValue / 1000000).toFixed(1)}M</p>
               </div>
               <div className="p-3 rounded-full bg-purple-200">
-                <TrendingUp className="w-6 h-6 text-purple-600" />
+                <TrendingUp className="w-6 h-6 text-brand" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+        <Card className="bg-gradient-to-r from-warning-soft to-warning-soft border-orange-200">
           <CardContent className="p-6 pt-8">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-600 mb-2">Avg. Deal Size</p>
+                <p className="text-sm font-medium text-warning mb-2">Avg. Deal Size</p>
                 <p className="text-3xl font-bold text-orange-900">${(totalPipelineValue / totalDeals / 1000000).toFixed(1)}M</p>
               </div>
               <div className="p-3 rounded-full bg-orange-200">
-                <Users className="w-6 h-6 text-orange-600" />
+                <Users className="w-6 h-6 text-warning" />
               </div>
             </div>
           </CardContent>
@@ -267,7 +267,7 @@ const SalesPipelinePage = () => {
               </div>
               
               <div className="flex items-center gap-2 pt-4">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-brand hover:bg-brand-hover">
                   <Edit className="w-4 h-4 mr-2" />
                   Update Deal
                 </Button>

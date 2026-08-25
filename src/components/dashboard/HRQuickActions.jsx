@@ -12,7 +12,10 @@ import {
   UserCheck,
   UserPlus,
   TrendingUp,
-  FileText
+  FileText,
+  Palmtree,
+  Stethoscope,
+  Laptop
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { safeFormatDate, safeFormatDateRange } from '../../utils/dateUtils';
@@ -50,12 +53,12 @@ const HRQuickActions = () => {
   const todayAbsences = [];
   const recentHires = [];
 
-  const getLeaveTypeEmoji = (type) => {
+  const getLeaveTypeIcon = (type) => {
     switch (type) {
-      case 'vacation': return '🏖️';
-      case 'sick': return '🏥';
-      case 'remote': return '💻';
-      default: return '📅';
+      case 'vacation': return Palmtree;
+      case 'sick': return Stethoscope;
+      case 'remote': return Laptop;
+      default: return Calendar;
     }
   };
 
@@ -66,10 +69,10 @@ const HRQuickActions = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
+              <Calendar className="w-5 h-5 text-brand" />
               <span>Pending Leave Requests</span>
             </CardTitle>
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            <Badge variant="outline" className="bg-warning-soft text-warning border-yellow-200">
               {pendingLeaveRequests.length} Pending
             </Badge>
           </div>
@@ -79,7 +82,7 @@ const HRQuickActions = () => {
             {pendingLeaveRequests.map((request) => (
               <div key={request.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getLeaveTypeEmoji(request.type)}</span>
+                  {React.createElement(getLeaveTypeIcon(request.type), { className: "w-5 h-5 text-ink-muted" })}
                   <div>
                     <p className="font-medium text-gray-900">{request.employeeName}</p>
                     <p className="text-sm text-gray-600">
@@ -88,10 +91,10 @@ const HRQuickActions = () => {
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                  <Button size="sm" variant="outline" className="text-positive hover:text-positive hover:bg-positive-soft">
                     <CheckCircle className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <Button size="sm" variant="outline" className="text-danger hover:text-danger hover:bg-danger-soft">
                     <AlertCircle className="w-4 h-4" />
                   </Button>
                 </div>
@@ -113,10 +116,10 @@ const HRQuickActions = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
-              <UserCheck className="w-5 h-5 text-green-600" />
+              <UserCheck className="w-5 h-5 text-positive" />
               <span>Today's Team Status</span>
             </CardTitle>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Badge variant="outline" className="bg-positive-soft text-positive border-green-200">
               23 Present
             </Badge>
           </div>
@@ -131,9 +134,9 @@ const HRQuickActions = () => {
               </h4>
               <div className="space-y-2">
                 {todayAbsences.map((absence, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-red-50 rounded">
+                  <div key={index} className="flex items-center justify-between p-2 bg-danger-soft rounded">
                     <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-red-600" />
+                      <User className="w-4 h-4 text-danger" />
                       <span className="text-sm font-medium text-gray-900">{absence.name}</span>
                     </div>
                     <span className="text-xs text-gray-600">{absence.reason}</span>
@@ -151,19 +154,19 @@ const HRQuickActions = () => {
                 </h4>
                 <div className="space-y-2">
                   {recentHires.map((hire, index) => (
-                    <div key={index} className="p-3 bg-blue-50 rounded-lg">
+                    <div key={index} className="p-3 bg-brand-soft rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div>
                           <p className="text-sm font-medium text-gray-900">{hire.name}</p>
                           <p className="text-xs text-gray-600">{hire.position}</p>
                         </div>
-                        <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+                        <Badge variant="secondary" className="bg-blue-200 text-brand">
                           {hire.onboardingProgress}%
                         </Badge>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                          className="bg-brand h-2 rounded-full" 
                           style={{ width: `${hire.onboardingProgress}%` }}
                         ></div>
                       </div>
@@ -189,10 +192,10 @@ const HRQuickActions = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
+              <TrendingUp className="w-5 h-5 text-brand" />
               <span>Upcoming Reviews</span>
             </CardTitle>
-            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+            <Badge variant="outline" className="bg-brand-soft text-brand border-purple-200">
               {upcomingReviews.length} Scheduled
             </Badge>
           </div>
@@ -202,8 +205,8 @@ const HRQuickActions = () => {
             {upcomingReviews.map((review) => (
               <div key={review.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-purple-100 rounded">
-                    <FileText className="w-4 h-4 text-purple-600" />
+                  <div className="p-2 bg-brand-soft rounded">
+                    <FileText className="w-4 h-4 text-brand" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{review.employeeName}</p>
@@ -230,7 +233,7 @@ const HRQuickActions = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-orange-600" />
+            <Calendar className="w-5 h-5 text-warning" />
             <span>Quick Actions</span>
           </CardTitle>
         </CardHeader>
@@ -241,7 +244,7 @@ const HRQuickActions = () => {
               className="flex flex-col items-center justify-center h-24 space-y-2"
               onClick={() => navigate('/hr-calendar')}
             >
-              <Calendar className="w-6 h-6 text-blue-600" />
+              <Calendar className="w-6 h-6 text-brand" />
               <span className="text-sm font-medium">HR Calendar</span>
             </Button>
             <Button 
@@ -249,7 +252,7 @@ const HRQuickActions = () => {
               className="flex flex-col items-center justify-center h-24 space-y-2"
               onClick={() => navigate('/hr-analytics')}
             >
-              <TrendingUp className="w-6 h-6 text-purple-600" />
+              <TrendingUp className="w-6 h-6 text-brand" />
               <span className="text-sm font-medium">Team Analytics</span>
             </Button>
             <Button 
@@ -257,7 +260,7 @@ const HRQuickActions = () => {
               className="flex flex-col items-center justify-center h-24 space-y-2"
               onClick={() => navigate('/team')}
             >
-              <User className="w-6 h-6 text-green-600" />
+              <User className="w-6 h-6 text-positive" />
               <span className="text-sm font-medium">Team Directory</span>
             </Button>
             <Button 
@@ -265,7 +268,7 @@ const HRQuickActions = () => {
               className="flex flex-col items-center justify-center h-24 space-y-2"
               onClick={() => navigate('/permissions')}
             >
-              <UserPlus className="w-6 h-6 text-orange-600" />
+              <UserPlus className="w-6 h-6 text-warning" />
               <span className="text-sm font-medium">Manage Users</span>
             </Button>
           </div>

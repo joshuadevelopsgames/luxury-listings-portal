@@ -8,43 +8,98 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        editorial: ['"Cormorant Garamond"', 'Cormorant Garamond', 'Georgia', 'serif'],
-        inter: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        // Instrument Sans is the UI face. Nothing previously set a
+        // font-family at all, so the app had been rendering in the OS
+        // system font despite loading a webfont.
+        sans: ['"Instrument Sans"', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        editorial: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        inter: ['"Instrument Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        // The legacy shadcn token names now resolve to the design system,
+        // so <Button>, <Card> and <Badge> follow the theme instead of the
+        // old blue. Keeping the names means no call sites had to change.
+        border: "var(--ds-hairline)",
+        input: "var(--ds-hairline-2)",
+        ring: "var(--ds-accent)",
+        background: "var(--ds-bg)",
+        foreground: "var(--ds-ink)",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "var(--ds-accent)",
+          foreground: "var(--ds-accent-fg)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "var(--ds-surface-3)",
+          foreground: "var(--ds-ink)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "var(--ds-danger)",
+          foreground: "#ffffff",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "var(--ds-surface-3)",
+          foreground: "var(--ds-ink-muted)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "var(--ds-surface-3)",
+          foreground: "var(--ds-ink)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "var(--ds-surface)",
+          foreground: "var(--ds-ink)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "var(--ds-surface)",
+          foreground: "var(--ds-ink)",
         },
+
+        // ══ Design system ══════════════════════════════════════════════
+        // Defined in src/index.css and flipped by the `.dark` class, so a
+        // single utility covers both themes: `text-ink` replaces
+        // `text-[#1d1d1f] dark:text-white`.
+        canvas: "var(--ds-bg)",
+        surface: {
+          DEFAULT: "var(--ds-surface)",
+          2: "var(--ds-surface-2)",
+          3: "var(--ds-surface-3)",
+        },
+        hairline: {
+          DEFAULT: "var(--ds-hairline)",
+          strong: "var(--ds-hairline-2)",
+        },
+        ink: {
+          DEFAULT: "var(--ds-ink)",
+          muted: "var(--ds-ink-muted)",
+          subtle: "var(--ds-ink-subtle)",
+        },
+        brand: {
+          DEFAULT: "var(--ds-accent)",
+          hover: "var(--ds-accent-hover)",
+          soft: "var(--ds-accent-soft)",
+          fg: "var(--ds-accent-fg)",
+        },
+        positive: {
+          DEFAULT: "var(--ds-positive)",
+          soft: "var(--ds-positive-soft)",
+        },
+        warning: {
+          DEFAULT: "var(--ds-warning)",
+          soft: "var(--ds-warning-soft)",
+        },
+        danger: {
+          DEFAULT: "var(--ds-danger)",
+          soft: "var(--ds-danger-soft)",
+        },
+        info: {
+          DEFAULT: "var(--ds-info)",
+          soft: "var(--ds-info-soft)",
+        },
+      },
+      boxShadow: {
+        sm: "var(--ds-shadow-sm)",
+        DEFAULT: "var(--ds-shadow-sm)",
+        md: "var(--ds-shadow-md)",
+        lg: "var(--ds-shadow-lg)",
       },
       borderRadius: {
         lg: "var(--radius)",

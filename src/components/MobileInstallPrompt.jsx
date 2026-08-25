@@ -84,7 +84,7 @@ export default function MobileInstallPrompt() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-slide-up">
-      <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden max-w-lg mx-auto">
+      <div className="bg-surface rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden max-w-lg mx-auto">
         {/* Header */}
         <div className="p-4 pb-2 flex items-start gap-3">
           <img 
@@ -121,15 +121,15 @@ export default function MobileInstallPrompt() {
               </p>
               <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
                 <li className="flex items-center gap-2">
-                  <span className="flex-shrink-0 w-5 h-5 bg-[#0071e3] text-white rounded-full flex items-center justify-center text-xs font-medium">1</span>
+                  <span className="flex-shrink-0 w-5 h-5 bg-brand text-white rounded-full flex items-center justify-center text-xs font-medium">1</span>
                   <span>Tap the <strong>Share</strong> button <ShareIcon /></span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="flex-shrink-0 w-5 h-5 bg-[#0071e3] text-white rounded-full flex items-center justify-center text-xs font-medium">2</span>
+                  <span className="flex-shrink-0 w-5 h-5 bg-brand text-white rounded-full flex items-center justify-center text-xs font-medium">2</span>
                   <span>Scroll and tap <strong>"Add to Home Screen"</strong></span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="flex-shrink-0 w-5 h-5 bg-[#0071e3] text-white rounded-full flex items-center justify-center text-xs font-medium">3</span>
+                  <span className="flex-shrink-0 w-5 h-5 bg-brand text-white rounded-full flex items-center justify-center text-xs font-medium">3</span>
                   <span>Tap <strong>"Add"</strong> in the top right</span>
                 </li>
               </ol>
@@ -152,7 +152,7 @@ export default function MobileInstallPrompt() {
             {!isIOS && deferredPrompt && (
               <button
                 onClick={handleInstall}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#0071e3] rounded-xl hover:bg-[#0077ed] transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-brand rounded-xl hover:bg-brand-hover transition-colors"
               >
                 Install App
               </button>
@@ -160,7 +160,7 @@ export default function MobileInstallPrompt() {
             {isIOS && (
               <button
                 onClick={handleDismiss}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-[#0071e3] rounded-xl hover:bg-[#0077ed] transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-brand rounded-xl hover:bg-brand-hover transition-colors"
               >
                 Got It
               </button>
@@ -176,7 +176,7 @@ export default function MobileInstallPrompt() {
 function ShareIcon() {
   return (
     <svg 
-      className="inline-block w-4 h-4 ml-1 text-[#0071e3]" 
+      className="inline-block w-4 h-4 ml-1 text-brand" 
       fill="none" 
       viewBox="0 0 24 24" 
       stroke="currentColor"

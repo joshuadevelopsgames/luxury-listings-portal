@@ -50,23 +50,23 @@ const ClientsPage = () => {
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
+        <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em] mb-1">
           Clients List
         </h1>
-        <p className="text-[15px] sm:text-[17px] text-[#86868b]">
+        <p className="text-[15px] sm:text-[17px] text-ink-muted">
           Manage SMM client profiles and internal accounts
         </p>
       </div>
       
       {/* Tab Navigation */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/10 rounded-xl">
+        <div className="flex gap-2 p-1 bg-surface-3 rounded-xl">
           <button
             onClick={() => handleTabChange('profiles')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
               activeTab === 'profiles'
-                ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-surface text-ink shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -76,8 +76,8 @@ const ClientsPage = () => {
             onClick={() => handleTabChange('internal')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-all ${
               activeTab === 'internal'
-                ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-surface text-ink shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <FolderOpen className="w-4 h-4" />
@@ -89,7 +89,7 @@ const ClientsPage = () => {
         {canManageClients && activeTab === 'profiles' && (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('openAddClientModal'))}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Client
@@ -98,7 +98,7 @@ const ClientsPage = () => {
         {canManageClients && activeTab === 'internal' && (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('openAddClientModal', { detail: { isInternal: true } }))}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Internal Account

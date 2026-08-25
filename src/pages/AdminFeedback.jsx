@@ -20,17 +20,17 @@ import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
 const PRIORITY_COLORS = {
-  low: { bg: 'bg-[#34c759]/10', text: 'text-[#34c759]', label: 'Low' },
-  medium: { bg: 'bg-[#ff9500]/10', text: 'text-[#ff9500]', label: 'Medium' },
-  high: { bg: 'bg-[#ff3b30]/10', text: 'text-[#ff3b30]', label: 'High' },
-  critical: { bg: 'bg-[#af52de]/10', text: 'text-[#af52de]', label: 'Critical' }
+  low: { bg: 'bg-positive/10', text: 'text-positive', label: 'Low' },
+  medium: { bg: 'bg-warning/10', text: 'text-warning', label: 'Medium' },
+  high: { bg: 'bg-danger/10', text: 'text-danger', label: 'High' },
+  critical: { bg: 'bg-brand/10', text: 'text-brand', label: 'Critical' }
 };
 
 const STATUS_OPTIONS = [
-  { value: 'open', label: 'Open', icon: Clock, color: 'text-[#0071e3]' },
-  { value: 'in_progress', label: 'In Progress', icon: AlertCircle, color: 'text-[#ff9500]' },
-  { value: 'resolved', label: 'Resolved', icon: CheckCircle2, color: 'text-[#34c759]' },
-  { value: 'closed', label: 'Closed', icon: CheckCircle2, color: 'text-[#86868b]' }
+  { value: 'open', label: 'Open', icon: Clock, color: 'text-brand' },
+  { value: 'in_progress', label: 'In Progress', icon: AlertCircle, color: 'text-warning' },
+  { value: 'resolved', label: 'Resolved', icon: CheckCircle2, color: 'text-positive' },
+  { value: 'closed', label: 'Closed', icon: CheckCircle2, color: 'text-ink-muted' }
 ];
 
 export default function AdminFeedback() {
@@ -104,50 +104,50 @@ export default function AdminFeedback() {
   }), [feedback]);
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#000] p-6">
+    <div className="min-h-screen bg-surface-2 dark:bg-[#000] p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">Feedback & Reports</h1>
-          <p className="text-[15px] text-[#86868b]">Manage bug reports and feature requests</p>
+          <h1 className="text-[28px] font-semibold text-ink">Feedback & Reports</h1>
+          <p className="text-[15px] text-ink-muted">Manage bug reports and feature requests</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[12px] text-[#86868b] mb-1">Total</p>
-            <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{stats.total}</p>
+          <div className="bg-surface rounded-xl p-4 border border-hairline">
+            <p className="text-[12px] text-ink-muted mb-1">Total</p>
+            <p className="text-[24px] font-semibold text-ink">{stats.total}</p>
           </div>
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[12px] text-[#86868b] mb-1">Bug Reports</p>
-            <p className="text-[24px] font-semibold text-[#ff3b30]">{stats.bugs}</p>
+          <div className="bg-surface rounded-xl p-4 border border-hairline">
+            <p className="text-[12px] text-ink-muted mb-1">Bug Reports</p>
+            <p className="text-[24px] font-semibold text-danger">{stats.bugs}</p>
           </div>
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[12px] text-[#86868b] mb-1">Feature Requests</p>
-            <p className="text-[24px] font-semibold text-[#ff9500]">{stats.features}</p>
+          <div className="bg-surface rounded-xl p-4 border border-hairline">
+            <p className="text-[12px] text-ink-muted mb-1">Feature Requests</p>
+            <p className="text-[24px] font-semibold text-warning">{stats.features}</p>
           </div>
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-4 border border-black/5 dark:border-white/10">
-            <p className="text-[12px] text-[#86868b] mb-1">Open</p>
-            <p className="text-[24px] font-semibold text-[#0071e3]">{stats.open}</p>
+          <div className="bg-surface rounded-xl p-4 border border-hairline">
+            <p className="text-[12px] text-ink-muted mb-1">Open</p>
+            <p className="text-[24px] font-semibold text-brand">{stats.open}</p>
           </div>
         </div>
 
         {/* Filters */}
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search feedback..."
-              className="w-full h-10 pl-10 pr-4 rounded-xl bg-white dark:bg-[#1c1c1e] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+              className="w-full h-10 pl-10 pr-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="h-10 px-4 rounded-xl bg-white dark:bg-[#1c1c1e] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+            className="h-10 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="all">All Types</option>
             <option value="bug">Bug Reports</option>
@@ -156,7 +156,7 @@ export default function AdminFeedback() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-4 rounded-xl bg-white dark:bg-[#1c1c1e] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+            className="h-10 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="all">All Status</option>
             <option value="open">Open</option>
@@ -169,12 +169,12 @@ export default function AdminFeedback() {
         {/* Feedback List */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredFeedback.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/5 dark:border-white/10">
-            <Filter className="w-10 h-10 text-[#86868b] mx-auto mb-3 opacity-50" />
-            <p className="text-[15px] text-[#86868b]">No feedback found</p>
+          <div className="text-center py-12 bg-surface rounded-xl border border-hairline">
+            <Filter className="w-10 h-10 text-ink-muted mx-auto mb-3 opacity-50" />
+            <p className="text-[15px] text-ink-muted">No feedback found</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -187,7 +187,7 @@ export default function AdminFeedback() {
               return (
                 <div
                   key={item.id}
-                  className="bg-white dark:bg-[#1c1c1e] rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden"
+                  className="bg-surface rounded-xl border border-hairline overflow-hidden"
                 >
                   {/* Header */}
                   <div
@@ -195,24 +195,24 @@ export default function AdminFeedback() {
                     className="flex items-center gap-4 p-4 cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      item.type === 'bug' ? 'bg-[#ff3b30]/10' : 'bg-[#ff9500]/10'
+                      item.type === 'bug' ? 'bg-danger/10' : 'bg-warning/10'
                     }`}>
                       {item.type === 'bug' ? (
-                        <Bug className="w-5 h-5 text-[#ff3b30]" />
+                        <Bug className="w-5 h-5 text-danger" />
                       ) : (
-                        <Lightbulb className="w-5 h-5 text-[#ff9500]" />
+                        <Lightbulb className="w-5 h-5 text-warning" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-[15px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                        <h3 className="text-[15px] font-medium text-ink truncate">
                           {item.title}
                         </h3>
                         <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${priority.bg} ${priority.text}`}>
                           {priority.label}
                         </span>
                       </div>
-                      <p className="text-[13px] text-[#86868b]">
+                      <p className="text-[13px] text-ink-muted">
                         {item.userName || item.userEmail} • {item.createdAt?.toDate ? format(item.createdAt.toDate(), 'MMM d, yyyy') : 'Unknown date'}
                       </p>
                     </div>
@@ -224,39 +224,39 @@ export default function AdminFeedback() {
                           handleStatusChange(item.id, e.target.value);
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className={`h-8 px-3 rounded-lg text-[12px] font-medium border-0 focus:outline-none focus:ring-2 focus:ring-[#0071e3] ${
-                          item.status === 'open' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
-                          item.status === 'in_progress' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                          item.status === 'resolved' ? 'bg-[#34c759]/10 text-[#34c759]' :
-                          'bg-[#86868b]/10 text-[#86868b]'
+                        className={`h-8 px-3 rounded-lg text-[12px] font-medium border-0 focus:outline-none focus:ring-2 focus:ring-brand ${
+                          item.status === 'open' ? 'bg-brand/10 text-brand' :
+                          item.status === 'in_progress' ? 'bg-warning/10 text-warning' :
+                          item.status === 'resolved' ? 'bg-positive/10 text-positive' :
+                          'bg-ink-muted/10 text-ink-muted'
                         }`}
                       >
                         {STATUS_OPTIONS.map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
-                      <ChevronDown className={`w-5 h-5 text-[#86868b] transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-5 h-5 text-ink-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </div>
                   </div>
 
                   {/* Expanded Content */}
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-0 border-t border-black/5 dark:border-white/10">
+                    <div className="px-4 pb-4 pt-0 border-t border-hairline">
                       <div className="pt-4 space-y-4">
                         <div>
-                          <p className="text-[12px] font-medium text-[#86868b] mb-1">Description</p>
-                          <p className="text-[14px] text-[#1d1d1f] dark:text-white whitespace-pre-wrap">
+                          <p className="text-[12px] font-medium text-ink-muted mb-1">Description</p>
+                          <p className="text-[14px] text-ink whitespace-pre-wrap">
                             {item.description}
                           </p>
                         </div>
                         {item.url && (
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Page URL</p>
+                            <p className="text-[12px] font-medium text-ink-muted mb-1">Page URL</p>
                             <a
                               href={item.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[14px] text-[#0071e3] hover:underline flex items-center gap-1"
+                              className="text-[14px] text-brand hover:underline flex items-center gap-1"
                             >
                               {item.url}
                               <ExternalLink className="w-3 h-3" />
@@ -267,18 +267,18 @@ export default function AdminFeedback() {
                         {/* Selected Element Info */}
                         {item.selectedElement && (
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Selected Element</p>
-                            <div className="p-3 rounded-lg bg-black/5 dark:bg-white/5 text-[13px] font-mono">
-                              <p className="text-[#1d1d1f] dark:text-white">
+                            <p className="text-[12px] font-medium text-ink-muted mb-1">Selected Element</p>
+                            <div className="p-3 rounded-lg bg-surface-3 text-[13px] font-mono">
+                              <p className="text-ink">
                                 &lt;{item.selectedElement.tagName?.toLowerCase()}&gt;
-                                {item.selectedElement.id && <span className="text-[#0071e3]"> #{item.selectedElement.id}</span>}
-                                {item.selectedElement.className && <span className="text-[#ff9500]"> .{item.selectedElement.className.split(' ')[0]}</span>}
+                                {item.selectedElement.id && <span className="text-brand"> #{item.selectedElement.id}</span>}
+                                {item.selectedElement.className && <span className="text-warning"> .{item.selectedElement.className.split(' ')[0]}</span>}
                               </p>
                               {item.selectedElement.textContent && (
-                                <p className="text-[#86868b] mt-1 truncate">Text: "{item.selectedElement.textContent.substring(0, 100)}"</p>
+                                <p className="text-ink-muted mt-1 truncate">Text: "{item.selectedElement.textContent.substring(0, 100)}"</p>
                               )}
                               {item.selectedElement.xpath && (
-                                <p className="text-[#86868b] mt-1 text-[11px]">XPath: {item.selectedElement.xpath}</p>
+                                <p className="text-ink-muted mt-1 text-[11px]">XPath: {item.selectedElement.xpath}</p>
                               )}
                             </div>
                           </div>
@@ -287,8 +287,8 @@ export default function AdminFeedback() {
                         {/* User Info */}
                         {item.userInfo && (
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Browser Info</p>
-                            <div className="p-3 rounded-lg bg-black/5 dark:bg-white/5 text-[12px] text-[#86868b]">
+                            <p className="text-[12px] font-medium text-ink-muted mb-1">Browser Info</p>
+                            <div className="p-3 rounded-lg bg-surface-3 text-[12px] text-ink-muted">
                               <p>Viewport: {item.userInfo.viewport?.width}x{item.userInfo.viewport?.height}</p>
                               <p className="truncate">UA: {item.userInfo.userAgent?.substring(0, 80)}...</p>
                             </div>
@@ -298,13 +298,13 @@ export default function AdminFeedback() {
                         {/* Console Logs */}
                         {item.consoleLogs && item.consoleLogs.length > 0 && (
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Console Logs ({item.consoleLogs.length})</p>
-                            <div className="max-h-[200px] overflow-y-auto p-3 rounded-lg bg-[#1d1d1f] text-[11px] font-mono">
+                            <p className="text-[12px] font-medium text-ink-muted mb-1">Console Logs ({item.consoleLogs.length})</p>
+                            <div className="max-h-[200px] overflow-y-auto p-3 rounded-lg bg-ink text-[11px] font-mono">
                               {item.consoleLogs.slice(-50).map((log, idx) => (
                                 <div key={idx} className={`py-0.5 ${
-                                  log.type === 'error' ? 'text-[#ff3b30]' :
-                                  log.type === 'warn' ? 'text-[#ff9500]' :
-                                  'text-[#86868b]'
+                                  log.type === 'error' ? 'text-danger' :
+                                  log.type === 'warn' ? 'text-warning' :
+                                  'text-ink-muted'
                                 }`}>
                                   <span className="opacity-50">[{log.type}]</span> {log.message?.substring(0, 200)}
                                 </div>
@@ -315,12 +315,12 @@ export default function AdminFeedback() {
 
                         <div className="flex gap-6">
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Email</p>
-                            <p className="text-[14px] text-[#1d1d1f] dark:text-white">{item.userEmail}</p>
+                            <p className="text-[12px] font-medium text-ink-muted mb-1">Email</p>
+                            <p className="text-[14px] text-ink">{item.userEmail}</p>
                           </div>
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b] mb-1">Type</p>
-                            <p className="text-[14px] text-[#1d1d1f] dark:text-white capitalize">{item.type}</p>
+                            <p className="text-[12px] font-medium text-ink-muted mb-1">Type</p>
+                            <p className="text-[14px] text-ink capitalize">{item.type}</p>
                           </div>
                         </div>
                       </div>

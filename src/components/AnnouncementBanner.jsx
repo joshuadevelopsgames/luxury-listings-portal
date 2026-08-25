@@ -31,27 +31,27 @@ function setDismissed(map) {
 // ── Type → style mapping ─────────────────────────────────────────────────────
 const TYPE_STYLES = {
   info: {
-    bg: 'bg-[#0071e3]/10 dark:bg-[#0071e3]/20',
-    border: 'border-[#0071e3]/20 dark:border-[#0071e3]/30',
-    text: 'text-[#0071e3]',
+    bg: 'bg-brand/10 dark:bg-brand/20',
+    border: 'border-brand/20 dark:border-brand/30',
+    text: 'text-brand',
     icon: Info,
   },
   warning: {
-    bg: 'bg-[#ff9500]/10 dark:bg-[#ff9500]/20',
-    border: 'border-[#ff9500]/20 dark:border-[#ff9500]/30',
-    text: 'text-[#ff9500]',
+    bg: 'bg-warning/10 dark:bg-warning/20',
+    border: 'border-warning/20 dark:border-warning/30',
+    text: 'text-warning',
     icon: AlertTriangle,
   },
   success: {
-    bg: 'bg-[#34c759]/10 dark:bg-[#34c759]/20',
-    border: 'border-[#34c759]/20 dark:border-[#34c759]/30',
-    text: 'text-[#34c759]',
+    bg: 'bg-positive/10 dark:bg-positive/20',
+    border: 'border-positive/20 dark:border-positive/30',
+    text: 'text-positive',
     icon: CheckCircle,
   },
   urgent: {
-    bg: 'bg-[#ff3b30]/10 dark:bg-[#ff3b30]/20',
-    border: 'border-[#ff3b30]/20 dark:border-[#ff3b30]/30',
-    text: 'text-[#ff3b30]',
+    bg: 'bg-danger/10 dark:bg-danger/20',
+    border: 'border-danger/20 dark:border-danger/30',
+    text: 'text-danger',
     icon: AlertCircle,
   },
 };
@@ -140,7 +140,7 @@ const AnnouncementBanner = ({ onHeightChange }) => {
                       {a.title}
                     </span>
                   )}
-                  <span className="text-[13px] text-[#1d1d1f] dark:text-[#f5f5f7] truncate">
+                  <span className="text-[13px] text-ink truncate">
                     {a.message}
                   </span>
                 </div>
@@ -162,10 +162,10 @@ const AnnouncementBanner = ({ onHeightChange }) => {
                 {a.dismissible !== false && (
                   <button
                     onClick={() => handleDismiss(a.id)}
-                    className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-surface-3 transition-colors"
                     aria-label="Dismiss announcement"
                   >
-                    <X className="w-3.5 h-3.5 text-[#86868b]" />
+                    <X className="w-3.5 h-3.5 text-ink-muted" />
                   </button>
                 )}
               </div>

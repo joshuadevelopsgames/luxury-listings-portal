@@ -17,12 +17,12 @@ const WaitingForApproval = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-brand-soft via-white to-brand-soft flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg border border-gray-100 p-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-10 h-10 text-yellow-600" />
+          <div className="w-20 h-20 bg-warning-soft rounded-full flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-10 h-10 text-warning" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Access Required
@@ -50,18 +50,18 @@ const WaitingForApproval = () => {
         )}
 
         {/* Status Information */}
-        <div className="bg-blue-50 rounded-lg p-6 mb-8">
+        <div className="bg-brand-soft rounded-lg p-6 mb-8">
           <div className="flex items-start space-x-3">
-            <AlertCircle className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
+            <AlertCircle className="w-6 h-6 text-brand mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="text-lg font-semibold text-blue-900 mb-2">What to do</h3>
-              <div className="space-y-3 text-blue-800">
+              <div className="space-y-3 text-brand">
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                  <CheckCircle className="w-4 h-4 text-brand" />
                   <span>Contact an administrator and ask them to add your email in Users &amp; Permissions</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                  <CheckCircle className="w-4 h-4 text-brand" />
                   <span>Once added, log in again to access your dashboard</span>
                 </div>
               </div>
@@ -70,12 +70,12 @@ const WaitingForApproval = () => {
         </div>
 
         {/* Estimated Timeline */}
-        <div className="bg-green-50 rounded-lg p-6 mb-8">
+        <div className="bg-positive-soft rounded-lg p-6 mb-8">
           <div className="flex items-start space-x-3">
-            <Clock className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
+            <Clock className="w-6 h-6 text-positive mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="text-lg font-semibold text-green-900 mb-2">Estimated Timeline</h3>
-              <p className="text-green-800">
+              <p className="text-positive">
                 Most accounts are reviewed and approved within <strong>24-48 hours</strong> during business days.
                 You'll be notified via email once your account is approved.
               </p>
@@ -84,12 +84,12 @@ const WaitingForApproval = () => {
         </div>
 
         {/* Security Notice */}
-        <div className="bg-purple-50 rounded-lg p-6 mb-8">
+        <div className="bg-brand-soft rounded-lg p-6 mb-8">
           <div className="flex items-start space-x-3">
-            <Shield className="w-6 h-6 text-purple-600 mt-0.5 flex-shrink-0" />
+            <Shield className="w-6 h-6 text-brand mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="text-lg font-semibold text-purple-900 mb-2">Security & Privacy</h3>
-              <p className="text-purple-800 text-sm">
+              <p className="text-brand text-sm">
                 Your account information is secure and will only be used for role assignment and access control.
                 We never share your personal information with third parties.
               </p>
@@ -107,7 +107,7 @@ const WaitingForApproval = () => {
           </button>
           <button
             onClick={() => window.location.reload()}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors duration-200"
+            className="flex-1 bg-brand hover:bg-brand-hover text-white rounded-lg px-6 py-3 font-medium transition-colors duration-200"
           >
             Check Status
           </button>

@@ -20,9 +20,15 @@ import {
   ChevronRight,
   Trash2,
   Archive,
-  Bell
+  Bell,
+  Ticket,
+  Loader,
+  AlertTriangle
 } from 'lucide-react';
 import { format } from 'date-fns';
+import PageHeader from '../components/ui/PageHeader';
+import StatCard from '../components/ui/StatCard';
+import { formatStat } from '../utils/formatStat';
 import { supabaseService } from '../services/supabaseService';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
@@ -366,18 +372,18 @@ const ITSupportPage = () => {
 
   const priorities = [
     { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-800' },
-    { value: 'medium', label: 'Medium', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'high', label: 'High', color: 'bg-orange-100 text-orange-800' },
-    { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800' }
+    { value: 'medium', label: 'Medium', color: 'bg-warning-soft text-warning' },
+    { value: 'high', label: 'High', color: 'bg-warning-soft text-warning' },
+    { value: 'urgent', label: 'Urgent', color: 'bg-danger-soft text-danger' }
   ];
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'resolved': return 'bg-[#34c759]/10 text-[#34c759]';
-      case 'in_progress': return 'bg-[#0071e3]/10 text-[#0071e3]';
-      case 'pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
-      case 'closed': return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
-      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
+      case 'resolved': return 'bg-positive/10 text-positive';
+      case 'in_progress': return 'bg-brand/10 text-brand';
+      case 'pending': return 'bg-warning/10 text-warning';
+      case 'closed': return 'bg-surface-3 text-ink-muted';
+      default: return 'bg-surface-3 text-ink-muted';
     }
   };
 
@@ -857,101 +863,96 @@ const ITSupportPage = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
-            IT Support Dashboard
-          </h1>
-          <p className="text-[15px] text-[#86868b] mt-1">
-            Manage support tickets and help team members
-          </p>
-        </div>
-        <button 
-          onClick={() => setShowRequestModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Support Ticket</span>
-        </button>
-      </div>
+      <PageHeader
+        title="IT Support"
+        actions={
+          <button
+            onClick={() => setShowRequestModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Support Ticket</span>
+          </button>
+        }
+      />
 
       {/* Removed: Feedback & Support (bug/feature/chat) for non-admin — now on /feedback-support */}
 
       {false && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
           <div className="p-5">
-            <p className="text-[13px] text-[#86868b] mb-4">Choose how you’d like to reach out:</p>
+            <p className="text-[13px] text-ink-muted mb-4">Choose how you’d like to reach out:</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
                 type="button"
                 onClick={() => setFeedbackCard(feedbackCard === 'bug' ? null : 'bug')}
                 className={`flex flex-col items-start gap-2 p-5 rounded-xl text-left border-2 transition-all ${
                   feedbackCard === 'bug'
-                    ? 'border-[#ff3b30] bg-[#ff3b30]/5'
-                    : 'border-transparent bg-black/[0.02] dark:bg-white/5 hover:bg-black/[0.04] dark:hover:bg-white/10'
+                    ? 'border-danger bg-danger/5'
+                    : 'border-transparent bg-surface-2 hover:bg-surface-3'
                 }`}
               >
-                <div className="p-2 rounded-lg bg-[#ff3b30]/10">
-                  <Bug className="w-5 h-5 text-[#ff3b30]" />
+                <div className="p-2 rounded-lg bg-danger/10">
+                  <Bug className="w-5 h-5 text-danger" />
                 </div>
-                <span className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Report a Bug</span>
-                <span className="text-[12px] text-[#86868b]">Something broken? Send details and we’ll fix it.</span>
+                <span className="text-[15px] font-semibold text-ink">Report a Bug</span>
+                <span className="text-[12px] text-ink-muted">Something broken? Send details and we’ll fix it.</span>
               </button>
               <button
                 type="button"
                 onClick={() => setFeedbackCard(feedbackCard === 'feature' ? null : 'feature')}
                 className={`flex flex-col items-start gap-2 p-5 rounded-xl text-left border-2 transition-all ${
                   feedbackCard === 'feature'
-                    ? 'border-[#ff9500] bg-[#ff9500]/5'
-                    : 'border-transparent bg-black/[0.02] dark:bg-white/5 hover:bg-black/[0.04] dark:hover:bg-white/10'
+                    ? 'border-warning bg-warning/5'
+                    : 'border-transparent bg-surface-2 hover:bg-surface-3'
                 }`}
               >
-                <div className="p-2 rounded-lg bg-[#ff9500]/10">
-                  <Lightbulb className="w-5 h-5 text-[#ff9500]" />
+                <div className="p-2 rounded-lg bg-warning/10">
+                  <Lightbulb className="w-5 h-5 text-warning" />
                 </div>
-                <span className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Feature Request</span>
-                <span className="text-[12px] text-[#86868b]">Have an idea? We’d love to hear it.</span>
+                <span className="text-[15px] font-semibold text-ink">Feature Request</span>
+                <span className="text-[12px] text-ink-muted">Have an idea? We’d love to hear it.</span>
               </button>
               <button
                 type="button"
                 onClick={() => setFeedbackCard(feedbackCard === 'chat' ? null : 'chat')}
                 className={`flex flex-col items-start gap-2 p-5 rounded-xl text-left border-2 transition-all ${
                   feedbackCard === 'chat'
-                    ? 'border-[#0071e3] bg-[#0071e3]/5'
-                    : 'border-transparent bg-black/[0.02] dark:bg-white/5 hover:bg-black/[0.04] dark:hover:bg-white/10'
+                    ? 'border-brand bg-brand/5'
+                    : 'border-transparent bg-surface-2 hover:bg-surface-3'
                 }`}
               >
-                <div className="p-2 rounded-lg bg-[#0071e3]/10">
-                  <MessageSquare className="w-5 h-5 text-[#0071e3]" />
+                <div className="p-2 rounded-lg bg-brand/10">
+                  <MessageSquare className="w-5 h-5 text-brand" />
                 </div>
-                <span className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Chat with Developer</span>
-                <span className="text-[12px] text-[#86868b]">Talk directly with the developer.</span>
+                <span className="text-[15px] font-semibold text-ink">Chat with Developer</span>
+                <span className="text-[12px] text-ink-muted">Talk directly with the developer.</span>
               </button>
             </div>
 
             {/* Bug form */}
             {feedbackCard === 'bug' && (
-              <div className="mt-6 p-5 rounded-xl bg-[#ff3b30]/5 border border-[#ff3b30]/20 space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Bug Report</h3>
+              <div className="mt-6 p-5 rounded-xl bg-danger/5 border border-danger/20 space-y-4">
+                <h3 className="text-[15px] font-semibold text-ink">Bug Report</h3>
                 <input
                   type="text"
                   placeholder="Short title"
                   value={pageBugForm.title}
                   onChange={(e) => setPageBugForm((p) => ({ ...p, title: e.target.value }))}
-                  className="w-full h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff3b30]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-danger"
                 />
                 <textarea
                   placeholder="What happened? Steps to reproduce, page URL, etc."
                   value={pageBugForm.description}
                   onChange={(e) => setPageBugForm((p) => ({ ...p, description: e.target.value }))}
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff3b30] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-danger resize-none"
                 />
                 <div className="flex gap-2">
                   <select
                     value={pageBugForm.priority}
                     onChange={(e) => setPageBugForm((p) => ({ ...p, priority: e.target.value }))}
-                    className="h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#ff3b30]"
+                    className="h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-danger"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -961,7 +962,7 @@ const ITSupportPage = () => {
                     type="button"
                     onClick={handlePageSubmitBug}
                     disabled={pageSubmitting}
-                    className="px-5 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
                   >
                     {pageSubmitting ? 'Sending…' : 'Submit'}
                   </button>
@@ -971,27 +972,27 @@ const ITSupportPage = () => {
 
             {/* Feature form */}
             {feedbackCard === 'feature' && (
-              <div className="mt-6 p-5 rounded-xl bg-[#ff9500]/5 border border-[#ff9500]/20 space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Feature Request</h3>
+              <div className="mt-6 p-5 rounded-xl bg-warning/5 border border-warning/20 space-y-4">
+                <h3 className="text-[15px] font-semibold text-ink">Feature Request</h3>
                 <input
                   type="text"
                   placeholder="Short title"
                   value={pageFeatureForm.title}
                   onChange={(e) => setPageFeatureForm((p) => ({ ...p, title: e.target.value }))}
-                  className="w-full h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff9500]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-warning"
                 />
                 <textarea
                   placeholder="Describe your idea and why it would help."
                   value={pageFeatureForm.description}
                   onChange={(e) => setPageFeatureForm((p) => ({ ...p, description: e.target.value }))}
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#ff9500] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-warning resize-none"
                 />
                 <button
                   type="button"
                   onClick={handlePageSubmitFeature}
                   disabled={pageSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-[#ff9500] text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
                 >
                   {pageSubmitting ? 'Sending…' : 'Submit'}
                 </button>
@@ -1000,8 +1001,8 @@ const ITSupportPage = () => {
 
             {/* Chat */}
             {feedbackCard === 'chat' && (
-              <div className="mt-6 p-5 rounded-xl bg-[#0071e3]/5 border border-[#0071e3]/20 space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Chat with Developer</h3>
+              <div className="mt-6 p-5 rounded-xl bg-brand/5 border border-brand/20 space-y-4">
+                <h3 className="text-[15px] font-semibold text-ink">Chat with Developer</h3>
                 {!pageSelectedChat ? (
                   <>
                     <textarea
@@ -1009,19 +1010,19 @@ const ITSupportPage = () => {
                       value={pageChatMessage}
                       onChange={(e) => setPageChatMessage(e.target.value)}
                       rows={3}
-                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                     />
                     <button
                       type="button"
                       onClick={handlePageStartChat}
                       disabled={pageSubmitting}
-                      className="px-5 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] disabled:opacity-50"
+                      className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover disabled:opacity-50"
                     >
                       {pageSubmitting ? 'Starting…' : 'Start chat'}
                     </button>
                     {pageUserChats.length > 0 && (
-                      <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                        <p className="text-[12px] font-medium text-[#86868b] mb-2">Or continue an existing chat:</p>
+                      <div className="pt-4 border-t border-hairline">
+                        <p className="text-[12px] font-medium text-ink-muted mb-2">Or continue an existing chat:</p>
                         <div className="space-y-2">
                           {pageUserChats.map((c) => (
                             <button
@@ -1034,10 +1035,10 @@ const ITSupportPage = () => {
                                   supabaseService.updateFeedbackChatUserLastRead(c.id).catch(() => {});
                                 }
                               }}
-                              className="w-full text-left px-4 py-2 rounded-lg bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15"
+                              className="w-full text-left px-4 py-2 rounded-lg bg-surface-3 text-[13px] text-ink hover:bg-hairline-strong"
                             >
-                              <span className={c.status === 'closed' ? 'text-[#86868b]' : ''}>{c.lastMessage?.substring(0, 60)}…</span>
-                              {c.status === 'closed' && <span className="text-[11px] text-[#86868b] ml-1">(closed)</span>}
+                              <span className={c.status === 'closed' ? 'text-ink-muted' : ''}>{c.lastMessage?.substring(0, 60)}…</span>
+                              {c.status === 'closed' && <span className="text-[11px] text-ink-muted ml-1">(closed)</span>}
                             </button>
                           ))}
                         </div>
@@ -1049,15 +1050,15 @@ const ITSupportPage = () => {
                     <button
                       type="button"
                       onClick={() => setPageSelectedChat(null)}
-                      className="text-[12px] text-[#0071e3] hover:underline"
+                      className="text-[12px] text-brand hover:underline"
                     >
                       ← Back to chats
                     </button>
-                    <div className="max-h-60 overflow-y-auto space-y-2 p-3 rounded-lg bg-black/5 dark:bg-white/5">
+                    <div className="max-h-60 overflow-y-auto space-y-2 p-3 rounded-lg bg-surface-3">
                       {(pageSelectedChat.messages || []).map((m, i) => (
                         <div key={i} className="text-[13px]">
-                          <span className="font-medium text-[#86868b]">{m.senderName || 'Developer'}:</span>{' '}
-                          <span className="text-[#1d1d1f] dark:text-white">{m.message}</span>
+                          <span className="font-medium text-ink-muted">{m.senderName || 'Developer'}:</span>{' '}
+                          <span className="text-ink">{m.message}</span>
                         </div>
                       ))}
                     </div>
@@ -1069,24 +1070,24 @@ const ITSupportPage = () => {
                           value={pageChatMessage}
                           onChange={(e) => setPageChatMessage(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handlePageSendMessage()}
-                          className="flex-1 h-11 px-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          className="flex-1 h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                         />
                         <button
                           type="button"
                           onClick={handlePageSendMessage}
                           disabled={pageSubmitting}
-                          className="px-5 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium disabled:opacity-50"
+                          className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium disabled:opacity-50"
                         >
                           Send
                         </button>
                       </div>
                     ) : (
-                      <div className="pt-3 border-t border-black/5 dark:border-white/10 text-center">
-                        <p className="text-[13px] text-[#86868b]">This chat was closed. Start a new chat to message again.</p>
+                      <div className="pt-3 border-t border-hairline text-center">
+                        <p className="text-[13px] text-ink-muted">This chat was closed. Start a new chat to message again.</p>
                         <button
                           type="button"
                           onClick={() => { setPageSelectedChat(null); setPageChatMessage(''); }}
-                          className="mt-2 px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed]"
+                          className="mt-2 px-4 py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover"
                         >
                           Start new chat
                         </button>
@@ -1102,27 +1103,18 @@ const ITSupportPage = () => {
 
       {/* IT Admin Stats Dashboard */}
       {isITSupport && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
-            <p className="text-[12px] text-[#86868b]">Total Tickets</p>
-            <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white mt-1">{ticketStats.total}</p>
-          </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
-            <p className="text-[12px] text-[#86868b]">Pending</p>
-            <p className="text-[28px] font-semibold text-[#ff9500] mt-1">{ticketStats.pending}</p>
-          </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
-            <p className="text-[12px] text-[#86868b]">In Progress</p>
-            <p className="text-[28px] font-semibold text-[#0071e3] mt-1">{ticketStats.inProgress}</p>
-          </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
-            <p className="text-[12px] text-[#86868b]">Resolved</p>
-            <p className="text-[28px] font-semibold text-[#34c759] mt-1">{ticketStats.resolved}</p>
-          </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 text-center">
-            <p className="text-[12px] text-[#86868b]">🚨 Urgent</p>
-            <p className="text-[28px] font-semibold text-[#ff3b30] mt-1">{ticketStats.urgent}</p>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <StatCard label="Total Tickets" value={formatStat(ticketStats.total)} icon={Ticket} />
+          <StatCard label="Pending" value={formatStat(ticketStats.pending)} icon={Clock} />
+          <StatCard label="In Progress" value={formatStat(ticketStats.inProgress)} icon={Loader} />
+          <StatCard label="Resolved" value={formatStat(ticketStats.resolved)} icon={CheckCircle} />
+          <StatCard
+            label="Urgent"
+            value={formatStat(ticketStats.urgent)}
+            icon={AlertTriangle}
+            status={ticketStats.urgent > 0 ? 'Action needed' : undefined}
+            statusTone="critical"
+          />
         </div>
       )}
 
@@ -1133,8 +1125,8 @@ const ITSupportPage = () => {
             onClick={() => setActiveAdminTab('tickets')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
               activeAdminTab === 'tickets'
-                ? 'bg-[#0071e3] text-white'
-                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                ? 'bg-brand text-white'
+                : 'bg-surface-3 text-ink hover:bg-hairline-strong'
             }`}
           >
             <Wrench className="w-4 h-4" />
@@ -1150,12 +1142,12 @@ const ITSupportPage = () => {
             }}
             className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
               activeAdminTab === 'bugs'
-                ? 'bg-[#ff3b30] text-white'
-                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                ? 'bg-danger text-white'
+                : 'bg-surface-3 text-ink hover:bg-hairline-strong'
             }`}
           >
             {newBugCount > 0 && activeAdminTab !== 'bugs' && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#ff3b30] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-danger text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
                 {newBugCount}
               </span>
             )}
@@ -1172,12 +1164,12 @@ const ITSupportPage = () => {
             }}
             className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
               activeAdminTab === 'features'
-                ? 'bg-[#ff9500] text-white'
-                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                ? 'bg-warning text-white'
+                : 'bg-surface-3 text-ink hover:bg-hairline-strong'
             }`}
           >
             {newFeatureCount > 0 && activeAdminTab !== 'features' && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#ff9500] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-warning text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
                 {newFeatureCount}
               </span>
             )}
@@ -1192,12 +1184,12 @@ const ITSupportPage = () => {
             }}
             className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium whitespace-nowrap transition-colors ${
               activeAdminTab === 'chats'
-                ? 'bg-[#5856d6] text-white'
-                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                ? 'bg-brand text-white'
+                : 'bg-surface-3 text-ink hover:bg-hairline-strong'
             }`}
           >
             {newChatCount > 0 && activeAdminTab !== 'chats' && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#5856d6] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
                 {newChatCount}
               </span>
             )}
@@ -1212,14 +1204,14 @@ const ITSupportPage = () => {
 
       {/* Support Info Banner (for regular users only) */}
       {!isITSupport && (
-        <div className="rounded-2xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-5">
+        <div className="rounded-xl bg-brand/5 border border-brand/20 p-5">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-[#0071e3]/10 rounded-lg">
-              <Wrench className="w-5 h-5 text-[#0071e3]" />
+            <div className="p-2 bg-brand/10 rounded-lg">
+              <Wrench className="w-5 h-5 text-brand" />
             </div>
             <div>
-              <h3 className="text-[13px] font-medium text-[#0071e3] mb-1">How to Get Help</h3>
-              <p className="text-[12px] text-[#0071e3]/80">
+              <h3 className="text-[13px] font-medium text-brand mb-1">How to Get Help</h3>
+              <p className="text-[12px] text-brand/80">
                 Submit a detailed support request including the page URL and screenshots if possible. 
                 Our IT team will respond within 24 hours for standard requests, and immediately for urgent issues.
               </p>
@@ -1230,29 +1222,29 @@ const ITSupportPage = () => {
 
       {/* My Tickets - Show for non-admins or when tickets tab is active */}
       {(!isITSupport || activeAdminTab === 'tickets') && (
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">{isITSupport ? 'All Support Tickets' : 'My Support Tickets'}</span>
+            <FileText className="w-5 h-5 text-ink" />
+            <span className="text-[15px] font-medium text-ink">{isITSupport ? 'All Support Tickets' : 'My Support Tickets'}</span>
           </div>
         </div>
         <div className="p-5">
           {loading ? (
             <div className="text-center py-8">
-              <div className="w-12 h-12 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-[14px] text-[#86868b]">Loading tickets...</p>
+              <div className="w-12 h-12 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[14px] text-ink-muted">Loading tickets...</p>
             </div>
           ) : myTickets.length === 0 ? (
             <div className="text-center py-8">
-              <Wrench className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
-              <p className="text-[14px] text-[#86868b]">
+              <Wrench className="w-12 h-12 text-ink-muted mx-auto mb-3 opacity-50" />
+              <p className="text-[14px] text-ink-muted">
                 {isITSupport ? 'No support tickets from team members yet' : 'No support tickets yet'}
               </p>
               {!isITSupport && (
                 <button 
                   onClick={() => setShowRequestModal(true)}
-                  className="mt-3 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="mt-3 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Submit Your First Request
                 </button>
@@ -1269,10 +1261,10 @@ const ITSupportPage = () => {
                   <div 
                     key={ticket.id} 
                     className={`p-4 rounded-xl transition-all ${
-                      ticket.status === 'pending' ? 'bg-[#ff9500]/5 border border-[#ff9500]/20' :
-                      ticket.status === 'in_progress' ? 'bg-[#0071e3]/5 border border-[#0071e3]/20' :
-                      ticket.status === 'resolved' ? 'bg-[#34c759]/5 border border-[#34c759]/20' :
-                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
+                      ticket.status === 'pending' ? 'bg-warning/5 border border-warning/20' :
+                      ticket.status === 'in_progress' ? 'bg-brand/5 border border-brand/20' :
+                      ticket.status === 'resolved' ? 'bg-positive/5 border border-positive/20' :
+                      'bg-surface-2 border border-transparent'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -1281,17 +1273,17 @@ const ITSupportPage = () => {
                         className="flex items-start gap-4 flex-1 cursor-pointer" 
                         onClick={() => setSelectedTicket(ticket)}
                       >
-                        <div className={`p-2.5 rounded-xl bg-black/5 dark:bg-white/10`}>
-                          <CategoryIcon className={`w-5 h-5 text-[#1d1d1f] dark:text-white`} />
+                        <div className={`p-2.5 rounded-xl bg-surface-3`}>
+                          <CategoryIcon className={`w-5 h-5 text-ink`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{ticket.title}</p>
+                            <p className="text-[14px] font-medium text-ink">{ticket.title}</p>
                             <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                              priority?.value === 'urgent' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
-                              priority?.value === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                              priority?.value === 'medium' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
-                              'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                              priority?.value === 'urgent' ? 'bg-danger/10 text-danger' :
+                              priority?.value === 'high' ? 'bg-warning/10 text-warning' :
+                              priority?.value === 'medium' ? 'bg-brand/10 text-brand' :
+                              'bg-surface-3 text-ink-muted'
                             }`}>
                               {priority?.label}
                             </span>
@@ -1301,14 +1293,14 @@ const ITSupportPage = () => {
                             </span>
                           </div>
                           {isITSupport && (
-                            <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
+                            <p className="text-[12px] font-medium text-ink mb-1">
                               👤 {ticket.requesterName} ({ticket.requesterEmail})
                             </p>
                           )}
-                          <p className="text-[12px] text-[#86868b] mb-2">
+                          <p className="text-[12px] text-ink-muted mb-2">
                             {ticket.description}
                           </p>
-                          <p className="text-[11px] text-[#86868b]">
+                          <p className="text-[11px] text-ink-muted">
                             Submitted {ticket.submittedDate?.toDate 
                               ? format(ticket.submittedDate.toDate(), 'MMM dd, yyyy h:mm a')
                               : format(new Date(ticket.submittedDate), 'MMM dd, yyyy h:mm a')}
@@ -1325,7 +1317,7 @@ const ITSupportPage = () => {
                                 e.stopPropagation();
                                 handleStatusUpdate(ticket.id, 'in_progress');
                               }}
-                              className="px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors whitespace-nowrap"
+                              className="px-3 py-1.5 rounded-lg bg-brand text-white text-[12px] font-medium hover:bg-brand-hover transition-colors whitespace-nowrap"
                             >
                               Start Work
                             </button>
@@ -1336,7 +1328,7 @@ const ITSupportPage = () => {
                                 e.stopPropagation();
                                 handleStatusUpdate(ticket.id, 'resolved');
                               }}
-                              className="px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors whitespace-nowrap"
+                              className="px-3 py-1.5 rounded-lg bg-positive text-white text-[12px] font-medium hover:bg-positive transition-colors whitespace-nowrap"
                             >
                               Mark Resolved
                             </button>
@@ -1344,7 +1336,7 @@ const ITSupportPage = () => {
                           {ticket.status !== 'closed' && (
                             <button
                               onClick={(e) => handleCloseTicketClick(ticket, e)}
-                              className="px-3 py-1.5 rounded-lg bg-[#86868b] text-white text-[12px] font-medium hover:bg-[#6e6e73] transition-colors whitespace-nowrap"
+                              className="px-3 py-1.5 rounded-lg bg-ink-muted text-white text-[12px] font-medium hover:bg-[#6e6e73] transition-colors whitespace-nowrap"
                             >
                               Close Ticket
                             </button>
@@ -1354,14 +1346,14 @@ const ITSupportPage = () => {
                               e.stopPropagation();
                               setSelectedTicket(ticket);
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                            className="px-3 py-1.5 rounded-lg bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
                           >
                             View Details
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteSupportTicket(ticket.id); }}
                             disabled={deletingTicketId === ticket.id}
-                            className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex items-center gap-1"
+                            className="px-3 py-1.5 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50 flex items-center gap-1"
                             title="Delete ticket"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1381,23 +1373,23 @@ const ITSupportPage = () => {
 
       {/* Bug Reports Section */}
       {isITSupport && activeAdminTab === 'bugs' && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <div className="flex items-center gap-2">
-              <Bug className="w-5 h-5 text-[#ff3b30]" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Bug Reports</span>
+              <Bug className="w-5 h-5 text-danger" />
+              <span className="text-[15px] font-medium text-ink">Bug Reports</span>
             </div>
           </div>
           <div className="p-5">
             {loadingFeedback ? (
               <div className="text-center py-8">
-                <div className="w-12 h-12 border-2 border-[#ff3b30] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-[14px] text-[#86868b]">Loading bug reports...</p>
+                <div className="w-12 h-12 border-2 border-danger border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-ink-muted">Loading bug reports...</p>
               </div>
             ) : feedbackItems.filter(f => f.type === 'bug').length === 0 ? (
               <div className="text-center py-8">
-                <Bug className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
-                <p className="text-[14px] text-[#86868b]">No bug reports yet</p>
+                <Bug className="w-12 h-12 text-ink-muted mx-auto mb-3 opacity-50" />
+                <p className="text-[14px] text-ink-muted">No bug reports yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1405,9 +1397,9 @@ const ITSupportPage = () => {
                   <div 
                     key={bug.id}
                     className={`p-4 rounded-xl transition-all ${
-                      bug.status === 'open' ? 'bg-[#ff3b30]/5 border border-[#ff3b30]/20' :
-                      bug.status === 'in_progress' ? 'bg-[#0071e3]/5 border border-[#0071e3]/20' :
-                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
+                      bug.status === 'open' ? 'bg-danger/5 border border-danger/20' :
+                      bug.status === 'in_progress' ? 'bg-brand/5 border border-brand/20' :
+                      'bg-surface-2 border border-transparent'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -1416,27 +1408,27 @@ const ITSupportPage = () => {
                         onClick={() => setSelectedFeedback(bug)}
                       >
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{bug.title}</p>
+                          <p className="text-[14px] font-medium text-ink">{bug.title}</p>
                           <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                            bug.priority === 'critical' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
-                            bug.priority === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                            'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                            bug.priority === 'critical' ? 'bg-danger/10 text-danger' :
+                            bug.priority === 'high' ? 'bg-warning/10 text-warning' :
+                            'bg-surface-3 text-ink-muted'
                           }`}>
                             {bug.priority}
                           </span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                            bug.status === 'open' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
-                            bug.status === 'in_progress' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
-                            'bg-[#34c759]/10 text-[#34c759]'
+                            bug.status === 'open' ? 'bg-danger/10 text-danger' :
+                            bug.status === 'in_progress' ? 'bg-brand/10 text-brand' :
+                            'bg-positive/10 text-positive'
                           }`}>
                             {bug.status}
                           </span>
                         </div>
-                        <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
+                        <p className="text-[12px] font-medium text-ink mb-1">
                           👤 {bug.userName} ({bug.userEmail})
                         </p>
-                        <p className="text-[12px] text-[#86868b] line-clamp-2">{bug.description}</p>
-                        <p className="text-[11px] text-[#86868b] mt-2">
+                        <p className="text-[12px] text-ink-muted line-clamp-2">{bug.description}</p>
+                        <p className="text-[11px] text-ink-muted mt-2">
                           {bug.createdAt?.toDate ? format(bug.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
                         </p>
                       </div>
@@ -1444,13 +1436,13 @@ const ITSupportPage = () => {
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDeleteFeedback(bug.id); }}
                           disabled={deletingFeedbackId === bug.id}
-                          className="p-2 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50"
+                          className="p-2 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors disabled:opacity-50"
                           title="Delete bug report"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setSelectedFeedback(bug)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                          <ChevronRight className="w-5 h-5 text-[#86868b]" />
+                        <button onClick={() => setSelectedFeedback(bug)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                          <ChevronRight className="w-5 h-5 text-ink-muted" />
                         </button>
                       </div>
                     </div>
@@ -1460,24 +1452,24 @@ const ITSupportPage = () => {
             )}
 
             {/* Error Reports (from ErrorBoundary / crash reports) */}
-            <div className="mt-8 pt-6 border-t border-black/5 dark:border-white/10">
-              <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white mb-3">Error Reports (crash reports)</h4>
+            <div className="mt-8 pt-6 border-t border-hairline">
+              <h4 className="text-[13px] font-semibold text-ink mb-3">Error Reports (crash reports)</h4>
               {loadingErrorReports ? (
-                <p className="text-[12px] text-[#86868b]">Loading...</p>
+                <p className="text-[12px] text-ink-muted">Loading...</p>
               ) : errorReports.length === 0 ? (
-                <p className="text-[12px] text-[#86868b]">No error reports.</p>
+                <p className="text-[12px] text-ink-muted">No error reports.</p>
               ) : (
                 <div className="space-y-2">
                   {errorReports.map((report) => (
                     <div
                       key={report.id}
-                      className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-between gap-3"
+                      className="p-3 rounded-xl bg-surface-2 border border-hairline flex items-center justify-between gap-3"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                        <p className="text-[12px] font-medium text-ink truncate">
                           {report.errorMessage?.substring(0, 120) || 'Error report'}
                         </p>
-                        <p className="text-[11px] text-[#86868b] mt-0.5">
+                        <p className="text-[11px] text-ink-muted mt-0.5">
                           {report.userEmail} · {report.createdAt?.toDate ? format(report.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
                           {report.status === 'resolved' && ' · Resolved'}
                         </p>
@@ -1485,7 +1477,7 @@ const ITSupportPage = () => {
                       <button
                         onClick={() => handleDeleteErrorReport(report.id)}
                         disabled={deletingErrorReportId === report.id}
-                        className="p-2 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex-shrink-0"
+                        className="p-2 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors disabled:opacity-50 flex-shrink-0"
                         title="Delete error report"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1501,23 +1493,23 @@ const ITSupportPage = () => {
 
       {/* Feature Requests Section */}
       {isITSupport && activeAdminTab === 'features' && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <div className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-[#ff9500]" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Feature Requests</span>
+              <Lightbulb className="w-5 h-5 text-warning" />
+              <span className="text-[15px] font-medium text-ink">Feature Requests</span>
             </div>
           </div>
           <div className="p-5">
             {loadingFeedback ? (
               <div className="text-center py-8">
-                <div className="w-12 h-12 border-2 border-[#ff9500] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-[14px] text-[#86868b]">Loading feature requests...</p>
+                <div className="w-12 h-12 border-2 border-warning border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-ink-muted">Loading feature requests...</p>
               </div>
             ) : feedbackItems.filter(f => f.type === 'feature').length === 0 ? (
               <div className="text-center py-8">
-                <Lightbulb className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
-                <p className="text-[14px] text-[#86868b]">No feature requests yet</p>
+                <Lightbulb className="w-12 h-12 text-ink-muted mx-auto mb-3 opacity-50" />
+                <p className="text-[14px] text-ink-muted">No feature requests yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1526,31 +1518,31 @@ const ITSupportPage = () => {
                     key={feature.id}
                     onClick={() => setSelectedFeedback(feature)}
                     className={`p-4 rounded-xl cursor-pointer transition-all ${
-                      feature.status === 'open' ? 'bg-[#ff9500]/5 border border-[#ff9500]/20' :
-                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
+                      feature.status === 'open' ? 'bg-warning/5 border border-warning/20' :
+                      'bg-surface-2 border border-transparent'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{feature.title}</p>
+                          <p className="text-[14px] font-medium text-ink">{feature.title}</p>
                           <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                            feature.status === 'open' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                            feature.status === 'planned' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
-                            'bg-[#34c759]/10 text-[#34c759]'
+                            feature.status === 'open' ? 'bg-warning/10 text-warning' :
+                            feature.status === 'planned' ? 'bg-brand/10 text-brand' :
+                            'bg-positive/10 text-positive'
                           }`}>
                             {feature.status}
                           </span>
                         </div>
-                        <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">
+                        <p className="text-[12px] font-medium text-ink mb-1">
                           👤 {feature.userName} ({feature.userEmail})
                         </p>
-                        <p className="text-[12px] text-[#86868b] line-clamp-2">{feature.description}</p>
-                        <p className="text-[11px] text-[#86868b] mt-2">
+                        <p className="text-[12px] text-ink-muted line-clamp-2">{feature.description}</p>
+                        <p className="text-[11px] text-ink-muted mt-2">
                           {feature.createdAt?.toDate ? format(feature.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
                         </p>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-[#86868b] flex-shrink-0" />
+                      <ChevronRight className="w-5 h-5 text-ink-muted flex-shrink-0" />
                     </div>
                   </div>
                 ))}
@@ -1562,23 +1554,23 @@ const ITSupportPage = () => {
 
       {/* User Chats Section */}
       {isITSupport && activeAdminTab === 'chats' && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+          <div className="px-5 py-4 border-b border-hairline">
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-[#5856d6]" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">User Chats</span>
+              <MessageSquare className="w-5 h-5 text-brand" />
+              <span className="text-[15px] font-medium text-ink">User Chats</span>
             </div>
           </div>
           <div className="p-5">
             {loadingFeedback ? (
               <div className="text-center py-8">
-                <div className="w-12 h-12 border-2 border-[#5856d6] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-[14px] text-[#86868b]">Loading chats...</p>
+                <div className="w-12 h-12 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-ink-muted">Loading chats...</p>
               </div>
             ) : feedbackChats.length === 0 ? (
               <div className="text-center py-8">
-                <MessageSquare className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
-                <p className="text-[14px] text-[#86868b]">No user chats yet</p>
+                <MessageSquare className="w-12 h-12 text-ink-muted mx-auto mb-3 opacity-50" />
+                <p className="text-[14px] text-ink-muted">No user chats yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1590,32 +1582,32 @@ const ITSupportPage = () => {
                       setSelectedChat(fullChat);
                     }}
                     className={`p-4 rounded-xl cursor-pointer transition-all ${
-                      chat.status === 'open' ? 'bg-[#5856d6]/5 border border-[#5856d6]/20' :
-                      'bg-black/[0.02] dark:bg-white/5 border border-transparent'
+                      chat.status === 'open' ? 'bg-brand/5 border border-brand/20' :
+                      'bg-surface-2 border border-transparent'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">
+                          <p className="text-[14px] font-medium text-ink">
                             {chat.userName || chat.userEmail}
                           </p>
                           <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                            chat.status === 'open' ? 'bg-[#5856d6]/10 text-[#5856d6]' :
-                            'bg-[#86868b]/10 text-[#86868b]'
+                            chat.status === 'open' ? 'bg-brand/10 text-brand' :
+                            'bg-ink-muted/10 text-ink-muted'
                           }`}>
                             {chat.status}
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b]">
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-3 text-ink-muted">
                             {chat.messageCount || 0} messages
                           </span>
                         </div>
-                        <p className="text-[12px] text-[#86868b] line-clamp-2">{chat.lastMessage}</p>
-                        <p className="text-[11px] text-[#86868b] mt-2">
+                        <p className="text-[12px] text-ink-muted line-clamp-2">{chat.lastMessage}</p>
+                        <p className="text-[11px] text-ink-muted mt-2">
                           {chat.createdAt?.toDate ? format(chat.createdAt.toDate(), 'MMM dd, yyyy h:mm a') : ''}
                         </p>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-[#86868b] flex-shrink-0" />
+                      <ChevronRight className="w-5 h-5 text-ink-muted flex-shrink-0" />
                     </div>
                   </div>
                 ))}
@@ -1628,12 +1620,12 @@ const ITSupportPage = () => {
       {/* Submit Support Request Modal */}
       {showRequestModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
+            <div className="sticky top-0 bg-surface border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Submit Support Request</h2>
-                <button onClick={() => setShowRequestModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <h2 className="text-[17px] font-semibold text-ink">Submit Support Request</h2>
+                <button onClick={() => setShowRequestModal(false)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
@@ -1641,7 +1633,7 @@ const ITSupportPage = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               {/* Issue Title */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Issue Title *
                 </label>
                 <input
@@ -1649,14 +1641,14 @@ const ITSupportPage = () => {
                   value={supportForm.title}
                   onChange={(e) => handleFormChange('title', e.target.value)}
                   placeholder="Brief summary of the issue"
-                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 />
               </div>
 
               {/* Category Selection */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-3">
+                <label className="block text-[13px] font-medium text-ink mb-3">
                   Category *
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1669,12 +1661,12 @@ const ITSupportPage = () => {
                         onClick={() => handleFormChange('category', cat.value)}
                         className={`p-3 rounded-xl text-left transition-all min-h-[70px] flex flex-col ${
                           supportForm.category === cat.value 
-                            ? 'bg-[#0071e3]/10 ring-2 ring-[#0071e3]' 
-                            : 'bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15'
+                            ? 'bg-brand/10 ring-2 ring-brand' 
+                            : 'bg-surface-3 hover:bg-hairline-strong'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 mb-2 ${supportForm.category === cat.value ? 'text-[#0071e3]' : 'text-[#86868b]'}`} />
-                        <p className={`text-[11px] font-medium leading-tight ${supportForm.category === cat.value ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white'}`}>{cat.label}</p>
+                        <Icon className={`w-5 h-5 mb-2 ${supportForm.category === cat.value ? 'text-brand' : 'text-ink-muted'}`} />
+                        <p className={`text-[11px] font-medium leading-tight ${supportForm.category === cat.value ? 'text-brand' : 'text-ink'}`}>{cat.label}</p>
                       </button>
                     );
                   })}
@@ -1683,7 +1675,7 @@ const ITSupportPage = () => {
 
               {/* Priority */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Priority *
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -1694,8 +1686,8 @@ const ITSupportPage = () => {
                       onClick={() => handleFormChange('priority', p.value)}
                       className={`px-3 py-2 rounded-xl text-[12px] font-medium transition-all ${
                         supportForm.priority === p.value 
-                          ? 'bg-[#0071e3] text-white'
-                          : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                          ? 'bg-brand text-white'
+                          : 'bg-surface-3 text-ink hover:bg-hairline-strong'
                       }`}
                     >
                       {p.label}
@@ -1706,7 +1698,7 @@ const ITSupportPage = () => {
 
               {/* Page URL */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   <LinkIcon className="w-4 h-4 inline mr-1" />
                   Page URL (Where the issue is happening)
                 </label>
@@ -1715,14 +1707,14 @@ const ITSupportPage = () => {
                   value={supportForm.pageUrl}
                   onChange={(e) => handleFormChange('pageUrl', e.target.value)}
                   placeholder="https://smmluxurylistings.com/dashboard"
-                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
-                <p className="text-[11px] text-[#86868b] mt-1">Copy and paste the URL where you're experiencing the issue</p>
+                <p className="text-[11px] text-ink-muted mt-1">Copy and paste the URL where you're experiencing the issue</p>
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Description *
                 </label>
                 <textarea
@@ -1730,14 +1722,14 @@ const ITSupportPage = () => {
                   onChange={(e) => handleFormChange('description', e.target.value)}
                   rows={5}
                   placeholder="Please describe the issue in detail. What were you trying to do? What happened? What did you expect to happen?"
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                   required
                 />
               </div>
 
               {/* Screenshot Upload */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   <ImageIcon className="w-4 h-4 inline mr-1" />
                   Screenshot (Optional)
                 </label>
@@ -1750,12 +1742,12 @@ const ITSupportPage = () => {
                       <img 
                         src={previewImage} 
                         alt="Preview" 
-                        className="max-h-48 rounded-xl border border-black/10 dark:border-white/10"
+                        className="max-h-48 rounded-xl border border-hairline-strong"
                       />
                       <button
                         type="button"
                         onClick={handleRemovePreview}
-                        className="absolute top-2 right-2 bg-[#ff3b30] text-white rounded-full p-1 hover:bg-[#e5342b]"
+                        className="absolute top-2 right-2 bg-danger text-white rounded-full p-1 hover:bg-[#e5342b]"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -1763,21 +1755,21 @@ const ITSupportPage = () => {
 
                     {/* Uploading state */}
                     {uploading && (
-                      <div className="p-4 bg-[#0071e3]/5 border border-[#0071e3]/20 rounded-xl">
+                      <div className="p-4 bg-brand/5 border border-brand/20 rounded-xl">
                         <div className="flex items-center gap-3">
-                          <div className="w-5 h-5 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin"></div>
-                          <p className="text-[13px] text-[#0071e3]">Uploading to imgbb automatically...</p>
+                          <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-[13px] text-brand">Uploading to imgbb automatically...</p>
                         </div>
                       </div>
                     )}
 
                     {/* Success state */}
                     {!uploading && supportForm.screenshotUrl && !uploadError && (
-                      <div className="p-4 bg-[#34c759]/5 border border-[#34c759]/20 rounded-xl">
-                        <p className="text-[13px] font-medium text-[#34c759] mb-1">
+                      <div className="p-4 bg-positive/5 border border-positive/20 rounded-xl">
+                        <p className="text-[13px] font-medium text-positive mb-1">
                           ✅ Uploaded successfully!
                         </p>
-                        <p className="text-[11px] text-[#34c759]/80 break-all">
+                        <p className="text-[11px] text-positive/80 break-all">
                           {supportForm.screenshotUrl}
                         </p>
                       </div>
@@ -1786,21 +1778,21 @@ const ITSupportPage = () => {
                     {/* Error state - show manual upload option */}
                     {!uploading && uploadError && !supportForm.screenshotUrl && (
                       <div className="space-y-3">
-                        <div className="p-4 bg-[#ff9500]/5 border border-[#ff9500]/20 rounded-xl">
-                          <p className="text-[13px] font-medium text-[#ff9500] mb-2">
+                        <div className="p-4 bg-warning/5 border border-warning/20 rounded-xl">
+                          <p className="text-[13px] font-medium text-warning mb-2">
                             ⚠️ Automatic upload failed - Please upload manually:
                           </p>
                           <div className="flex gap-2 mb-2">
                             <button
                               type="button"
                               onClick={handleOpenImgbb}
-                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors"
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-positive text-white text-[12px] font-medium hover:bg-positive transition-colors"
                             >
                               <ExternalLink className="w-4 h-4" />
                               Open imgbb Upload
                             </button>
                           </div>
-                          <p className="text-[11px] text-[#ff9500]/80">
+                          <p className="text-[11px] text-warning/80">
                             Upload your screenshot on imgbb.com, then paste the URL below ⬇️
                           </p>
                         </div>
@@ -1810,7 +1802,7 @@ const ITSupportPage = () => {
                           value={supportForm.screenshotUrl}
                           onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
                           placeholder="Paste the image URL here"
-                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                         />
                       </div>
                     )}
@@ -1823,17 +1815,17 @@ const ITSupportPage = () => {
                       onDragLeave={handleDrag}
                       onDragOver={handleDrag}
                       onDrop={handleDrop}
-                      className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
+                      className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
                         dragActive 
-                          ? 'border-[#0071e3] bg-[#0071e3]/5' 
-                          : 'border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20'
+                          ? 'border-brand bg-brand/5' 
+                          : 'border-hairline-strong hover:border-hairline-strong'
                       }`}
                     >
-                      <ImageIcon className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">
+                      <ImageIcon className="w-12 h-12 text-ink-muted mx-auto mb-3 opacity-50" />
+                      <p className="text-[13px] font-medium text-ink mb-1">
                         Drag & drop your screenshot here
                       </p>
-                      <p className="text-[11px] text-[#86868b] mb-3">or</p>
+                      <p className="text-[11px] text-ink-muted mb-3">or</p>
                       <label className="inline-block">
                         <input
                           type="file"
@@ -1841,24 +1833,24 @@ const ITSupportPage = () => {
                           onChange={handleFileSelect}
                           className="hidden"
                         />
-                        <span className="px-4 py-2 bg-[#0071e3] text-white text-[13px] font-medium rounded-xl hover:bg-[#0077ed] cursor-pointer inline-block">
+                        <span className="px-4 py-2 bg-brand text-white text-[13px] font-medium rounded-xl hover:bg-brand-hover cursor-pointer inline-block">
                           Browse Files
                         </span>
                       </label>
-                      <p className="text-[11px] text-[#86868b] mt-3">
+                      <p className="text-[11px] text-ink-muted mt-3">
                         PNG, JPG, GIF up to 10MB
                       </p>
                     </div>
 
                     {/* Alternative: paste URL directly */}
                     <div className="mt-3">
-                      <p className="text-[11px] text-[#86868b] mb-2">Or paste an image URL directly:</p>
+                      <p className="text-[11px] text-ink-muted mb-2">Or paste an image URL directly:</p>
                       <input
                         type="url"
                         value={supportForm.screenshotUrl}
                         onChange={(e) => handleFormChange('screenshotUrl', e.target.value)}
                         placeholder="https://i.ibb.co/example.png"
-                        className="w-full h-11 px-4 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        className="w-full h-11 px-4 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                     </div>
                   </>
@@ -1866,19 +1858,19 @@ const ITSupportPage = () => {
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-hairline">
                 <button
                   type="button"
                   onClick={() => setShowRequestModal(false)}
                   disabled={submitting}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit Request'}
@@ -1893,12 +1885,12 @@ const ITSupportPage = () => {
       {/* Ticket Details Modal */}
       {selectedTicket && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Ticket Details</h2>
-                <button onClick={() => setSelectedTicket(null)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <h2 className="text-[17px] font-semibold text-ink">Ticket Details</h2>
+                <button onClick={() => setSelectedTicket(null)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
@@ -1906,8 +1898,8 @@ const ITSupportPage = () => {
             <div className="p-6 space-y-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{selectedTicket.title}</h3>
-                  <p className="text-[12px] text-[#86868b] mt-1">
+                  <h3 className="text-[15px] font-semibold text-ink">{selectedTicket.title}</h3>
+                  <p className="text-[12px] text-ink-muted mt-1">
                     Submitted by {selectedTicket.requesterName} on{' '}
                     {selectedTicket.submittedDate?.toDate 
                       ? format(selectedTicket.submittedDate.toDate(), 'MMMM dd, yyyy')
@@ -1920,31 +1912,31 @@ const ITSupportPage = () => {
                     <span className="ml-1 capitalize">{selectedTicket.status?.replace('_', ' ')}</span>
                   </span>
                   <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${
-                    selectedTicket.priority === 'urgent' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
-                    selectedTicket.priority === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                    selectedTicket.priority === 'medium' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
-                    'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                    selectedTicket.priority === 'urgent' ? 'bg-danger/10 text-danger' :
+                    selectedTicket.priority === 'high' ? 'bg-warning/10 text-warning' :
+                    selectedTicket.priority === 'medium' ? 'bg-brand/10 text-brand' :
+                    'bg-surface-3 text-ink-muted'
                   }`}>
                     {priorities.find(p => p.value === selectedTicket.priority)?.label}
                   </span>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                <label className="text-[12px] font-medium text-[#86868b]">Category</label>
-                <p className="text-[14px] text-[#1d1d1f] dark:text-white mt-1 capitalize">
+              <div className="pt-4 border-t border-hairline">
+                <label className="text-[12px] font-medium text-ink-muted">Category</label>
+                <p className="text-[14px] text-ink mt-1 capitalize">
                   {categories.find(c => c.value === selectedTicket.category)?.label}
                 </p>
               </div>
 
               {selectedTicket.pageUrl && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b]">Page URL</label>
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted">Page URL</label>
                   <a 
                     href={selectedTicket.pageUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-[13px] text-[#0071e3] hover:underline mt-1 flex items-center gap-1"
+                    className="text-[13px] text-brand hover:underline mt-1 flex items-center gap-1"
                   >
                     <span className="break-all">{selectedTicket.pageUrl}</span>
                     <ExternalLink className="w-4 h-4 flex-shrink-0" />
@@ -1952,19 +1944,19 @@ const ITSupportPage = () => {
                 </div>
               )}
 
-              <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                <label className="text-[12px] font-medium text-[#86868b]">Description</label>
-                <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1 whitespace-pre-wrap">{selectedTicket.description}</p>
+              <div className="pt-4 border-t border-hairline">
+                <label className="text-[12px] font-medium text-ink-muted">Description</label>
+                <p className="text-[13px] text-ink mt-1 whitespace-pre-wrap">{selectedTicket.description}</p>
               </div>
 
               {selectedTicket.screenshotUrl && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b] mb-2 block">Screenshot</label>
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted mb-2 block">Screenshot</label>
                   <a 
                     href={selectedTicket.screenshotUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-[13px] text-[#0071e3] hover:underline flex items-center gap-1"
+                    className="text-[13px] text-brand hover:underline flex items-center gap-1"
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span>View Screenshot</span>
@@ -1974,11 +1966,11 @@ const ITSupportPage = () => {
               )}
 
               {selectedTicket.resolvedDate && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b]">
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted">
                     {selectedTicket.status === 'closed' ? 'Closed' : 'Resolved'}
                   </label>
-                  <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1">
+                  <p className="text-[13px] text-ink mt-1">
                     {selectedTicket.resolvedDate?.toDate 
                       ? format(selectedTicket.resolvedDate.toDate(), 'MMMM dd, yyyy')
                       : format(new Date(selectedTicket.resolvedDate), 'MMMM dd, yyyy')}
@@ -1988,19 +1980,19 @@ const ITSupportPage = () => {
               )}
 
               {selectedTicket.notes && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b]">
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted">
                     {selectedTicket.status === 'closed' ? 'Closing Reason' : 'IT Support Notes'}
                   </label>
-                  <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1 bg-[#0071e3]/5 border border-[#0071e3]/20 p-3 rounded-xl">
+                  <p className="text-[13px] text-ink mt-1 bg-brand/5 border border-brand/20 p-3 rounded-xl">
                     {selectedTicket.notes}
                   </p>
                 </div>
               )}
 
               {/* Comments Section */}
-              <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                <label className="text-[12px] font-medium text-[#86868b] mb-3 block">
+              <div className="pt-4 border-t border-hairline">
+                <label className="text-[12px] font-medium text-ink-muted mb-3 block">
                   💬 Comments ({ticketComments.length})
                 </label>
                 
@@ -2014,7 +2006,7 @@ const ITSupportPage = () => {
                         key={comment.id} 
                         className={`p-3 rounded-lg ${
                           comment.isITSupport 
-                            ? 'bg-blue-50 border border-blue-200' 
+                            ? 'bg-brand-soft border border-blue-200' 
                             : 'bg-gray-50 border border-gray-200'
                         }`}
                       >
@@ -2043,12 +2035,12 @@ const ITSupportPage = () => {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder={isITSupport ? "Reply to user..." : "Add a comment..."}
-                    className="flex-1 h-10 px-4 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="flex-1 h-10 px-4 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                   <button 
                     type="submit" 
                     disabled={!newComment.trim()}
-                    className="px-3 py-2 rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                    className="px-3 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -2056,11 +2048,11 @@ const ITSupportPage = () => {
               </div>
 
               {isITSupport && (
-                <div className="pt-4 mt-4 border-t border-black/5 dark:border-white/10 flex justify-end">
+                <div className="pt-4 mt-4 border-t border-hairline flex justify-end">
                   <button
                     onClick={() => handleDeleteSupportTicket(selectedTicket.id)}
                     disabled={deletingTicketId === selectedTicket.id}
-                    className="px-4 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-danger/10 text-danger text-[13px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     {deletingTicketId === selectedTicket.id ? 'Deleting...' : 'Delete Ticket'}
@@ -2076,23 +2068,23 @@ const ITSupportPage = () => {
       {/* Close Ticket Dialog */}
       {showCloseDialog && ticketToClose && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Close Ticket</h2>
+          <div className="bg-surface rounded-xl max-w-md w-full border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4">
+              <h2 className="text-[17px] font-semibold text-ink">Close Ticket</h2>
             </div>
             
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-[13px] text-[#86868b] mb-4">
+                <p className="text-[13px] text-ink-muted mb-4">
                   Are you sure you want to close this ticket?
                 </p>
-                <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <p className="text-[14px] font-medium text-ink mb-2">
                   {ticketToClose.title}
                 </p>
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Closing Reason (Optional)
                 </label>
                 <textarea
@@ -2100,27 +2092,27 @@ const ITSupportPage = () => {
                   onChange={(e) => setClosingReason(e.target.value)}
                   rows={3}
                   placeholder="Explain why this ticket is being closed (the user will see this)"
-                  className="w-full px-4 py-3 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
-                <p className="text-[11px] text-[#86868b] mt-1">
+                <p className="text-[11px] text-ink-muted mt-1">
                   Examples: "Issue resolved via email", "Duplicate ticket", "User cancelled request"
                 </p>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-hairline">
                 <button
                   onClick={() => {
                     setShowCloseDialog(false);
                     setTicketToClose(null);
                     setClosingReason('');
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleConfirmClose}
-                  className="px-4 py-2.5 rounded-xl bg-[#86868b] text-white text-[14px] font-medium hover:bg-[#6e6e73] transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-ink-muted text-white text-[14px] font-medium hover:bg-[#6e6e73] transition-colors"
                 >
                   Close Ticket
                 </button>
@@ -2134,41 +2126,41 @@ const ITSupportPage = () => {
       {/* Feedback Detail Modal */}
       {selectedFeedback && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
+            <div className="sticky top-0 bg-surface border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {selectedFeedback.type === 'bug' ? (
-                    <Bug className="w-5 h-5 text-[#ff3b30]" />
+                    <Bug className="w-5 h-5 text-danger" />
                   ) : (
-                    <Lightbulb className="w-5 h-5 text-[#ff9500]" />
+                    <Lightbulb className="w-5 h-5 text-warning" />
                   )}
-                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                  <h2 className="text-[17px] font-semibold text-ink">
                     {selectedFeedback.type === 'bug' ? 'Bug Report' : 'Feature Request'}
                   </h2>
                 </div>
-                <button onClick={() => setSelectedFeedback(null)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <button onClick={() => setSelectedFeedback(null)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
             
             <div className="p-6 space-y-4">
               <div>
-                <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{selectedFeedback.title}</h3>
+                <h3 className="text-[15px] font-semibold text-ink">{selectedFeedback.title}</h3>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${
-                    selectedFeedback.status === 'open' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                    selectedFeedback.status === 'in_progress' ? 'bg-[#0071e3]/10 text-[#0071e3]' :
-                    'bg-[#34c759]/10 text-[#34c759]'
+                    selectedFeedback.status === 'open' ? 'bg-warning/10 text-warning' :
+                    selectedFeedback.status === 'in_progress' ? 'bg-brand/10 text-brand' :
+                    'bg-positive/10 text-positive'
                   }`}>
                     {selectedFeedback.status}
                   </span>
                   {selectedFeedback.priority && (
                     <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${
-                      selectedFeedback.priority === 'critical' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
-                      selectedFeedback.priority === 'high' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                      'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                      selectedFeedback.priority === 'critical' ? 'bg-danger/10 text-danger' :
+                      selectedFeedback.priority === 'high' ? 'bg-warning/10 text-warning' :
+                      'bg-surface-3 text-ink-muted'
                     }`}>
                       {selectedFeedback.priority}
                     </span>
@@ -2176,26 +2168,26 @@ const ITSupportPage = () => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                <label className="text-[12px] font-medium text-[#86868b]">Submitted By</label>
-                <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1">
+              <div className="pt-4 border-t border-hairline">
+                <label className="text-[12px] font-medium text-ink-muted">Submitted By</label>
+                <p className="text-[13px] text-ink mt-1">
                   {selectedFeedback.userName} ({selectedFeedback.userEmail})
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                <label className="text-[12px] font-medium text-[#86868b]">Description</label>
-                <p className="text-[13px] text-[#1d1d1f] dark:text-white mt-1 whitespace-pre-wrap">{selectedFeedback.description}</p>
+              <div className="pt-4 border-t border-hairline">
+                <label className="text-[12px] font-medium text-ink-muted">Description</label>
+                <p className="text-[13px] text-ink mt-1 whitespace-pre-wrap">{selectedFeedback.description}</p>
               </div>
 
               {selectedFeedback.url && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b]">Page URL</label>
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted">Page URL</label>
                   <a 
                     href={selectedFeedback.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-[13px] text-[#0071e3] hover:underline mt-1 flex items-center gap-1"
+                    className="text-[13px] text-brand hover:underline mt-1 flex items-center gap-1"
                   >
                     <span className="break-all">{selectedFeedback.url}</span>
                     <ExternalLink className="w-4 h-4 flex-shrink-0" />
@@ -2204,10 +2196,10 @@ const ITSupportPage = () => {
               )}
 
               {selectedFeedback.selectedElement && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b]">Selected Element</label>
-                  <div className="mt-1 p-3 bg-black/5 dark:bg-white/5 rounded-xl">
-                    <p className="text-[12px] font-mono text-[#1d1d1f] dark:text-white">
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted">Selected Element</label>
+                  <div className="mt-1 p-3 bg-surface-3 rounded-xl">
+                    <p className="text-[12px] font-mono text-ink">
                       &lt;{selectedFeedback.selectedElement.tagName?.toLowerCase()}&gt;
                       {selectedFeedback.selectedElement.id && ` #${selectedFeedback.selectedElement.id}`}
                       {selectedFeedback.selectedElement.className && ` .${selectedFeedback.selectedElement.className.split(' ')[0]}`}
@@ -2217,14 +2209,14 @@ const ITSupportPage = () => {
               )}
 
               {selectedFeedback.consoleLogs && selectedFeedback.consoleLogs.length > 0 && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b]">Console Logs ({selectedFeedback.consoleLogs.length})</label>
-                  <div className="mt-2 p-3 bg-[#1d1d1f] rounded-xl max-h-48 overflow-y-auto">
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted">Console Logs ({selectedFeedback.consoleLogs.length})</label>
+                  <div className="mt-2 p-3 bg-ink rounded-xl max-h-48 overflow-y-auto">
                     {selectedFeedback.consoleLogs.slice(-50).map((log, idx) => (
                       <p key={idx} className={`text-[10px] font-mono ${
-                        log.type === 'error' ? 'text-[#ff3b30]' :
-                        log.type === 'warn' ? 'text-[#ff9500]' :
-                        'text-[#86868b]'
+                        log.type === 'error' ? 'text-danger' :
+                        log.type === 'warn' ? 'text-warning' :
+                        'text-ink-muted'
                       }`}>
                         [{log.type}] {log.message}
                       </p>
@@ -2234,9 +2226,9 @@ const ITSupportPage = () => {
               )}
 
               {selectedFeedback.userInfo && (
-                <div className="pt-4 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[12px] font-medium text-[#86868b]">Browser Info</label>
-                  <div className="mt-1 text-[12px] text-[#86868b]">
+                <div className="pt-4 border-t border-hairline">
+                  <label className="text-[12px] font-medium text-ink-muted">Browser Info</label>
+                  <div className="mt-1 text-[12px] text-ink-muted">
                     <p>Viewport: {selectedFeedback.userInfo.viewport?.width}x{selectedFeedback.userInfo.viewport?.height}</p>
                     <p className="truncate">User Agent: {selectedFeedback.userInfo.userAgent}</p>
                   </div>
@@ -2244,11 +2236,11 @@ const ITSupportPage = () => {
               )}
 
               {/* Status Actions */}
-              <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-wrap gap-2">
+              <div className="pt-4 border-t border-hairline flex flex-wrap gap-2">
                 {selectedFeedback.status === 'open' && (
                   <button
                     onClick={() => handleFeedbackStatusUpdate(selectedFeedback.id, 'in_progress')}
-                    className="px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                    className="px-4 py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors"
                   >
                     Mark In Progress
                   </button>
@@ -2256,21 +2248,21 @@ const ITSupportPage = () => {
                 {selectedFeedback.status !== 'resolved' && (
                   <button
                     onClick={() => handleFeedbackStatusUpdate(selectedFeedback.id, 'resolved')}
-                    className="px-4 py-2 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors"
+                    className="px-4 py-2 rounded-xl bg-positive text-white text-[13px] font-medium hover:bg-positive transition-colors"
                   >
                     Mark Resolved
                   </button>
                 )}
                 <button
                   onClick={() => setSelectedFeedback(null)}
-                  className="px-4 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-4 py-2 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => handleDeleteFeedback(selectedFeedback.id)}
                   disabled={deletingFeedbackId === selectedFeedback.id}
-                  className="px-4 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 flex items-center gap-2 ml-auto"
+                  className="px-4 py-2 rounded-xl bg-danger/10 text-danger text-[13px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50 flex items-center gap-2 ml-auto"
                 >
                   <Trash2 className="w-4 h-4" />
                   {deletingFeedbackId === selectedFeedback.id ? 'Deleting...' : 'Delete'}
@@ -2285,25 +2277,25 @@ const ITSupportPage = () => {
       {/* Chat Detail Modal */}
       {selectedChat && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col">
-            <div className="flex-shrink-0 border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-hairline-strong shadow-lg flex flex-col">
+            <div className="flex-shrink-0 border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5856d6] to-[#0071e3] flex items-center justify-center text-white font-semibold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand to-brand flex items-center justify-center text-white font-semibold">
                     {(selectedChat.userName || selectedChat.userEmail || '?').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                    <h2 className="text-[15px] font-semibold text-ink">
                       {selectedChat.userName || selectedChat.userEmail}
                     </h2>
-                    <p className="text-[12px] text-[#86868b]">{selectedChat.userEmail}</p>
+                    <p className="text-[12px] text-ink-muted">{selectedChat.userEmail}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {selectedChat.status === 'open' && (
                     <button
                       onClick={() => handleCloseChat(selectedChat.id)}
-                      className="px-3 py-1.5 rounded-lg bg-[#86868b] text-white text-[12px] font-medium hover:bg-[#6e6e73] transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-ink-muted text-white text-[12px] font-medium hover:bg-[#6e6e73] transition-colors"
                     >
                       Close Chat
                     </button>
@@ -2311,7 +2303,7 @@ const ITSupportPage = () => {
                   {selectedChat.status === 'closed' && (
                     <button
                       onClick={() => handleArchiveChat(selectedChat.id)}
-                      className="px-3 py-1.5 rounded-lg bg-[#ff9500]/10 text-[#ff9500] text-[12px] font-medium hover:bg-[#ff9500]/20 transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg bg-warning/10 text-warning text-[12px] font-medium hover:bg-warning/20 transition-colors flex items-center gap-1"
                     >
                       <Archive className="w-3.5 h-3.5" />
                       Archive
@@ -2320,13 +2312,13 @@ const ITSupportPage = () => {
                   <button
                     onClick={() => handleDeleteChat(selectedChat.id)}
                     disabled={deletingChatId === selectedChat.id}
-                    className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors flex items-center gap-1 disabled:opacity-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     {deletingChatId === selectedChat.id ? '...' : 'Delete'}
                   </button>
-                  <button onClick={() => setSelectedChat(null)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                    <X className="w-5 h-5 text-[#86868b]" />
+                  <button onClick={() => setSelectedChat(null)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                    <X className="w-5 h-5 text-ink-muted" />
                   </button>
                 </div>
               </div>
@@ -2338,13 +2330,13 @@ const ITSupportPage = () => {
                 const isAdmin = msg.senderEmail === currentUser?.email || msg.senderEmail === 'jrsschroeder@gmail.com';
                 return (
                   <div key={idx} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                    <div className={`max-w-[80%] px-4 py-3 rounded-xl ${
                       isAdmin 
-                        ? 'bg-[#0071e3] text-white' 
-                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white'
+                        ? 'bg-brand text-white' 
+                        : 'bg-surface-3 text-ink'
                     }`}>
                       <p className="text-[13px]">{msg.message}</p>
-                      <p className={`text-[10px] mt-1 ${isAdmin ? 'text-white/70' : 'text-[#86868b]'}`}>
+                      <p className={`text-[10px] mt-1 ${isAdmin ? 'text-white/70' : 'text-ink-muted'}`}>
                         {msg.senderName} • {msg.timestamp ? format(new Date(msg.timestamp), 'MMM dd, h:mm a') : ''}
                       </p>
                     </div>
@@ -2355,7 +2347,7 @@ const ITSupportPage = () => {
 
             {/* Reply Input */}
             {selectedChat.status === 'open' && (
-              <div className="flex-shrink-0 border-t border-black/5 dark:border-white/10 p-4">
+              <div className="flex-shrink-0 border-t border-hairline p-4">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -2363,12 +2355,12 @@ const ITSupportPage = () => {
                     onChange={(e) => setChatReply(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleChatReply()}
                     placeholder="Type your reply..."
-                    className="flex-1 h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="flex-1 h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                   <button
                     onClick={handleChatReply}
                     disabled={!chatReply.trim()}
-                    className="px-4 py-2 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -2377,8 +2369,8 @@ const ITSupportPage = () => {
             )}
 
             {selectedChat.status === 'closed' && (
-              <div className="flex-shrink-0 border-t border-black/5 dark:border-white/10 p-4 text-center">
-                <p className="text-[13px] text-[#86868b]">This chat has been closed</p>
+              <div className="flex-shrink-0 border-t border-hairline p-4 text-center">
+                <p className="text-[13px] text-ink-muted">This chat has been closed</p>
               </div>
             )}
           </div>

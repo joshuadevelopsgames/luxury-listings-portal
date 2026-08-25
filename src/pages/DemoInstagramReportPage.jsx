@@ -122,9 +122,9 @@ const DemoInstagramReportPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-brand-soft via-pink-50 to-warning-soft">
       {/* Demo Banner */}
-      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-2 px-4 text-center">
+      <div className="bg-gradient-to-r from-yellow-400 to-warning text-white py-2 px-4 text-center">
         <div className="flex items-center justify-center gap-2">
           <Sparkles className="w-4 h-4" />
           <span className="text-sm font-medium">Demo Preview - This is how your client reports will look with extracted data</span>
@@ -137,7 +137,7 @@ const DemoInstagramReportPage = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand via-pink-500 to-warning flex items-center justify-center">
                 <Instagram className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -147,7 +147,7 @@ const DemoInstagramReportPage = () => {
             </div>
             <a
               href="/instagram-reports"
-              className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+              className="text-sm text-brand hover:text-brand flex items-center gap-1"
             >
               Back to Reports <ExternalLink className="w-3 h-3" />
             </a>
@@ -157,7 +157,7 @@ const DemoInstagramReportPage = () => {
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand via-pink-600 to-warning" />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjLTItNC00LTItNC0ycy0yIDItMiA0YzAgMiAyIDQgMiA0czIgMiA0IDJjMiA0IDQgMiA0IDJzMi0yIDItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-10" />
         
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
@@ -194,7 +194,7 @@ const DemoInstagramReportPage = () => {
               icon: Eye, 
               label: 'Total Views', 
               value: report.metrics.views?.toLocaleString(), 
-              color: 'from-purple-500 to-purple-600',
+              color: 'from-brand to-brand',
               subtext: `${report.metrics.viewsFollowerPercent}% from followers`
             },
             { 
@@ -203,27 +203,27 @@ const DemoInstagramReportPage = () => {
               value: report.metrics.followers?.toLocaleString(), 
               color: 'from-pink-500 to-pink-600',
               subtext: `${report.metrics.followerChange > 0 ? '+' : ''}${report.metrics.followerChange} (${report.metrics.followerChangePercent}%)`,
-              subtextColor: report.metrics.followerChange > 0 ? 'text-green-600' : 'text-red-500'
+              subtextColor: report.metrics.followerChange > 0 ? 'text-positive' : 'text-danger'
             },
             { 
               icon: Heart, 
               label: 'Interactions', 
               value: report.metrics.interactions?.toLocaleString(), 
-              color: 'from-orange-500 to-orange-600',
+              color: 'from-warning to-warning',
               subtext: `${report.metrics.interactionsFollowerPercent}% from followers`
             },
             { 
               icon: MousePointer, 
               label: 'Profile Visits', 
               value: report.metrics.profileVisits?.toLocaleString(), 
-              color: 'from-blue-500 to-blue-600',
+              color: 'from-brand to-brand',
               subtext: report.metrics.profileVisitsChange,
-              subtextColor: 'text-green-600'
+              subtextColor: 'text-positive'
             },
           ].map((stat, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl shadow-lg p-5 transform hover:-translate-y-1 transition-all duration-300"
+              className="bg-white rounded-xl shadow-lg p-5 transform hover:-translate-y-1 transition-all duration-300"
             >
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-3`}>
                 <stat.icon className="w-6 h-6 text-white" />
@@ -240,9 +240,9 @@ const DemoInstagramReportPage = () => {
 
       {/* Report Highlights */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-purple-500" />
+            <MessageCircle className="w-5 h-5 text-brand" />
             Report Highlights
           </h2>
           <p className="text-gray-700 leading-relaxed">
@@ -256,9 +256,9 @@ const DemoInstagramReportPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Content Performance */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-500" />
+              <BarChart3 className="w-5 h-5 text-brand" />
               Views by Content Type
             </h3>
             <div className="space-y-4">
@@ -270,7 +270,7 @@ const DemoInstagramReportPage = () => {
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-3">
                     <div 
-                      className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                      className="h-3 rounded-full bg-gradient-to-r from-brand to-pink-500"
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
@@ -280,7 +280,7 @@ const DemoInstagramReportPage = () => {
           </div>
 
           {/* Interactions by Content */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500" />
               Interactions by Content Type
@@ -294,7 +294,7 @@ const DemoInstagramReportPage = () => {
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-3">
                     <div 
-                      className="h-3 rounded-full bg-gradient-to-r from-pink-500 to-orange-500"
+                      className="h-3 rounded-full bg-gradient-to-r from-pink-500 to-warning"
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
@@ -304,7 +304,7 @@ const DemoInstagramReportPage = () => {
           </div>
 
           {/* Top Locations */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-pink-500" />
               Top Locations
@@ -316,7 +316,7 @@ const DemoInstagramReportPage = () => {
                   <div className="flex items-center gap-3">
                     <div className="w-24 bg-gray-100 rounded-full h-2">
                       <div 
-                        className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-500"
+                        className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-warning"
                         style={{ width: `${(city.percentage / report.metrics.topCities[0].percentage) * 100}%` }}
                       />
                     </div>
@@ -328,9 +328,9 @@ const DemoInstagramReportPage = () => {
           </div>
 
           {/* Age Distribution */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-500" />
+              <Users className="w-5 h-5 text-brand" />
               Age Distribution
             </h3>
             <div className="space-y-3">
@@ -340,7 +340,7 @@ const DemoInstagramReportPage = () => {
                   <div className="flex items-center gap-3">
                     <div className="w-24 bg-gray-100 rounded-full h-2">
                       <div 
-                        className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                        className="h-2 rounded-full bg-gradient-to-r from-brand to-brand"
                         style={{ width: `${Math.min(100, range.percentage ?? 0)}%` }}
                       />
                     </div>
@@ -352,9 +352,9 @@ const DemoInstagramReportPage = () => {
           </div>
 
           {/* Gender Split */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-orange-500" />
+              <Activity className="w-5 h-5 text-warning" />
               Audience Gender
             </h3>
             <div className="flex items-center gap-6">
@@ -365,7 +365,7 @@ const DemoInstagramReportPage = () => {
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-4">
                   <div 
-                    className="h-4 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+                    className="h-4 rounded-full bg-gradient-to-r from-blue-400 to-brand"
                     style={{ width: `${report.metrics.gender.men}%` }}
                   />
                 </div>
@@ -386,9 +386,9 @@ const DemoInstagramReportPage = () => {
           </div>
 
           {/* Top Content */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-500" />
+              <Sparkles className="w-5 h-5 text-warning" />
               Top Performing Content
             </h3>
             <div className="flex gap-4">
@@ -403,29 +403,29 @@ const DemoInstagramReportPage = () => {
           </div>
 
           {/* Growth Metrics */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
+          <div className="bg-white rounded-xl shadow-lg p-6 lg:col-span-2">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-500" />
+              <TrendingUp className="w-5 h-5 text-positive" />
               Follower Growth
             </h3>
             <div className="grid grid-cols-3 gap-6">
               <div className="text-center p-4 bg-gray-50 rounded-xl">
-                <div className={`text-3xl font-bold ${report.metrics.growth.overall >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                <div className={`text-3xl font-bold ${report.metrics.growth.overall >= 0 ? 'text-positive' : 'text-danger'}`}>
                   {report.metrics.growth.overall >= 0 ? '+' : ''}{report.metrics.growth.overall}
                 </div>
                 <p className="text-sm text-gray-500 mt-1">Net Change</p>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-xl">
+              <div className="text-center p-4 bg-positive-soft rounded-xl">
                 <div className="flex items-center justify-center gap-2">
-                  <UserPlus className="w-5 h-5 text-green-600" />
-                  <span className="text-3xl font-bold text-green-600">{report.metrics.growth.follows.toLocaleString()}</span>
+                  <UserPlus className="w-5 h-5 text-positive" />
+                  <span className="text-3xl font-bold text-positive">{report.metrics.growth.follows.toLocaleString()}</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">New Follows</p>
               </div>
-              <div className="text-center p-4 bg-red-50 rounded-xl">
+              <div className="text-center p-4 bg-danger-soft rounded-xl">
                 <div className="flex items-center justify-center gap-2">
-                  <UserMinus className="w-5 h-5 text-red-500" />
-                  <span className="text-3xl font-bold text-red-500">{report.metrics.growth.unfollows.toLocaleString()}</span>
+                  <UserMinus className="w-5 h-5 text-danger" />
+                  <span className="text-3xl font-bold text-danger">{report.metrics.growth.unfollows.toLocaleString()}</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">Unfollows</p>
               </div>
@@ -433,16 +433,16 @@ const DemoInstagramReportPage = () => {
           </div>
 
           {/* Most Active Times */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
+          <div className="bg-white rounded-xl shadow-lg p-6 lg:col-span-2">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-purple-500" />
+              <Clock className="w-5 h-5 text-brand" />
               Most Active Times
             </h3>
             <div className="flex items-end justify-between gap-2 h-32">
               {report.metrics.activeTimes.map((time, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center">
                   <div 
-                    className="w-full bg-gradient-to-t from-purple-500 to-pink-500 rounded-t-lg transition-all duration-300 hover:from-purple-600 hover:to-pink-600"
+                    className="w-full bg-gradient-to-t from-brand to-pink-500 rounded-t-lg transition-all duration-300 hover:from-brand hover:to-pink-600"
                     style={{ height: `${time.activity}%` }}
                   />
                   <span className="text-xs text-gray-500 mt-2">{time.hour}</span>
@@ -467,7 +467,7 @@ const DemoInstagramReportPage = () => {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center border-2 border-dashed border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center border-2 border-dashed border-gray-200">
           <ImageIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
           <p className="text-gray-500">
             Screenshots from Instagram Insights would be displayed in a gallery here,<br />

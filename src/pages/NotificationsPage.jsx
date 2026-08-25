@@ -88,34 +88,34 @@ const NotificationsPage = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'time_off_request':
-        return <Calendar className="w-5 h-5 text-[#ff9500]" />;
+        return <Calendar className="w-5 h-5 text-warning" />;
       case 'time_off_approved':
-        return <CheckCircle className="w-5 h-5 text-[#34c759]" />;
+        return <CheckCircle className="w-5 h-5 text-positive" />;
       case 'time_off_rejected':
-        return <X className="w-5 h-5 text-[#ff3b30]" />;
+        return <X className="w-5 h-5 text-danger" />;
       case 'time_off_cancelled':
-        return <AlertCircle className="w-5 h-5 text-[#ff9500]" />;
+        return <AlertCircle className="w-5 h-5 text-warning" />;
       case 'leave_balance_updated':
-        return <Calendar className="w-5 h-5 text-[#5856d6]" />;
+        return <Calendar className="w-5 h-5 text-brand" />;
       case 'ticket_comment':
-        return <MessageSquare className="w-5 h-5 text-blue-600" />;
+        return <MessageSquare className="w-5 h-5 text-brand" />;
       case 'ticket_status':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        return <CheckCircle className="w-5 h-5 text-positive" />;
       case 'task_request':
-        return <MessageSquare className="w-5 h-5 text-orange-600" />;
+        return <MessageSquare className="w-5 h-5 text-warning" />;
       case 'task_accepted':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        return <CheckCircle className="w-5 h-5 text-positive" />;
       case 'task_completed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        return <CheckCircle className="w-5 h-5 text-positive" />;
       case 'task_rejected':
-        return <Bell className="w-5 h-5 text-red-600" />;
+        return <Bell className="w-5 h-5 text-danger" />;
       case 'error_report':
-        return <AlertCircle className="w-5 h-5 text-[#ff3b30]" />;
+        return <AlertCircle className="w-5 h-5 text-danger" />;
       case 'post_due':
       case 'task_reminder':
-        return <Calendar className="w-5 h-5 text-[#0071e3]" />;
+        return <Calendar className="w-5 h-5 text-brand" />;
       default:
-        return <Bell className="w-5 h-5 text-[#86868b]" />;
+        return <Bell className="w-5 h-5 text-ink-muted" />;
     }
   };
 
@@ -145,15 +145,15 @@ const NotificationsPage = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors"
+            className="p-2 hover:bg-surface-3 rounded-xl transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-[#86868b]" />
+            <ArrowLeft className="w-5 h-5 text-ink-muted" />
           </button>
           <div>
-            <h1 className="text-2xl font-semibold text-[#1d1d1f] dark:text-white">
+            <h1 className="text-2xl font-semibold text-ink">
               Notifications
             </h1>
-            <p className="text-sm text-[#86868b]">
+            <p className="text-sm text-ink-muted">
               {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up!'}
             </p>
           </div>
@@ -163,7 +163,7 @@ const NotificationsPage = () => {
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong transition-colors"
             >
               <Check className="w-4 h-4" />
               Mark all read
@@ -172,7 +172,7 @@ const NotificationsPage = () => {
           {notifications.length > 0 && (
             <button
               onClick={handleClearAll}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/10 text-danger text-[13px] font-medium hover:bg-danger/20 transition-colors"
             >
               <Trash2 className="w-4 h-4" />
               Clear all
@@ -189,8 +189,8 @@ const NotificationsPage = () => {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               filter === f
-                ? 'bg-[#0071e3] text-white'
-                : 'bg-black/5 dark:bg-white/5 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10'
+                ? 'bg-brand text-white'
+                : 'bg-surface-3 text-ink-muted hover:bg-black/10 dark:hover:bg-white/10'
             }`}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -204,19 +204,19 @@ const NotificationsPage = () => {
       </div>
 
       {/* Notifications List */}
-      <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div className="bg-surface rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0071e3] mx-auto"></div>
-            <p className="text-sm text-[#86868b] mt-4">Loading notifications...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand mx-auto"></div>
+            <p className="text-sm text-ink-muted mt-4">Loading notifications...</p>
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="p-12 text-center">
-            <Bell className="w-16 h-16 text-[#86868b]/50 mx-auto mb-4" />
-            <p className="text-lg font-medium text-[#1d1d1f] dark:text-white mb-2">
+            <Bell className="w-16 h-16 text-ink-muted/50 mx-auto mb-4" />
+            <p className="text-lg font-medium text-ink mb-2">
               {filter === 'all' ? 'No notifications yet' : `No ${filter} notifications`}
             </p>
-            <p className="text-sm text-[#86868b]">
+            <p className="text-sm text-ink-muted">
               {filter === 'all' 
                 ? "You're all caught up!" 
                 : `Try checking the "${filter === 'unread' ? 'all' : 'unread'}" tab`}
@@ -229,42 +229,42 @@ const NotificationsPage = () => {
                 key={notification.id}
                 onClick={() => handleNotificationClick(notification)}
                 className={`p-5 cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors ${
-                  !notification.read ? 'bg-[#0071e3]/5' : ''
+                  !notification.read ? 'bg-brand/5' : ''
                 }`}
               >
                 <div className="flex items-start gap-4">
                   {/* Icon */}
-                  <div className={`p-3 rounded-xl ${!notification.read ? 'bg-[#0071e3]/10' : 'bg-black/5 dark:bg-white/5'}`}>
+                  <div className={`p-3 rounded-xl ${!notification.read ? 'bg-brand/10' : 'bg-surface-3'}`}>
                     {getNotificationIcon(notification.type)}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
+                      <p className="text-[15px] font-medium text-ink">
                         {notification.title}
                         {(notification.count || 0) > 1 && (
-                          <span className="ml-1.5 text-[#86868b] font-normal">({notification.count})</span>
+                          <span className="ml-1.5 text-ink-muted font-normal">({notification.count})</span>
                         )}
                       </p>
                       {!notification.read && (
-                        <span className="px-2 py-0.5 bg-[#0071e3] text-white text-[10px] font-semibold rounded-full">
+                        <span className="px-2 py-0.5 bg-brand text-white text-[10px] font-semibold rounded-full">
                           NEW
                         </span>
                       )}
                     </div>
-                    <p className="text-[13px] text-[#86868b] mb-2">
+                    <p className="text-[13px] text-ink-muted mb-2">
                       {notification.message}
                     </p>
-                    <div className="flex items-center gap-3 text-xs text-[#86868b]">
-                      <span className="px-2 py-1 bg-black/5 dark:bg-white/5 rounded-md">
+                    <div className="flex items-center gap-3 text-xs text-ink-muted">
+                      <span className="px-2 py-1 bg-surface-3 rounded-md">
                         {getTypeLabel(notification.type)}
                       </span>
                       <span>
                         {safeFormatDate(notification.updatedAt || notification.createdAt, 'MMM d, yyyy h:mm a', 'Just now')}
                       </span>
                       {notification.link && (
-                        <span className="text-[#0071e3]">Click to view →</span>
+                        <span className="text-brand">Click to view →</span>
                       )}
                     </div>
                   </div>
@@ -272,7 +272,7 @@ const NotificationsPage = () => {
                   {/* Delete Button */}
                   <button
                     onClick={(e) => handleDeleteNotification(notification.id, e)}
-                    className="p-2 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded-lg transition-colors"
+                    className="p-2 text-ink-muted hover:text-danger hover:bg-danger/10 rounded-lg transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>

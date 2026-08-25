@@ -241,7 +241,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
   };
 
   return (
-    <Card className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white border-none">
+    <Card className="bg-ink text-white border-none">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">

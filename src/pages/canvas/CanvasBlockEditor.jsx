@@ -77,7 +77,7 @@ function getUnifiedBlockWrapperClass(blockType) {
     case 'h3': return 'text-lg font-semibold mt-2 mb-0.5';
     case 'quote': return 'border-l-4 border-primary pl-4 py-1 bg-muted rounded-r text-muted-foreground italic';
     case 'code': return 'font-mono text-sm bg-muted border border-border rounded px-4 py-2 whitespace-pre-wrap';
-    case 'callout': return 'flex gap-2 py-2 px-3 bg-amber-500/10 dark:bg-amber-500/15 border-l-4 border-amber-500 dark:border-amber-400 rounded-r';
+    case 'callout': return 'flex gap-2 py-2 px-3 bg-warning/10 dark:bg-warning/15 border-l-4 border-warning dark:border-amber-400 rounded-r';
     case 'bullet':
     case 'ordered': return 'pl-4';
     default: return 'min-h-[24px]';
@@ -328,7 +328,7 @@ function ReportBlock({ block, onContentChange }) {
         <iframe
           src={reportUrl}
           title={data.title || 'Report'}
-          className="w-full border-0 bg-white dark:bg-[#1d1d1f]"
+          className="w-full border-0 bg-surface"
           style={{ height: data.size === 'small' ? 280 : 420, minHeight: data.size === 'small' ? 280 : 420 }}
         />
       )}
@@ -443,7 +443,7 @@ function SortableBlock({ block, onContentChange, onRemove, isFocused, onFocus, f
       ref={setNodeRef}
       style={style}
       className={`group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50 ${
-        isFocused ? 'bg-amber-100/70 dark:bg-amber-500/20 ring-1 ring-amber-400/60' : ''
+        isFocused ? 'bg-warning-soft/70 dark:bg-warning/20 ring-1 ring-amber-400/60' : ''
       }`}
       data-block-id={block.id}
       data-block-type={block.type}
@@ -552,7 +552,7 @@ function UnifiedBlockRow({ block, bodyRefCallback, isTextLike, onContentChange, 
       ref={setNodeRef}
       style={style}
       className={`group flex gap-1 py-0.5 -mx-2 px-2 rounded hover:bg-muted/50 ${
-        isFocused ? 'bg-amber-100/70 dark:bg-amber-500/20 ring-1 ring-amber-400/60' : ''
+        isFocused ? 'bg-warning-soft/70 dark:bg-warning/20 ring-1 ring-amber-400/60' : ''
       }`}
       data-block-id={block.id}
       data-block-type={block.type}
@@ -883,7 +883,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
               : block.type === 'code'
                 ? 'font-mono text-sm bg-muted border border-border rounded px-4 py-2 whitespace-pre-wrap'
                 : block.type === 'callout'
-                  ? 'flex gap-2 py-2 px-3 bg-amber-500/10 dark:bg-amber-500/15 border-l-4 border-amber-500 dark:border-amber-400 rounded-r'
+                  ? 'flex gap-2 py-2 px-3 bg-warning/10 dark:bg-warning/15 border-l-4 border-warning dark:border-amber-400 rounded-r'
                   : block.type === 'bullet' || block.type === 'ordered'
                     ? 'pl-4'
                     : 'min-h-[24px]';
@@ -1746,7 +1746,7 @@ function CanvasBlockEditorInner({
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setAddBlockMenuOpen(false)} aria-hidden />
                 <div
-                  className="fixed z-50 w-[230px] max-h-[280px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+                  className="fixed z-50 w-[230px] max-h-[280px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-lg"
                   style={{
                     left: addBlockMenuPosRef.current.left,
                     ...(addBlockMenuPosRef.current.bottom != null
@@ -1796,7 +1796,7 @@ function CanvasBlockEditorInner({
         // #endregion
         return (
         <div
-          className="fixed z-50 w-[230px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+          className="fixed z-50 w-[230px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-lg"
           style={{ left: slashPosRef.current.left, top: slashPosRef.current.top }}
         >
           {slashItems.map((c, i) => (
@@ -1844,7 +1844,7 @@ function CanvasBlockEditorInner({
 
       {openCommentBlockId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setOpenCommentBlockId(null)}>
-          <div className="bg-popover border border-border rounded-xl shadow-xl w-full max-w-md max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-popover border border-border rounded-xl shadow-lg w-full max-w-md max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="p-3 border-b border-border font-medium text-foreground">Comments</div>
             <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
               {(blockDataMap[openCommentBlockId]?.comments || []).map((c) => (
@@ -1879,7 +1879,7 @@ function CanvasBlockEditorInner({
 
       {wikiOpen && wikiItems.length > 0 && (
         <div
-          className="fixed z-50 w-[260px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+          className="fixed z-50 w-[260px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-lg"
           style={{ left: wikiPosRef.current.left, top: wikiPosRef.current.top }}
         >
           {wikiItems.map((w, i) => (
@@ -1897,7 +1897,7 @@ function CanvasBlockEditorInner({
 
       {mentionOpen && mentionItems.length > 0 && (
         <div
-          className="fixed z-50 w-[260px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+          className="fixed z-50 w-[260px] max-h-[260px] overflow-y-auto py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-lg"
           style={{ left: mentionPosRef.current.left, top: mentionPosRef.current.top }}
         >
           {mentionItems.map((u, i) => (

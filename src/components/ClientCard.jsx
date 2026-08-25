@@ -74,33 +74,33 @@ const ClientCard = ({
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
+      case 'active': return 'bg-positive-soft text-positive';
+      case 'pending': return 'bg-warning-soft text-warning';
+      case 'completed': return 'bg-brand-soft text-brand';
+      case 'overdue': return 'bg-danger-soft text-danger';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getPaymentStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      case 'partial': return 'bg-orange-100 text-orange-800';
+      case 'paid': return 'bg-positive-soft text-positive';
+      case 'pending': return 'bg-warning-soft text-warning';
+      case 'overdue': return 'bg-danger-soft text-danger';
+      case 'partial': return 'bg-warning-soft text-warning';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getPackageTypeColor = (packageType) => {
     const colors = {
-      'Standard': 'bg-blue-100 text-blue-800',
+      'Standard': 'bg-brand-soft text-brand',
       'Silver': 'bg-gray-300 text-gray-800',
-      'Gold': 'bg-yellow-100 text-yellow-800',
-      'Platinum': 'bg-purple-100 text-purple-800',
-      'Seven': 'bg-indigo-100 text-indigo-800',
+      'Gold': 'bg-warning-soft text-warning',
+      'Platinum': 'bg-brand-soft text-brand',
+      'Seven': 'bg-brand-soft text-brand',
       'Custom': 'bg-pink-100 text-pink-800',
-      'Monthly': 'bg-green-100 text-green-800'
+      'Monthly': 'bg-positive-soft text-positive'
     };
     return colors[packageType] || 'bg-gray-100 text-gray-800';
   };
@@ -110,7 +110,7 @@ const ClientCard = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg font-bold">
+            <div className="w-12 h-12 bg-brand rounded-full flex items-center justify-center text-white text-lg font-bold">
               {client.clientName?.[0] || 'C'}
             </div>
             <div>
@@ -153,7 +153,7 @@ const ClientCard = ({
                 type="email"
                 value={editedData.clientEmail || client.clientEmail}
                 onChange={(e) => setEditedData({...editedData, clientEmail: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-brand"
               />
             ) : (
               <p className="text-gray-900 mt-1">{client.clientEmail || 'Not provided'}</p>
@@ -170,7 +170,7 @@ const ClientCard = ({
                 type="tel"
                 value={editedData.phone || client.phone || ''}
                 onChange={(e) => setEditedData({...editedData, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-brand"
                 placeholder="(555) 123-4567"
               />
             ) : (
@@ -189,7 +189,7 @@ const ClientCard = ({
                   type="text"
                   value={editedData.address || client.address || ''}
                   onChange={(e) => setEditedData({...editedData, address: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1 focus:outline-none focus:ring-2 focus:ring-brand"
                   placeholder="Client address"
                 />
               ) : (
@@ -226,11 +226,11 @@ const ClientCard = ({
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Posts Used</p>
-                  <p className="text-lg font-semibold text-blue-600">{client.postsUsed}</p>
+                  <p className="text-lg font-semibold text-brand">{client.postsUsed}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Remaining</p>
-                  <p className="text-lg font-semibold text-green-600">{client.postsRemaining}</p>
+                  <p className="text-lg font-semibold text-positive">{client.postsRemaining}</p>
                 </div>
               </div>
 

@@ -594,12 +594,12 @@ const UserManagement = () => {
     if (!role) return 'bg-gray-100 text-gray-800';
     
     const colors = {
-      'admin': 'bg-red-100 text-red-800',
-      'director': 'bg-indigo-100 text-indigo-800',
-      'content_director': 'bg-blue-100 text-blue-800',
-      'social_media_manager': 'bg-purple-100 text-purple-800',
-      'hr_manager': 'bg-green-100 text-green-800',
-      'sales_manager': 'bg-orange-100 text-orange-800',
+      'admin': 'bg-danger-soft text-danger',
+      'director': 'bg-brand-soft text-brand',
+      'content_director': 'bg-brand-soft text-brand',
+      'social_media_manager': 'bg-brand-soft text-brand',
+      'hr_manager': 'bg-positive-soft text-positive',
+      'sales_manager': 'bg-warning-soft text-warning',
       'assistant': 'bg-slate-100 text-slate-800',
       'pending': 'bg-gray-100 text-gray-800'
     };
@@ -1101,7 +1101,7 @@ const UserManagement = () => {
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 />
               </div>
@@ -1111,7 +1111,7 @@ const UserManagement = () => {
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 />
               </div>
@@ -1122,7 +1122,7 @@ const UserManagement = () => {
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="admin">Admin</option>
                 <option value="director">Director</option>
@@ -1140,7 +1140,7 @@ const UserManagement = () => {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             
@@ -1150,7 +1150,7 @@ const UserManagement = () => {
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             
@@ -1160,12 +1160,12 @@ const UserManagement = () => {
                 value={formData.bio}
                 onChange={(e) => setFormData({...formData, bio: e.target.value})}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             
             <div className="flex space-x-3 pt-4">
-              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" className="flex-1 bg-brand hover:bg-brand-hover">
                 Save Changes
               </Button>
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
@@ -1210,22 +1210,22 @@ const UserManagement = () => {
   return (
     <div className="p-6 space-y-6">
       {/* Super Prominent Refresh Button */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="bg-brand-soft border border-blue-200 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-blue-900">Firestore Status - UPDATED 8/18/2025</h2>
-            <p className="text-blue-700 text-sm">Click to refresh pending users from database</p>
+            <p className="text-brand text-sm">Click to refresh pending users from database</p>
           </div>
           <Button
             onClick={handleRefreshUsers}
             className={`px-6 py-3 font-bold text-lg ${
               firestoreStatus === 'loading' 
-                ? 'bg-blue-600 text-white' 
+                ? 'bg-brand text-white' 
                 : firestoreStatus === 'success'
-                ? 'bg-green-600 text-white'
+                ? 'bg-positive text-white'
                 : firestoreStatus === 'error'
-                ? 'bg-red-600 text-white'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                ? 'bg-danger text-white'
+                : 'bg-brand text-white hover:bg-brand-hover'
             }`}
             disabled={loading || firestoreStatus === 'loading'}
           >
@@ -1245,7 +1245,7 @@ const UserManagement = () => {
         {canAddUser && (
           <Button
             onClick={() => setShowAddUserModal(true)}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+            className="flex items-center gap-2 bg-positive hover:bg-positive-hover"
           >
             <UserPlus className="w-4 h-4" />
             Add New User
@@ -1261,7 +1261,7 @@ const UserManagement = () => {
             <div className="text-sm text-gray-600">Approved Users</div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-orange-600">{pendingUsers.length}</div>
+            <div className="text-2xl font-bold text-warning">{pendingUsers.length}</div>
             <div className="text-sm text-gray-600">Pending Approval</div>
           </div>
         </div>
@@ -1270,14 +1270,14 @@ const UserManagement = () => {
           <Button
             onClick={handleFixUserRoles}
             variant="outline"
-            className="bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+            className="bg-warning-soft border-yellow-300 text-warning hover:bg-warning-soft"
           >
             🔧 Fix User Roles
           </Button>
           <Button
             onClick={handleCleanDuplicates}
             variant="outline"
-            className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+            className="bg-danger-soft border-red-300 text-danger hover:bg-danger-soft"
             disabled={isProcessing}
           >
             {isProcessing ? '🧹 Processing...' : '🧹 Clean Duplicates'}
@@ -1303,7 +1303,7 @@ const UserManagement = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="text-center">
-                  <UserCheck className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                  <UserCheck className="w-12 h-12 text-positive mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No Pending Users</h3>
                   <p className="text-gray-600">All user requests have been processed.</p>
                 </div>
@@ -1317,12 +1317,12 @@ const UserManagement = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-lg">
-                          <EmployeeLink user={user} showId className="text-[#1d1d1f] dark:text-white">
+                          <EmployeeLink user={user} showId className="text-ink">
                             {user.firstName} {user.lastName}
                           </EmployeeLink>
                         </CardTitle>
                       </div>
-                      <Badge variant="outline" className="border-orange-300 text-orange-700">
+                      <Badge variant="outline" className="border-orange-300 text-warning">
                         Pending
                       </Badge>
                     </div>
@@ -1359,7 +1359,7 @@ const UserManagement = () => {
                         <Button
                           size="sm"
                           onClick={() => handleApproveUserAsAdmin(user)}
-                          className="flex-1 bg-red-600 hover:bg-red-700"
+                          className="flex-1 bg-danger hover:bg-danger-hover"
                           disabled={isProcessing}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -1369,7 +1369,7 @@ const UserManagement = () => {
                         <Button
                           size="sm"
                           onClick={() => handleApproveUser(user)}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          className="flex-1 bg-positive hover:bg-positive-hover"
                           disabled={isProcessing}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -1415,12 +1415,12 @@ const UserManagement = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-lg">
-                          <EmployeeLink user={user} showId className="text-[#1d1d1f] dark:text-white">
+                          <EmployeeLink user={user} showId className="text-ink">
                             {user.firstName} {user.lastName}
                           </EmployeeLink>
                         </CardTitle>
                       </div>
-                      <Badge variant="outline" className="border-green-300 text-green-700">
+                      <Badge variant="outline" className="border-green-300 text-positive">
                         Approved
                       </Badge>
                     </div>
@@ -1456,7 +1456,7 @@ const UserManagement = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleManageUser(user)}
-                        className="bg-blue-600 text-white hover:bg-blue-700 col-span-2"
+                        className="bg-brand text-white hover:bg-brand-hover col-span-2"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Manage User
@@ -1466,7 +1466,7 @@ const UserManagement = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeleteApprovedUser(user.email)}
-                          className="col-span-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="col-span-2 text-danger hover:text-danger hover:bg-danger-soft"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           Delete User
@@ -1497,12 +1497,12 @@ const UserManagement = () => {
       {/* Role Assignment Modal */}
       {showRoleAssignmentModal && selectedUserForRoles && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-md w-full mx-4 border border-black/5 dark:border-white/10">
+          <div className="bg-surface rounded-lg p-6 max-w-md w-full mx-4 border border-hairline">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#1d1d1f] dark:text-white">Assign Roles to {selectedUserForRoles.firstName} {selectedUserForRoles.lastName}</h2>
+              <h2 className="text-xl font-bold text-ink">Assign Roles to {selectedUserForRoles.firstName} {selectedUserForRoles.lastName}</h2>
               <button 
                 onClick={() => setShowRoleAssignmentModal(false)} 
-                className="text-gray-500 dark:text-[#a1a1a6] hover:text-gray-700 dark:hover:text-white"
+                className="text-gray-500 dark:text-ink-subtle hover:text-gray-700 dark:hover:text-white"
                 disabled={isProcessing}
               >
                 <X className="w-6 h-6" />
@@ -1510,10 +1510,10 @@ const UserManagement = () => {
             </div>
             
             {/* Connection Status */}
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700/50 rounded-md">
+            <div className="mb-4 p-3 bg-brand-soft dark:bg-blue-900/30 border border-blue-200 dark:border-brand/50 rounded-md">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-blue-700 dark:text-blue-300">Connected to Firestore</span>
+                <div className="w-2 h-2 bg-positive rounded-full"></div>
+                <span className="text-sm text-brand dark:text-blue-300">Connected to Firestore</span>
               </div>
             </div>
             
@@ -1536,7 +1536,7 @@ const UserManagement = () => {
                 </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {/* Built-in Roles */}
-                  <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mb-1">Built-in Roles</div>
+                  <div className="text-xs text-gray-500 dark:text-ink-subtle font-medium mb-1">Built-in Roles</div>
                   {getAllRoles().filter(r => r.isBuiltIn).map((roleObj) => (
                     <label key={roleObj.id} className="flex items-center space-x-3 cursor-pointer">
                       <input
@@ -1549,14 +1549,14 @@ const UserManagement = () => {
                             setSelectedRoles(selectedRoles.filter(r => r !== roleObj.id));
                           }
                         }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-brand focus:ring-brand"
                       />
                       <div className="flex items-center space-x-2">
                         <Badge className={getRoleBadgeColor(roleObj.id)}>
                           {roleObj.displayName}
                         </Badge>
                         {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
-                          <span className="text-xs text-blue-600 dark:text-blue-400">⭐ Primary</span>
+                          <span className="text-xs text-brand dark:text-blue-400">⭐ Primary</span>
                         )}
                       </div>
                     </label>
@@ -1565,7 +1565,7 @@ const UserManagement = () => {
                   {/* Custom Roles */}
                   {customRoles.length > 0 && (
                     <>
-                      <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mt-3 mb-1">Custom Roles</div>
+                      <div className="text-xs text-gray-500 dark:text-ink-subtle font-medium mt-3 mb-1">Custom Roles</div>
                       {getAllRoles().filter(r => !r.isBuiltIn).map((roleObj) => (
                         <label key={roleObj.id} className="flex items-center space-x-3 cursor-pointer">
                           <input
@@ -1578,14 +1578,14 @@ const UserManagement = () => {
                                 setSelectedRoles(selectedRoles.filter(r => r !== roleObj.id));
                               }
                             }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-gray-300 text-brand focus:ring-brand"
                           />
                           <div className="flex items-center space-x-2">
-                            <Badge className="bg-purple-100 text-purple-800">
+                            <Badge className="bg-brand-soft text-brand">
                               {roleObj.icon || '👤'} {roleObj.displayName}
                             </Badge>
                             {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
-                              <span className="text-xs text-blue-600 dark:text-blue-400">⭐ Primary</span>
+                              <span className="text-xs text-brand dark:text-blue-400">⭐ Primary</span>
                             )}
                           </div>
                         </label>
@@ -1633,7 +1633,7 @@ const UserManagement = () => {
                   <Button
                     onClick={handleSaveRoleAssignment}
                     disabled={isProcessing || selectedRoles.length === 0}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-brand hover:bg-brand-hover"
                   >
                     {isProcessing ? 'Saving...' : 'Save Roles'}
                   </Button>
@@ -1648,7 +1648,7 @@ const UserManagement = () => {
       {/* Manage Permissions Modal */}
       {showPermissionsModal && selectedUserForPermissions && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
+          <div className="bg-surface rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-hairline">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -1709,7 +1709,7 @@ const UserManagement = () => {
                               setSelectedPermissions(selectedPermissions.filter(p => p !== permission));
                             }
                           }}
-                          className="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5"
+                          className="mt-1 rounded border-gray-300 text-brand focus:ring-brand w-5 h-5"
                         />
                         <div className="flex-1">
                           <div className="font-medium text-gray-900 text-sm">
@@ -1722,7 +1722,7 @@ const UserManagement = () => {
                 </div>
               ))}
 
-              <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+              <div className="bg-brand-soft border-l-4 border-brand rounded-lg p-4">
                 <p className="text-sm text-blue-900">
                   <strong>💡 Tip:</strong> Custom permissions give this user specific abilities across all roles they switch into. These override role-based permissions.
                 </p>
@@ -1745,7 +1745,7 @@ const UserManagement = () => {
               <Button
                 onClick={handleSavePermissions}
                 disabled={isProcessing}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-brand hover:bg-brand-hover"
               >
                 {isProcessing ? (
                   <>
@@ -1768,7 +1768,7 @@ const UserManagement = () => {
       {/* Add New User Modal */}
       {showAddUserModal && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
+          <div className="bg-surface rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-hairline">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Add New User</h2>
               <button 
@@ -1793,7 +1793,7 @@ const UserManagement = () => {
                       type="email"
                       value={newUserForm.email}
                       onChange={(e) => setNewUserForm({...newUserForm, email: e.target.value})}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-brand focus:ring-2 focus:ring-blue-200 transition-colors"
                       placeholder="user@luxury-listings.com"
                       required
                     />
@@ -1808,7 +1808,7 @@ const UserManagement = () => {
                       type="text"
                       value={newUserForm.department}
                       onChange={(e) => setNewUserForm({...newUserForm, department: e.target.value})}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-brand focus:ring-2 focus:ring-blue-200 transition-colors"
                       placeholder="Marketing, Sales, etc."
                     />
                   </div>
@@ -1822,7 +1822,7 @@ const UserManagement = () => {
                       type="text"
                       value={newUserForm.firstName}
                       onChange={(e) => setNewUserForm({...newUserForm, firstName: e.target.value})}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-brand focus:ring-2 focus:ring-blue-200 transition-colors"
                       placeholder="John"
                       required
                     />
@@ -1837,7 +1837,7 @@ const UserManagement = () => {
                       type="text"
                       value={newUserForm.lastName}
                       onChange={(e) => setNewUserForm({...newUserForm, lastName: e.target.value})}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-brand focus:ring-2 focus:ring-blue-200 transition-colors"
                       placeholder="Doe"
                       required
                     />
@@ -1852,7 +1852,7 @@ const UserManagement = () => {
                       type="tel"
                       value={newUserForm.phone}
                       onChange={(e) => setNewUserForm({...newUserForm, phone: e.target.value})}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-brand focus:ring-2 focus:ring-blue-200 transition-colors"
                       placeholder="(555) 123-4567"
                     />
                   </div>
@@ -1866,7 +1866,7 @@ const UserManagement = () => {
                       type="text"
                       value={newUserForm.location}
                       onChange={(e) => setNewUserForm({...newUserForm, location: e.target.value})}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-brand focus:ring-2 focus:ring-blue-200 transition-colors"
                       placeholder="Vancouver, BC"
                     />
                   </div>
@@ -1889,8 +1889,8 @@ const UserManagement = () => {
                   )}
                 </div>
                 {!isSystemAdmin ? (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-amber-800 text-sm">
+                  <div className="p-4 bg-warning-soft border border-amber-200 rounded-lg">
+                    <p className="text-warning text-sm">
                       Only system administrators can assign roles. Contact jrsschroeder@gmail.com.
                     </p>
                   </div>
@@ -1899,7 +1899,7 @@ const UserManagement = () => {
                     <p className="text-sm text-gray-600 mb-3">Select at least one role. The first role selected will be the primary role.</p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {/* Built-in Roles */}
-                      <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mb-1">Built-in Roles</div>
+                      <div className="text-xs text-gray-500 dark:text-ink-subtle font-medium mb-1">Built-in Roles</div>
                       {Object.entries(USER_ROLES)
                         .filter(([key, value]) => value !== 'pending')
                         .map(([key, role]) => (
@@ -1914,14 +1914,14 @@ const UserManagement = () => {
                                   setNewUserForm({...newUserForm, roles: newUserForm.roles.filter(r => r !== role)});
                                 }
                               }}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                              className="rounded border-gray-300 text-brand focus:ring-brand w-5 h-5"
                             />
                             <div className="flex items-center space-x-2 flex-1">
                               <Badge className={getRoleBadgeColor(role)}>
                                 {getRoleDisplayName(role)}
                               </Badge>
                               {newUserForm.roles.includes(role) && newUserForm.roles.indexOf(role) === 0 && (
-                                <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                                <span className="text-xs text-brand font-medium">⭐ Primary</span>
                               )}
                             </div>
                           </label>
@@ -1930,7 +1930,7 @@ const UserManagement = () => {
                       {/* Custom Roles */}
                       {customRoles.length > 0 && (
                         <>
-                          <div className="text-xs text-gray-500 dark:text-[#a1a1a6] font-medium mt-3 mb-1">Custom Roles</div>
+                          <div className="text-xs text-gray-500 dark:text-ink-subtle font-medium mt-3 mb-1">Custom Roles</div>
                           {customRoles.map((role) => (
                             <label key={role.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
                               <input
@@ -1943,14 +1943,14 @@ const UserManagement = () => {
                                     setNewUserForm({...newUserForm, roles: newUserForm.roles.filter(r => r !== role.id)});
                                   }
                                 }}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                                className="rounded border-gray-300 text-brand focus:ring-brand w-5 h-5"
                               />
                               <div className="flex items-center space-x-2 flex-1">
-                                <Badge className="bg-purple-100 text-purple-800">
+                                <Badge className="bg-brand-soft text-brand">
                                   {role.icon || '👤'} {role.displayName}
                                 </Badge>
                                 {newUserForm.roles.includes(role.id) && newUserForm.roles.indexOf(role.id) === 0 && (
-                                  <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                                  <span className="text-xs text-brand font-medium">⭐ Primary</span>
                                 )}
                               </div>
                             </label>
@@ -1985,7 +1985,7 @@ const UserManagement = () => {
                 <Button
                   onClick={handleAddNewUser}
                   disabled={isProcessing || !newUserForm.email || !newUserForm.firstName || !newUserForm.lastName || newUserForm.roles.length === 0}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-positive hover:bg-positive-hover"
                 >
                   {isProcessing ? (
                     <>
@@ -2009,7 +2009,7 @@ const UserManagement = () => {
       {/* Unified Manage User Modal */}
       {showUnifiedManageModal && managedUser && typeof document !== 'undefined' && document.body && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-black/5 dark:border-white/10">
+          <div className="bg-surface rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-hairline">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -2101,8 +2101,8 @@ const UserManagement = () => {
               {/* Roles Tab */}
               <TabsContent value="roles" className="space-y-4">
                 {!isSystemAdmin ? (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-amber-800">
+                  <div className="p-4 bg-warning-soft border border-amber-200 rounded-lg">
+                    <p className="text-warning">
                       Only system administrators can modify user roles. Contact jrsschroeder@gmail.com for role changes.
                     </p>
                   </div>
@@ -2136,13 +2136,13 @@ const UserManagement = () => {
                               setSelectedRoles(selectedRoles.filter(r => r !== role));
                             }
                           }}
-                          className="w-4 h-4 text-blue-600 rounded"
+                          className="w-4 h-4 text-brand rounded"
                         />
                         <Badge className={getRoleBadgeColor(role)}>
                           {getRoleDisplayName(role)}
                         </Badge>
                         {selectedRoles.includes(role) && selectedRoles.indexOf(role) === 0 && (
-                          <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                          <span className="text-xs text-brand font-medium">⭐ Primary</span>
                         )}
                       </label>
                     ))}
@@ -2163,13 +2163,13 @@ const UserManagement = () => {
                                   setSelectedRoles(selectedRoles.filter(r => r !== role.id));
                                 }
                               }}
-                              className="w-4 h-4 text-blue-600 rounded"
+                              className="w-4 h-4 text-brand rounded"
                             />
-                            <Badge className="bg-purple-100 text-purple-800">
+                            <Badge className="bg-brand-soft text-brand">
                               {role.icon || '👤'} {role.displayName}
                             </Badge>
                             {selectedRoles.includes(role.id) && selectedRoles.indexOf(role.id) === 0 && (
-                              <span className="text-xs text-blue-600 font-medium">⭐ Primary</span>
+                              <span className="text-xs text-brand font-medium">⭐ Primary</span>
                             )}
                           </label>
                         ))}
@@ -2211,7 +2211,7 @@ const UserManagement = () => {
                                     setUserPagePermissions([...userPagePermissions, page.id]);
                                   }
                                 }}
-                                className="w-4 h-4 text-blue-600 rounded"
+                                className="w-4 h-4 text-brand rounded"
                               />
                               <span className="text-lg">{page.icon}</span>
                               <span className="flex-1 font-medium text-gray-900">{page.name}</span>
@@ -2262,7 +2262,7 @@ const UserManagement = () => {
                                   setSelectedPermissions(selectedPermissions.filter(p => p !== permission));
                                 }
                               }}
-                              className="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-5 h-5"
+                              className="mt-1 rounded border-gray-300 text-brand focus:ring-brand w-5 h-5"
                             />
                             <div className="flex-1">
                               <div className="font-medium text-gray-900 text-sm">
@@ -2375,7 +2375,7 @@ const UserManagement = () => {
                   }
                 }}
                 disabled={isProcessing}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-brand hover:bg-brand-hover"
               >
                 {isProcessing ? (
                   <>
@@ -2438,7 +2438,7 @@ const UserManagement = () => {
                     value={newRoleForm.name}
                     onChange={(e) => setNewRoleForm({...newRoleForm, name: e.target.value})}
                     placeholder="e.g., project_manager"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
                   />
                   <p className="text-xs text-gray-500 mt-1">Used internally (no spaces)</p>
                 </div>
@@ -2451,7 +2451,7 @@ const UserManagement = () => {
                     value={newRoleForm.displayName}
                     onChange={(e) => setNewRoleForm({...newRoleForm, displayName: e.target.value})}
                     placeholder="e.g., Project Manager"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
                   />
                 </div>
               </div>
@@ -2466,7 +2466,7 @@ const UserManagement = () => {
                   onChange={(e) => setNewRoleForm({...newRoleForm, description: e.target.value})}
                   placeholder="Describe what this role can do..."
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
                 />
               </div>
 
@@ -2482,7 +2482,7 @@ const UserManagement = () => {
                     onChange={(e) => setNewRoleForm({...newRoleForm, icon: e.target.value})}
                     placeholder="👤"
                     maxLength={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
                   />
                 </div>
                 <div>
@@ -2492,7 +2492,7 @@ const UserManagement = () => {
                   <select
                     value={newRoleForm.color}
                     onChange={(e) => setNewRoleForm({...newRoleForm, color: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand focus:border-brand"
                   >
                     <option value="gray">Gray</option>
                     <option value="blue">Blue</option>
@@ -2528,7 +2528,7 @@ const UserManagement = () => {
                                   [permission]: e.target.checked
                                 }
                               })}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
+                              className="rounded border-gray-300 text-brand focus:ring-brand mr-2"
                             />
                             <span className="text-gray-700">{CAPABILITY_LABELS[permission]}</span>
                           </label>
@@ -2551,7 +2551,7 @@ const UserManagement = () => {
                 <Button
                   onClick={handleCreateRole}
                   disabled={isProcessing || !newRoleForm.name || !newRoleForm.displayName}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-brand hover:bg-brand-hover"
                 >
                   {isProcessing ? 'Creating...' : 'Create Role'}
                 </Button>

@@ -118,10 +118,10 @@ const PermissionsManagement = () => {
   if (!isSystemAdmin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-8 max-w-md text-center">
-          <Shield className="w-16 h-16 text-[#ff3b30] mx-auto mb-4" />
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Access Denied</h2>
-          <p className="text-[14px] text-[#86868b]">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-8 max-w-md text-center">
+          <Shield className="w-16 h-16 text-danger mx-auto mb-4" />
+          <h2 className="text-[22px] font-semibold text-ink mb-2">Access Denied</h2>
+          <p className="text-[14px] text-ink-muted">
             Only system administrators can manage page permissions.
           </p>
         </div>
@@ -134,63 +134,63 @@ const PermissionsManagement = () => {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <Shield className="w-8 h-8 text-[#0071e3]" />
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
+          <Shield className="w-8 h-8 text-brand" />
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">
             Page Permissions
           </h1>
         </div>
-        <p className="text-[15px] sm:text-[17px] text-[#86868b]">
+        <p className="text-[15px] sm:text-[17px] text-ink-muted">
           Control which pages each user can access. Pages will appear in their navigation menu based on permissions.
         </p>
       </div>
 
       {/* Search */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
         <div className="flex items-center gap-3">
-          <Search className="w-5 h-5 text-[#86868b]" />
+          <Search className="w-5 h-5 text-ink-muted" />
           <input
             type="text"
             placeholder="Search users by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b]"
+            className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder-ink-muted"
           />
         </div>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-[14px] text-[#86868b]">Loading users...</p>
+          <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-[14px] text-ink-muted">Loading users...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Users List */}
           <div className="space-y-4">
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Users</h2>
+            <h2 className="text-[17px] font-semibold text-ink">Users</h2>
             {filteredUsers.map((user) => (
               <div
                 key={user.email}
-                className={`rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border p-4 cursor-pointer transition-all ${
+                className={`rounded-xl bg-surface backdrop-blur-xl border p-4 cursor-pointer transition-all ${
                   selectedUser?.email === user.email
-                    ? 'border-[#0071e3] ring-2 ring-[#0071e3]/20'
-                    : 'border-black/5 dark:border-white/10 hover:shadow-lg'
+                    ? 'border-brand ring-2 ring-brand/20'
+                    : 'border-hairline hover:shadow-md'
                 }`}
                 onClick={() => setSelectedUser(user)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#0071e3]/10 rounded-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-[#0071e3]" />
+                    <div className="w-10 h-10 bg-brand/10 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-brand" />
                     </div>
                     <div>
-                      <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">
+                      <h3 className="text-[14px] font-medium text-ink">
                         {user.firstName} {user.lastName}
                       </h3>
-                      <p className="text-[12px] text-[#86868b]">{user.email}</p>
+                      <p className="text-[12px] text-ink-muted">{user.email}</p>
                     </div>
                   </div>
-                  <span className="text-[11px] px-2 py-1 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
+                  <span className="text-[11px] px-2 py-1 rounded-md bg-brand/10 text-brand font-medium">
                     {(userPermissions[user.email] || []).length} pages
                   </span>
                 </div>
@@ -200,18 +200,18 @@ const PermissionsManagement = () => {
 
           {/* Permissions Editor */}
           {selectedUser && (
-            <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-6">
+            <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-6">
               <div className="mb-6">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">
+                <h2 className="text-[17px] font-semibold text-ink mb-1">
                   Permissions for {selectedUser.firstName} {selectedUser.lastName}
                 </h2>
-                <p className="text-[12px] text-[#86868b]">{selectedUser.email}</p>
+                <p className="text-[12px] text-ink-muted">{selectedUser.email}</p>
               </div>
 
               <div className="space-y-6 max-h-[500px] overflow-y-auto">
                 {Object.entries(groupedPages).map(([category, pages]) => (
                   <div key={category}>
-                    <h3 className="text-[11px] font-semibold text-[#86868b] mb-3 uppercase tracking-wider">
+                    <h3 className="text-[11px] font-semibold text-ink-muted mb-3 uppercase tracking-wider">
                       {category}
                     </h3>
                     <div className="space-y-2">
@@ -222,22 +222,22 @@ const PermissionsManagement = () => {
                             key={page.id}
                             className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
                               hasPermission 
-                                ? 'bg-[#34c759]/10 border border-[#34c759]/20' 
-                                : 'bg-black/[0.02] dark:bg-white/5 border border-transparent hover:bg-black/5 dark:hover:bg-white/10'
+                                ? 'bg-positive/10 border border-positive/20' 
+                                : 'bg-surface-2 border border-transparent hover:bg-surface-3'
                             }`}
                           >
                             <input
                               type="checkbox"
                               checked={hasPermission}
                               onChange={() => handleTogglePermission(selectedUser.email, page.id)}
-                              className="w-4 h-4 text-[#0071e3] rounded focus:ring-[#0071e3]"
+                              className="w-4 h-4 text-brand rounded focus:ring-brand"
                             />
                             <span className="text-lg">{page.icon}</span>
-                            <span className="flex-1 text-[13px] font-medium text-[#1d1d1f] dark:text-white">{page.name}</span>
+                            <span className="flex-1 text-[13px] font-medium text-ink">{page.name}</span>
                             {hasPermission ? (
-                              <Check className="w-5 h-5 text-[#34c759]" />
+                              <Check className="w-5 h-5 text-positive" />
                             ) : (
-                              <X className="w-5 h-5 text-[#86868b]/30" />
+                              <X className="w-5 h-5 text-ink-muted/30" />
                             )}
                           </label>
                         );
@@ -247,18 +247,18 @@ const PermissionsManagement = () => {
                 ))}
               </div>
 
-              <div className="mt-6 pt-6 border-t border-black/5 dark:border-white/10 space-y-3">
+              <div className="mt-6 pt-6 border-t border-hairline space-y-3">
                 <button
                   onClick={() => handleSavePermissions(selectedUser.email)}
                   disabled={saving}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save Permissions'}
                 </button>
                 <button
                   onClick={() => handleResetToRoleDefaults(selectedUser.email)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-transparent border border-black/10 dark:border-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-transparent border border-hairline-strong text-ink-muted text-[13px] font-medium hover:bg-surface-3 transition-colors"
                 >
                   Reset to Role Defaults
                 </button>

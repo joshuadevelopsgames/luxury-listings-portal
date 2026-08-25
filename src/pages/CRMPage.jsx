@@ -35,8 +35,12 @@ import {
   Download,
   ArrowUp,
   ArrowDown,
-  Ban
+  Ban,
+  Upload
 } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
+import StatCard from '../components/ui/StatCard';
+import { formatStat } from '../utils/formatStat';
 import { supabaseService } from '../services/supabaseService';
 import { exportCrmToXlsx } from '../utils/exportCrmToXlsx';
 import { importCrmFromXlsxFile } from '../utils/importCrmFromXlsx';
@@ -613,14 +617,14 @@ const CRMPage = () => {
   const getStatusColor = (status) => {
     const s = String(status || '').toLowerCase().replace(/\s+/g, '_');
     const colors = {
-      warm: '!bg-blue-100 !text-blue-600 dark:!bg-blue-900/30 dark:!text-blue-300', // legacy rows → cold styling
+      warm: '!bg-brand-soft !text-brand dark:!bg-blue-900/30 dark:!text-blue-300', // legacy rows → cold styling
       not_interested: 'bg-stone-200 text-stone-800 dark:bg-stone-800/40 dark:text-stone-300',
-      contacted: '!bg-purple-100 !text-purple-800 dark:!bg-purple-900/30 dark:!text-purple-300',
-      cold: '!bg-blue-100 !text-blue-600 dark:!bg-blue-900/30 dark:!text-blue-300',
-      client: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      paused: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+      contacted: '!bg-brand-soft !text-brand dark:!bg-purple-900/30 dark:!text-purple-300',
+      cold: '!bg-brand-soft !text-brand dark:!bg-blue-900/30 dark:!text-blue-300',
+      client: 'bg-positive-soft text-positive dark:bg-green-900/30 dark:text-green-300',
+      approved: 'bg-positive-soft text-positive dark:bg-green-900/30 dark:text-green-300',
+      active: 'bg-positive-soft text-positive dark:bg-green-900/30 dark:text-green-300',
+      paused: 'bg-warning-soft text-warning dark:bg-amber-900/30 dark:text-amber-300',
       cancelled: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
       rejected: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400'
     };
@@ -651,7 +655,7 @@ const CRMPage = () => {
       case 'not interested':
         return <Ban className="w-4 h-4 text-stone-600" />;
       case 'contacted':
-        return <CheckCircle className="w-4 h-4 text-purple-600" />;
+        return <CheckCircle className="w-4 h-4 text-brand" />;
       case 'cold':
         return <Clock className="w-4 h-4 text-gray-600" />;
       default:
@@ -821,14 +825,14 @@ const CRMPage = () => {
   }, [sortBy, sortDir]);
 
   const renderClientCard = (client, isExisting = false) => (
-    <div key={client.id} className="p-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/10 hover:shadow-lg transition-shadow">
+    <div key={client.id} className="p-5 rounded-xl bg-surface border border-hairline hover:shadow-md transition-shadow">
       <div>
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 flex gap-3 min-w-0">
             {!isExisting && canManageLeads && (
               <input
                 type="checkbox"
-                className="mt-1 w-4 h-4 shrink-0 rounded border-black/20 dark:border-white/30 text-[#0071e3] focus:ring-[#0071e3]"
+                className="mt-1 w-4 h-4 shrink-0 rounded border-black/20 dark:border-white/30 text-brand focus:ring-brand"
                 checked={selectedLeadIdSet.has(String(client.id))}
                 onChange={() => toggleLeadSelected(client.id)}
                 aria-label={`Select ${client.contactName || client.email || 'lead'}`}
@@ -889,11 +893,11 @@ const CRMPage = () => {
             <span className={`text-[11px] px-2 py-1 rounded-lg font-medium ${getStatusColor(client.status)}`}>
               {getClientStatusLabel(client.status, isExisting, client._categories)}
             </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-3 text-ink-muted font-medium">
               Type: {getContactTypes(client).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
             </span>
             {client.location && (
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium flex items-center gap-1">
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-3 text-ink-muted font-medium flex items-center gap-1">
                 <MapPin className="w-3 h-3" /> {client.location}
               </span>
             )}
@@ -901,10 +905,10 @@ const CRMPage = () => {
         </div>
         {(client.primaryContact && (client.primaryContact.name || client.primaryContact.email)) && (
           <div className="mb-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
-            <p className="text-[11px] font-medium text-[#86868b] mb-1">Primary contact</p>
-            <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{client.primaryContact.name || '—'}{client.primaryContact.role ? ` · ${client.primaryContact.role}` : ''}</p>
-            {client.primaryContact.email && <p className="text-[12px] text-[#86868b]">{client.primaryContact.email}</p>}
-            {client.primaryContact.phone && <p className="text-[12px] text-[#86868b]">{client.primaryContact.phone}</p>}
+            <p className="text-[11px] font-medium text-ink-muted mb-1">Primary contact</p>
+            <p className="text-[13px] font-medium text-ink">{client.primaryContact.name || '—'}{client.primaryContact.role ? ` · ${client.primaryContact.role}` : ''}</p>
+            {client.primaryContact.email && <p className="text-[12px] text-ink-muted">{client.primaryContact.email}</p>}
+            {client.primaryContact.phone && <p className="text-[12px] text-ink-muted">{client.primaryContact.phone}</p>}
           </div>
         )}
         <div className="space-y-3 mb-5">
@@ -936,7 +940,7 @@ const CRMPage = () => {
               setSelectedClient(client);
               setSelectedItemType(isExisting ? 'client' : 'lead');
             }}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             View
@@ -946,7 +950,7 @@ const CRMPage = () => {
               setSelectedClient(client);
               setSelectedItemType(isExisting ? 'client' : 'lead');
             }}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
           >
             <Edit className="w-3.5 h-3.5" />
             Edit
@@ -965,7 +969,7 @@ const CRMPage = () => {
         {!isExisting && canManageLeads ? (
           <input
             type="checkbox"
-            className="w-4 h-4 rounded border-gray-300 dark:border-white/25 text-[#0071e3] focus:ring-[#0071e3]"
+            className="w-4 h-4 rounded border-gray-300 dark:border-white/25 text-brand focus:ring-brand"
             checked={selectedLeadIdSet.has(String(client.id))}
             onChange={() => toggleLeadSelected(client.id)}
             aria-label={`Select ${client.contactName || client.email || 'lead'}`}
@@ -993,7 +997,7 @@ const CRMPage = () => {
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{formatCrmDateAdded(client)}</td>
       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{client.email}</td>
       <td className="py-3 px-4">
-        <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#86868b] font-medium">
+        <span className="text-[11px] px-2 py-0.5 rounded-md bg-surface-3 text-ink-muted font-medium">
           {getContactTypes(client).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
         </span>
       </td>
@@ -1011,7 +1015,7 @@ const CRMPage = () => {
               setSelectedClient(client);
               setSelectedItemType(isExisting ? 'client' : 'lead');
             }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             View
@@ -1021,7 +1025,7 @@ const CRMPage = () => {
               setSelectedClient(client);
               setSelectedItemType(isExisting ? 'client' : 'lead');
             }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
           >
             <Edit className="w-3.5 h-3.5" />
             Edit
@@ -1071,7 +1075,7 @@ const CRMPage = () => {
                 <input
                   ref={selectAllLeadsRef}
                   type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 dark:border-white/25 text-[#0071e3] focus:ring-[#0071e3]"
+                  className="w-4 h-4 rounded border-gray-300 dark:border-white/25 text-brand focus:ring-brand"
                   checked={allVisibleLeadsSelected}
                   onChange={toggleSelectAllVisibleLeads}
                   aria-label="Select all visible leads"
@@ -1098,12 +1102,10 @@ const CRMPage = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">CRM Dashboard</h1>
-          <p className="text-[15px] text-[#86868b] mt-1">Manage your leads and client relationships</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        title="CRM"
+        actions={
+        <>
           <input
             ref={importFileRef}
             type="file"
@@ -1138,9 +1140,10 @@ const CRMPage = () => {
             type="button"
             onClick={() => importFileRef.current?.click()}
             disabled={importingCrm}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50"
           >
-            {importingCrm ? 'Importing…' : 'Import from xlsx'}
+            <Upload className="w-4 h-4" />
+            {importingCrm ? 'Importing…' : 'Import'}
           </button>
           <button
             onClick={() => {
@@ -1156,103 +1159,60 @@ const CRMPage = () => {
               }
             }}
             disabled={exportingCrm}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            {exportingCrm ? 'Exporting…' : 'Export to spreadsheet'}
+            {exportingCrm ? 'Exporting…' : 'Export'}
           </button>
           {canManageCRM && (
             <button
               type="button"
               onClick={() => setShowManageLocationsModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
             >
               <MapPin className="w-4 h-4" />
-              Manage locations
+              Locations
             </button>
           )}
           <button
             onClick={() => navigate('/clients?openAdd=1')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Client
           </button>
-          <button type="button" onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors">
+          <button type="button" onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors">
             <Plus className="w-4 h-4" />
             Add Lead
           </button>
-        </div>
-      </div>
+        </>
+        }
+      />
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <div className="rounded-2xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#0071e3] mb-1">Contacted</p>
-              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalContacted}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#0071e3]/10">
-              <CheckCircle className="w-5 h-5 text-[#0071e3]" />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-black/[0.02] dark:bg-white/5 border border-black/5 dark:border-white/10 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#86868b] mb-1">Cold Leads</p>
-              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalColdLeads}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10">
-              <Clock className="w-5 h-5 text-[#86868b]" />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-stone-500/10 border border-stone-400/25 dark:border-stone-500/30 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-stone-600 dark:text-stone-400 mb-1">Not interested</p>
-              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalNotInterested}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-stone-500/15">
-              <Ban className="w-5 h-5 text-stone-600 dark:text-stone-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-[#af52de]/5 border border-[#af52de]/20 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[12px] font-medium text-[#af52de] mb-1">Total Leads</p>
-              <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{totalLeads}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-[#af52de]/10">
-              <Users className="w-5 h-5 text-[#af52de]" />
-            </div>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Contacted" value={formatStat(totalContacted)} icon={CheckCircle} />
+        <StatCard label="Cold Leads" value={formatStat(totalColdLeads)} icon={Clock} />
+        <StatCard label="Not interested" value={formatStat(totalNotInterested)} icon={Ban} />
+        <StatCard label="Total Leads" value={formatStat(totalLeads)} icon={Users} />
       </div>
 
       {/* Search, filters, and view in one bar */}
-      <div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+      <div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-surface-3 border border-hairline">
         <div className="flex-1 min-w-[200px] relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-muted w-4 h-4 pointer-events-none" />
           <input
             type="text"
             placeholder="Search leads..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 text-[14px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+            className="w-full h-10 pl-9 pr-3 text-[14px] rounded-lg bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-10 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 min-w-[140px]"
+          className="h-10 px-3 text-[13px] rounded-lg bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 min-w-[140px]"
         >
           <option value="all">All</option>
           <option value="cold">Cold leads ({totalColdLeads})</option>
@@ -1262,7 +1222,7 @@ const CRMPage = () => {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="h-10 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 min-w-[160px]"
+          className="h-10 px-3 text-[13px] rounded-lg bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 min-w-[160px]"
         >
           <option value="all">All types</option>
           {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
@@ -1272,7 +1232,7 @@ const CRMPage = () => {
         <select
           value={locationFilter}
           onChange={(e) => setLocationFilter(e.target.value)}
-          className="h-10 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 min-w-[140px]"
+          className="h-10 px-3 text-[13px] rounded-lg bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 min-w-[140px]"
         >
           <option value="all">All locations</option>
           <option value="_none_">No location</option>
@@ -1280,14 +1240,14 @@ const CRMPage = () => {
             <option key={loc} value={loc}>{loc}</option>
           ))}
         </select>
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-surface border border-hairline-strong">
           <button
             type="button"
             onClick={() => setViewMode('list')}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
               viewMode === 'list'
-                ? 'bg-[#0071e3] text-white'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-brand text-white'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <List className="w-4 h-4" />
@@ -1298,8 +1258,8 @@ const CRMPage = () => {
             onClick={() => setViewMode('card')}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
               viewMode === 'card'
-                ? 'bg-[#0071e3] text-white'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-brand text-white'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
@@ -1309,15 +1269,15 @@ const CRMPage = () => {
       </div>
 
       {canManageLeads && visibleCrmLeads.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10">
-          <span className="text-[13px] text-[#86868b] mr-1">
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-hairline">
+          <span className="text-[13px] text-ink-muted mr-1">
             {selectedLeadIds.length > 0 ? `${selectedLeadIds.length} selected` : 'Select leads to delete in bulk'}
           </span>
           <button
             type="button"
             onClick={bulkDeleteSelectedLeads}
             disabled={selectedLeadIds.length === 0 || bulkDeleting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/10 text-red-700 dark:text-red-400 text-[13px] font-medium hover:bg-red-600/20 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger/10 text-danger dark:text-red-400 text-[13px] font-medium hover:bg-danger-hover/20 transition-colors disabled:opacity-40 disabled:pointer-events-none"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {bulkDeleting ? 'Deleting…' : `Delete selected${selectedLeadIds.length ? ` (${selectedLeadIds.length})` : ''}`}
@@ -1326,7 +1286,7 @@ const CRMPage = () => {
             <button
               type="button"
               onClick={() => setSelectedLeadIds([])}
-              className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10"
+              className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-ink-muted hover:bg-surface-3"
             >
               Clear selection
             </button>
@@ -1335,11 +1295,11 @@ const CRMPage = () => {
       )}
 
       <div className="space-y-4">
-        <p className="text-[13px] text-[#86868b]">
+        <p className="text-[13px] text-ink-muted">
           {allContacts.length} contact{allContacts.length !== 1 ? 's' : ''} ({sortSummaryLabel})
         </p>
         {loadingExistingClients && statusFilter === 'all' ? (
-          <p className="text-[#86868b] py-8">Loading...</p>
+          <p className="text-ink-muted py-8">Loading...</p>
         ) : viewMode === 'list' ? (
           renderLeadList(allContacts, false)
         ) : (
@@ -1348,25 +1308,25 @@ const CRMPage = () => {
           </div>
         )}
         {!loadingExistingClients && allContacts.length === 0 && (
-          <p className="text-[#86868b] py-8 text-center">No contacts match the current filter and search.</p>
+          <p className="text-ink-muted py-8 text-center">No contacts match the current filter and search.</p>
         )}
       </div>
 
       {/* Possible existing contact (CRM) – open or add anyway */}
       {possibleExistingMatches.length > 0 && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl">
-            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Possible existing contact</h3>
-            <p className="text-[13px] text-[#86868b] mb-4">
+          <div className="bg-surface rounded-xl max-w-md w-full p-6 border border-hairline-strong shadow-lg">
+            <h3 className="text-[17px] font-semibold text-ink mb-1">Possible existing contact</h3>
+            <p className="text-[13px] text-ink-muted mb-4">
               A lead or client with the same or similar name/email may already exist. Open existing or add as new?
             </p>
             <ul className="space-y-2 mb-4 max-h-40 overflow-y-auto">
               {possibleExistingMatches.map((c) => (
-                <li key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-black/5 dark:bg-white/5">
-                  <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                <li key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-3">
+                  <span className="text-[14px] font-medium text-ink truncate">
                     {c.clientName || c.contactName || '—'}
                   </span>
-                  <span className="text-[12px] text-[#86868b] truncate">{c.clientEmail || c.email || ''}</span>
+                  <span className="text-[12px] text-ink-muted truncate">{c.clientEmail || c.email || ''}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -1375,7 +1335,7 @@ const CRMPage = () => {
                       setSelectedClient(c);
                       setSelectedItemType(c.isExisting ? 'client' : 'lead');
                     }}
-                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed]"
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-brand text-white text-[12px] font-medium hover:bg-brand-hover"
                   >
                     Open
                   </button>
@@ -1400,14 +1360,14 @@ const CRMPage = () => {
                   }
                 }}
                 disabled={isAddingLead}
-                className="flex-1 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-ink text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
               >
                 {isAddingLead ? 'Adding…' : 'Add as new anyway'}
               </button>
               <button
                 type="button"
                 onClick={() => setPossibleExistingMatches([])}
-                className="flex-1 py-2.5 rounded-xl border border-black/10 dark:border-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                className="flex-1 py-2.5 rounded-xl border border-hairline-strong text-ink-muted text-[13px] font-medium hover:bg-surface-3"
               >
                 Cancel
               </button>
@@ -1420,37 +1380,37 @@ const CRMPage = () => {
       {/* Manage custom locations modal (admins) */}
       {showManageLocationsModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-lg max-h-[85vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/10 flex-shrink-0">
+          <div className="bg-surface rounded-xl w-full max-w-lg max-h-[85vh] overflow-hidden border border-hairline-strong shadow-lg flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-hairline flex-shrink-0">
               <div>
-                <h3 className="text-[18px] font-semibold text-[#1d1d1f] dark:text-white">Custom locations</h3>
-                <p className="text-[13px] text-[#86868b] mt-0.5">Remove custom locations so they no longer appear in the dropdown. Contacts that already use a location will keep it until you edit them.</p>
+                <h3 className="text-[18px] font-semibold text-ink">Custom locations</h3>
+                <p className="text-[13px] text-ink-muted mt-0.5">Remove custom locations so they no longer appear in the dropdown. Contacts that already use a location will keep it until you edit them.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowManageLocationsModal(false)}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-ink-muted hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5">
               {customLocationsWithMeta.length === 0 ? (
-                <p className="text-[14px] text-[#86868b]">No custom locations yet. Add one by typing in the location field and choosing &quot;Use …&quot;.</p>
+                <p className="text-[14px] text-ink-muted">No custom locations yet. Add one by typing in the location field and choosing &quot;Use …&quot;.</p>
               ) : (
                 <table className="w-full text-left text-[14px]">
                   <thead>
-                    <tr className="border-b border-black/10 dark:border-white/10">
-                      <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Location</th>
-                      {canViewAuditTrail && <th className="pb-2 pr-4 font-medium text-[#1d1d1f] dark:text-white">Created by</th>}
-                      <th className="pb-2 w-[80px] font-medium text-[#1d1d1f] dark:text-white text-right">Actions</th>
+                    <tr className="border-b border-hairline-strong">
+                      <th className="pb-2 pr-4 font-medium text-ink">Location</th>
+                      {canViewAuditTrail && <th className="pb-2 pr-4 font-medium text-ink">Created by</th>}
+                      <th className="pb-2 w-[80px] font-medium text-ink text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {customLocationsWithMeta.map((item) => (
                       <tr key={item.value} className="border-b border-black/5 dark:border-white/5">
-                        <td className="py-2.5 pr-4 text-[#1d1d1f] dark:text-white">{item.value}</td>
-                        {canViewAuditTrail && <td className="py-2.5 pr-4 text-[13px] text-[#86868b]">{item.createdBy || '—'}</td>}
+                        <td className="py-2.5 pr-4 text-ink">{item.value}</td>
+                        {canViewAuditTrail && <td className="py-2.5 pr-4 text-[13px] text-ink-muted">{item.createdBy || '—'}</td>}
                         <td className="py-2.5 text-right">
                           <button
                             type="button"
@@ -1473,7 +1433,7 @@ const CRMPage = () => {
                                 setDeletingLocation(null);
                               }
                             }}
-                            className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                            className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-danger dark:text-red-400 hover:bg-danger/10 disabled:opacity-50"
                           >
                             {deletingLocation === item.value ? 'Removing…' : 'Delete'}
                           </button>
@@ -1484,8 +1444,8 @@ const CRMPage = () => {
                 </table>
               )}
             </div>
-            <div className="p-5 border-t border-black/5 dark:border-white/10 flex-shrink-0">
-              <button type="button" onClick={() => setShowManageLocationsModal(false)} className="w-full py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15">
+            <div className="p-5 border-t border-hairline flex-shrink-0">
+              <button type="button" onClick={() => setShowManageLocationsModal(false)} className="w-full py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">
                 Close
               </button>
             </div>
@@ -1497,15 +1457,15 @@ const CRMPage = () => {
       {/* Add New Lead Modal */}
       {showAddModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-lg flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-shrink-0">
               <div>
-                <h3 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white">Add New Lead</h3>
-                <p className="text-[13px] text-[#86868b] mt-0.5">Lead will be added to your CRM and the date recorded</p>
+                <h3 className="text-[19px] font-semibold text-ink">Add New Lead</h3>
+                <p className="text-[13px] text-ink-muted mt-0.5">Lead will be added to your CRM and the date recorded</p>
               </div>
               <button
                 onClick={() => { setShowAddModal(false); resetNewLeadForm(); }}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-ink-muted hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1515,14 +1475,14 @@ const CRMPage = () => {
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-[#0071e3]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Type & list</h4>
+                    <Target className="w-4 h-4 text-brand" />
+                    <h4 className="text-[14px] font-semibold text-ink">Type & list</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Choose type and which tab(s) to add this lead to</p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">Choose type and which tab(s) to add this lead to</p>
                 </div>
                 <div className="p-4 space-y-4">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Type(s) *</label>
+                    <label className="block text-[13px] font-medium text-ink mb-2">Type(s) *</label>
                     <div className="flex flex-wrap gap-3">
                       {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
                         <label key={value} className="flex items-center gap-2 cursor-pointer">
@@ -1536,43 +1496,43 @@ const CRMPage = () => {
                                 types: e.target.checked ? [...prev, value] : prev.filter(t => t !== value)
                               }));
                             }}
-                            className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                            className="w-4 h-4 rounded border-black/20 text-brand focus:ring-brand"
                           />
-                          <span className="text-[13px] text-[#1d1d1f] dark:text-white">{label}</span>
+                          <span className="text-[13px] text-ink">{label}</span>
                         </label>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Add to list(s)</label>
-                    <p className="text-[11px] text-[#86868b] mb-2">Pick Contacted, Cold, and/or Not interested (you can add to more than one list).</p>
+                    <label className="block text-[13px] font-medium text-ink mb-2">Add to list(s)</label>
+                    <p className="text-[11px] text-ink-muted mb-2">Pick Contacted, Cold, and/or Not interested (you can add to more than one list).</p>
                     <div className="flex flex-wrap gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedTabs.contactedClients}
                           onChange={(e) => setSelectedTabs(prev => ({ ...prev, contactedClients: e.target.checked }))}
-                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                          className="w-4 h-4 rounded border-black/20 text-brand focus:ring-brand"
                         />
-                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Contacted</span>
+                        <span className="text-[13px] text-ink">Contacted</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedTabs.coldLeads}
                           onChange={(e) => setSelectedTabs(prev => ({ ...prev, coldLeads: e.target.checked }))}
-                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                          className="w-4 h-4 rounded border-black/20 text-brand focus:ring-brand"
                         />
-                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Cold Leads</span>
+                        <span className="text-[13px] text-ink">Cold Leads</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedTabs.notInterestedLeads}
                           onChange={(e) => setSelectedTabs(prev => ({ ...prev, notInterestedLeads: e.target.checked }))}
-                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                          className="w-4 h-4 rounded border-black/20 text-brand focus:ring-brand"
                         />
-                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">Not interested</span>
+                        <span className="text-[13px] text-ink">Not interested</span>
                       </label>
                     </div>
                   </div>
@@ -1583,74 +1543,74 @@ const CRMPage = () => {
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-[#0071e3]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Contact details</h4>
+                    <Mail className="w-4 h-4 text-brand" />
+                    <h4 className="text-[14px] font-semibold text-ink">Contact details</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Name and email required</p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">Name and email required</p>
                 </div>
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">First name *</label>
-                      <input type="text" value={newLead.firstName} onChange={(e) => setNewLead(prev => ({ ...prev, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-ink mb-2">First name *</label>
+                      <input type="text" value={newLead.firstName} onChange={(e) => setNewLead(prev => ({ ...prev, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand" />
                     </div>
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Last name *</label>
-                      <input type="text" value={newLead.lastName} onChange={(e) => setNewLead(prev => ({ ...prev, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-ink mb-2">Last name *</label>
+                      <input type="text" value={newLead.lastName} onChange={(e) => setNewLead(prev => ({ ...prev, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand" />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Email *</label>
-                      <input type="email" value={newLead.email} onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))} placeholder="email@example.com" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-ink mb-2">Email *</label>
+                      <input type="email" value={newLead.email} onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))} placeholder="email@example.com" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand" />
                     </div>
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Phone</label>
-                      <input type="tel" value={newLead.phone} onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-ink mb-2">Phone</label>
+                      <input type="tel" value={newLead.phone} onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand" />
                     </div>
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Instagram</label>
-                      <input type="text" value={newLead.instagram} onChange={(e) => setNewLead(prev => ({ ...prev, instagram: e.target.value }))} placeholder="@handle" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-ink mb-2">Instagram</label>
+                      <input type="text" value={newLead.instagram} onChange={(e) => setNewLead(prev => ({ ...prev, instagram: e.target.value }))} placeholder="@handle" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand" />
                     </div>
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Organization</label>
-                      <input type="text" value={newLead.organization} onChange={(e) => setNewLead(prev => ({ ...prev, organization: e.target.value }))} placeholder="Company or brand" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-ink mb-2">Organization</label>
+                      <input type="text" value={newLead.organization} onChange={(e) => setNewLead(prev => ({ ...prev, organization: e.target.value }))} placeholder="Company or brand" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand" />
                     </div>
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Website</label>
-                      <input type="url" value={newLead.website} onChange={(e) => setNewLead(prev => ({ ...prev, website: e.target.value }))} placeholder="https://…" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                      <label className="block text-[13px] font-medium text-ink mb-2">Website</label>
+                      <input type="url" value={newLead.website} onChange={(e) => setNewLead(prev => ({ ...prev, website: e.target.value }))} placeholder="https://…" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Location</label>
+                    <label className="block text-[13px] font-medium text-ink mb-2">Location</label>
                     <LocationSelect
                       value={newLead.location || ''}
                       onChange={(loc) => setNewLead((prev) => ({ ...prev, location: loc || '' }))}
                       placeholder="Search or select location"
-                      className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                       allowLegacy={false}
                     />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Notes</label>
-                    <textarea value={newLead.notes} onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))} rows={3} placeholder="Additional notes" className="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none" />
+                    <label className="block text-[13px] font-medium text-ink mb-2">Notes</label>
+                    <textarea value={newLead.notes} onChange={(e) => setNewLead(prev => ({ ...prev, notes: e.target.value }))} rows={3} placeholder="Additional notes" className="w-full px-3 py-2.5 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
                   </div>
-                  <div className="border-t border-black/5 dark:border-white/10 pt-4">
-                    <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white mb-3">Primary contact (optional)</h4>
+                  <div className="border-t border-hairline pt-4">
+                    <h4 className="text-[13px] font-semibold text-ink mb-3">Primary contact (optional)</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Name</label>
-                        <input type="text" value={newLead.primaryContact?.name || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), name: e.target.value } }))} placeholder="Contact name" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                        <label className="block text-[12px] font-medium text-ink-muted mb-1">Name</label>
+                        <input type="text" value={newLead.primaryContact?.name || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), name: e.target.value } }))} placeholder="Contact name" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px]" />
                       </div>
                       <div>
-                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Email</label>
-                        <input type="email" value={newLead.primaryContact?.email || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), email: e.target.value } }))} placeholder="contact@example.com" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                        <label className="block text-[12px] font-medium text-ink-muted mb-1">Email</label>
+                        <input type="email" value={newLead.primaryContact?.email || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), email: e.target.value } }))} placeholder="contact@example.com" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px]" />
                       </div>
                       <div>
-                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Phone</label>
-                        <input type="tel" value={newLead.primaryContact?.phone || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), phone: e.target.value } }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                        <label className="block text-[12px] font-medium text-ink-muted mb-1">Phone</label>
+                        <input type="tel" value={newLead.primaryContact?.phone || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), phone: e.target.value } }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px]" />
                       </div>
                       <div>
-                        <label className="block text-[12px] font-medium text-[#86868b] mb-1">Role</label>
-                        <input type="text" value={newLead.primaryContact?.role || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), role: e.target.value } }))} placeholder="e.g. Marketing Manager" className="w-full h-10 px-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 text-[14px]" />
+                        <label className="block text-[12px] font-medium text-ink-muted mb-1">Role</label>
+                        <input type="text" value={newLead.primaryContact?.role || ''} onChange={(e) => setNewLead(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), role: e.target.value } }))} placeholder="e.g. Marketing Manager" className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px]" />
                       </div>
                     </div>
                   </div>
@@ -1658,11 +1618,11 @@ const CRMPage = () => {
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button type="button" onClick={handleAddNewLead} disabled={isAddingLead} className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                <button type="button" onClick={handleAddNewLead} disabled={isAddingLead} className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                   <Plus className="w-4 h-4" />
                   {isAddingLead ? 'Adding…' : 'Add Lead'}
                 </button>
-                <button onClick={() => { setShowAddModal(false); resetNewLeadForm(); }} className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+                <button onClick={() => { setShowAddModal(false); resetNewLeadForm(); }} className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
                   Cancel
                 </button>
               </div>
@@ -1717,22 +1677,22 @@ const CRMPage = () => {
           aria-labelledby="day-one-screenshot-title"
         >
           <div
-            className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl relative"
+            className="bg-surface rounded-xl max-w-md w-full p-6 border border-hairline-strong shadow-lg relative"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setGraduateScreenshotModal({ show: false, clientId: null, clientName: '', leadId: null })}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-white transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-full text-ink-muted hover:bg-black/10 dark:hover:bg-white/10 hover:text-ink dark:hover:text-white transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 id="day-one-screenshot-title" className="text-lg font-semibold text-[#1d1d1f] dark:text-white mb-1 pr-8">Day-one screenshot (required)</h3>
-            <p className="text-[13px] text-[#86868b] mb-4">
+            <h3 id="day-one-screenshot-title" className="text-lg font-semibold text-ink mb-1 pr-8">Day-one screenshot (required)</h3>
+            <p className="text-[13px] text-ink-muted mb-4">
               Upload a screenshot of followers/insights for {graduateScreenshotModal.clientName}. This completes promoting the lead to a client.
             </p>
-            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#86868b]/30 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-ink-muted/30 rounded-xl cursor-pointer hover:bg-surface-3 transition-colors">
               <input
                 type="file"
                 accept="image/*"
@@ -1745,9 +1705,9 @@ const CRMPage = () => {
                 }}
               />
               {uploadingScreenshot ? (
-                <span className="text-[#0071e3]">Uploading…</span>
+                <span className="text-brand">Uploading…</span>
               ) : (
-                <span className="text-[13px] text-[#86868b]">Click or drop image</span>
+                <span className="text-[13px] text-ink-muted">Click or drop image</span>
               )}
             </label>
           </div>
@@ -1758,10 +1718,10 @@ const CRMPage = () => {
       {toast.show && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
           toast.type === 'success' 
-            ? 'bg-green-500 text-white' 
+            ? 'bg-positive text-white' 
             : toast.type === 'error' 
-            ? 'bg-red-500 text-white' 
-            : 'bg-blue-500 text-white'
+            ? 'bg-danger text-white' 
+            : 'bg-brand text-white'
         }`}>
           <div className="flex items-center gap-2">
             <span className="text-lg">{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>

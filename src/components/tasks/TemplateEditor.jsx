@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Edit, Trash2, Save, Sparkles, Share2 } from 'lucide-react';
+import { TEMPLATE_ICONS, DEFAULT_TEMPLATE_ICON, getTemplateIcon } from './templateIcons';
 import { supabaseService } from '../../services/supabaseService';
 import { toast } from 'react-hot-toast';
 import { useConfirm } from '../../contexts/ConfirmContext';
 
-const TEMPLATE_ICONS = ['👋', '📊', '✍️', '📱', '🏡', '🎯', '💼', '🎨', '📈', '🎉', '⚡', '🚀'];
-
-const inputClass = 'w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]';
-const labelClass = 'block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2';
+const inputClass = 'w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand';
+const labelClass = 'block text-[13px] font-medium text-ink mb-2';
 
 const TemplateEditor = ({ onClose, currentUser }) => {
   const { confirm } = useConfirm();
@@ -25,7 +24,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    icon: '✍️',
+    icon: DEFAULT_TEMPLATE_ICON,
     tasks: []
   });
   const [newTask, setNewTask] = useState({
@@ -99,7 +98,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
       await loadTemplates();
       setEditingTemplate(null);
       setIsCreating(false);
-      setFormData({ name: '', description: '', icon: '✍️', tasks: [] });
+      setFormData({ name: '', description: '', icon: DEFAULT_TEMPLATE_ICON, tasks: [] });
     } catch (error) {
       console.error('Error saving template:', error);
       toast.error('Failed to save template');
@@ -144,7 +143,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
     setFormData({
       name: template.name,
       description: template.description,
-      icon: template.icon || '✍️',
+      icon: template.icon || DEFAULT_TEMPLATE_ICON,
       tasks: template.tasks || []
     });
     setIsCreating(true);
@@ -166,15 +165,15 @@ const TemplateEditor = ({ onClose, currentUser }) => {
   const resetForm = () => {
     setIsCreating(false);
     setEditingTemplate(null);
-    setFormData({ name: '', description: '', icon: '✍️', tasks: [] });
+    setFormData({ name: '', description: '', icon: DEFAULT_TEMPLATE_ICON, tasks: [] });
   };
 
   if (loading) {
     return createPortal(
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl p-8 text-center border border-black/10 dark:border-white/10 shadow-2xl min-w-[280px]">
-          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-[15px] text-[#86868b]">Loading templates...</p>
+        <div className="bg-surface rounded-xl p-8 text-center border border-hairline-strong shadow-lg min-w-[280px]">
+          <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-[15px] text-ink-muted">Loading templates...</p>
         </div>
       </div>,
       document.body
@@ -184,12 +183,12 @@ const TemplateEditor = ({ onClose, currentUser }) => {
   if (isCreating) {
     return createPortal(
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-        <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-4xl border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden">
-          <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex justify-between items-center">
-            <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">
+        <div className="bg-surface rounded-xl w-full max-w-4xl border border-hairline-strong shadow-lg overflow-hidden">
+          <div className="sticky top-0 bg-surface px-6 py-4 border-b border-hairline flex justify-between items-center">
+            <h2 className="text-[20px] font-semibold text-ink">
               {editingTemplate ? 'Edit Template' : 'Create New Template'}
             </h2>
-            <button type="button" onClick={resetForm} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b]">
+            <button type="button" onClick={resetForm} className="p-2 rounded-lg hover:bg-surface-3 text-ink-muted">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -208,18 +207,20 @@ const TemplateEditor = ({ onClose, currentUser }) => {
               <div>
                 <label className={labelClass}>Icon</label>
                 <div className="flex gap-2 flex-wrap">
-                  {TEMPLATE_ICONS.map((icon) => (
+                  {TEMPLATE_ICONS.map(({ key, Icon }) => (
                     <button
-                      key={icon}
+                      key={key}
                       type="button"
-                      onClick={() => setFormData({ ...formData, icon })}
-                      className={`text-2xl p-2 rounded-xl border-2 transition-colors ${
-                        formData.icon === icon
-                          ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20'
-                          : 'border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20'
+                      aria-label={key}
+                      aria-pressed={formData.icon === key}
+                      onClick={() => setFormData({ ...formData, icon: key })}
+                      className={`p-2.5 rounded-lg border transition-colors ${
+                        formData.icon === key
+                          ? 'border-brand bg-brand/10 text-brand'
+                          : 'border-hairline-strong text-ink-muted hover:border-hairline-strong'
                       }`}
                     >
-                      {icon}
+                      <Icon className="w-5 h-5" />
                     </button>
                   ))}
                 </div>
@@ -235,9 +236,9 @@ const TemplateEditor = ({ onClose, currentUser }) => {
                 placeholder="Describe what this template is for..."
               />
             </div>
-            <div className="border-t border-black/5 dark:border-white/10 pt-6">
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Template Tasks</h3>
-              <div className="space-y-3 p-4 rounded-xl bg-black/[0.02] dark:bg-white/5 border border-black/5 dark:border-white/10 mb-4">
+            <div className="border-t border-hairline pt-6">
+              <h3 className="text-[17px] font-semibold text-ink mb-4">Template Tasks</h3>
+              <div className="space-y-3 p-4 rounded-xl bg-surface-2 border border-hairline mb-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input
                     type="text"
@@ -263,7 +264,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
                   rows={2}
                   className={`${inputClass} py-3 resize-none`}
                 />
-                <button type="button" onClick={handleAddTask} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed]">
+                <button type="button" onClick={handleAddTask} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover">
                   <Plus className="w-4 h-4" />
                   Add Task
                 </button>
@@ -271,20 +272,20 @@ const TemplateEditor = ({ onClose, currentUser }) => {
               {formData.tasks.length > 0 ? (
                 <div className="space-y-2">
                   {formData.tasks.map((task, index) => (
-                    <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
-                      <span className="text-[#86868b] text-[13px] mt-1">{index + 1}.</span>
+                    <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-hairline">
+                      <span className="text-ink-muted text-[13px] mt-1">{index + 1}.</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-[#1d1d1f] dark:text-white">{task.title}</p>
-                        <p className="text-[13px] text-[#86868b] mt-0.5">{task.description}</p>
+                        <p className="font-medium text-ink">{task.title}</p>
+                        <p className="text-[13px] text-ink-muted mt-0.5">{task.description}</p>
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <span className="inline-block px-2 py-0.5 rounded-lg text-[11px] font-medium bg-black/5 dark:bg-white/10 text-[#86868b]">{task.priority}</span>
-                          <span className="text-[12px] text-[#86868b]">{task.category}</span>
+                          <span className="inline-block px-2 py-0.5 rounded-lg text-[11px] font-medium bg-surface-3 text-ink-muted">{task.priority}</span>
+                          <span className="text-[12px] text-ink-muted">{task.category}</span>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveTask(index)}
-                        className="p-2 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors"
+                        className="p-2 rounded-lg text-danger hover:bg-danger/10 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -292,14 +293,14 @@ const TemplateEditor = ({ onClose, currentUser }) => {
                   ))}
                 </div>
               ) : (
-                <p className="text-[#86868b] text-center py-4 text-[14px]">No tasks added yet</p>
+                <p className="text-ink-muted text-center py-4 text-[14px]">No tasks added yet</p>
               )}
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
-              <button type="button" onClick={resetForm} className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15">
+            <div className="flex justify-end gap-3 pt-4 border-t border-hairline">
+              <button type="button" onClick={resetForm} className="px-5 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">
                 Cancel
               </button>
-              <button type="button" onClick={handleSaveTemplate} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed]">
+              <button type="button" onClick={handleSaveTemplate} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover">
                 <Save className="w-4 h-4" />
                 {editingTemplate ? 'Update Template' : 'Create Template'}
               </button>
@@ -313,53 +314,53 @@ const TemplateEditor = ({ onClose, currentUser }) => {
 
   return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 overflow-y-auto py-8 px-4">
-      <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-5xl mb-8 border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden">
-        <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex justify-between items-center">
+      <div className="bg-surface rounded-xl w-full max-w-5xl mb-8 border border-hairline-strong shadow-lg overflow-hidden">
+        <div className="sticky top-0 bg-surface px-6 py-4 border-b border-hairline flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0071e3]/10 dark:bg-[#0071e3]/20 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-[#0071e3]" />
+            <div className="w-10 h-10 rounded-xl bg-brand/10 dark:bg-brand/20 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-brand" />
             </div>
-            <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">Template Manager</h2>
+            <h2 className="text-[20px] font-semibold text-ink">Template Manager</h2>
           </div>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setIsCreating(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed]">
+            <button type="button" onClick={() => setIsCreating(true)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover">
               <Plus className="w-4 h-4" />
               New Template
             </button>
-            <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#86868b]">
+            <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-surface-3 text-ink-muted">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
         <div className="p-6 space-y-6">
-          <p className="text-[14px] text-[#86868b]">Create and manage task templates for your team</p>
+          <p className="text-[14px] text-ink-muted">Create and manage task templates for your team</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {templates.map((template) => (
-              <div key={template.id} className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/5 p-6 hover:shadow-lg hover:border-black/20 dark:hover:border-white/20 transition-all">
+              <div key={template.id} className="rounded-xl border border-hairline-strong bg-surface-2 p-6 hover:shadow-md hover:border-hairline-strong transition-all">
                 <div className="flex items-start justify-between mb-4">
-                  <span className="text-4xl">{template.icon}</span>
+                  {React.createElement(getTemplateIcon(template.icon), { className: "w-6 h-6 text-ink-muted" })}
                   <div className="flex gap-1">
                     {template.isOwner !== false && (
                       <>
-                        <button type="button" onClick={() => setShareModal(template)} className="p-2 rounded-lg hover:bg-[#34c759]/10 text-[#34c759]" title="Share with someone">
+                        <button type="button" onClick={() => setShareModal(template)} className="p-2 rounded-lg hover:bg-positive/10 text-positive" title="Share with someone">
                           <Share2 className="w-5 h-5" />
                         </button>
-                        <button type="button" onClick={() => handleEditTemplate(template)} className="p-2 rounded-lg hover:bg-[#0071e3]/10 text-[#0071e3]">
+                        <button type="button" onClick={() => handleEditTemplate(template)} className="p-2 rounded-lg hover:bg-brand/10 text-brand">
                           <Edit className="w-5 h-5" />
                         </button>
-                        <button type="button" onClick={() => handleDeleteTemplate(template.id)} className="p-2 rounded-lg hover:bg-[#ff3b30]/10 text-[#ff3b30]">
+                        <button type="button" onClick={() => handleDeleteTemplate(template.id)} className="p-2 rounded-lg hover:bg-danger/10 text-danger">
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </>
                     )}
                   </div>
                 </div>
-                <h3 className="font-semibold text-[#1d1d1f] dark:text-white mb-2">{template.name}</h3>
+                <h3 className="font-semibold text-ink mb-2">{template.name}</h3>
                 {template.isOwner === false && template.ownerEmail && (
-                  <p className="text-[11px] text-[#0071e3] mb-1">Shared with you by {template.ownerEmail}</p>
+                  <p className="text-[11px] text-brand mb-1">Shared with you by {template.ownerEmail}</p>
                 )}
-                <p className="text-[13px] text-[#86868b] mb-3 line-clamp-2">{template.description}</p>
-                <span className="inline-block px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/10 text-[12px] text-[#86868b]">
+                <p className="text-[13px] text-ink-muted mb-3 line-clamp-2">{template.description}</p>
+                <span className="inline-block px-2.5 py-1 rounded-lg bg-surface-3 text-[12px] text-ink-muted">
                   {template.tasks?.length || 0} tasks
                 </span>
               </div>
@@ -367,13 +368,13 @@ const TemplateEditor = ({ onClose, currentUser }) => {
           </div>
           {shareModal && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-              <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-md border border-black/10 dark:border-white/10 shadow-2xl p-6">
-                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Share template</h3>
-                <p className="text-[13px] text-[#86868b] mb-4">Send &quot;{shareModal.name}&quot; to a teammate. They will get a notification and see it in their templates.</p>
+              <div className="bg-surface rounded-xl w-full max-w-md border border-hairline-strong shadow-lg p-6">
+                <h3 className="text-[17px] font-semibold text-ink mb-2">Share template</h3>
+                <p className="text-[13px] text-ink-muted mb-4">Send &quot;{shareModal.name}&quot; to a teammate. They will get a notification and see it in their templates.</p>
                 {shareUsersLoading ? (
-                  <p className="text-[13px] text-[#86868b] mb-4">Loading users…</p>
+                  <p className="text-[13px] text-ink-muted mb-4">Loading users…</p>
                 ) : shareableUsers.length === 0 ? (
-                  <p className="text-[13px] text-[#86868b] mb-4">No other users to share with.</p>
+                  <p className="text-[13px] text-ink-muted mb-4">No other users to share with.</p>
                 ) : (
                   <select
                     value={shareEmail}
@@ -391,10 +392,10 @@ const TemplateEditor = ({ onClose, currentUser }) => {
                   </select>
                 )}
                 <div className="flex justify-end gap-3">
-                  <button type="button" onClick={() => { setShareModal(null); setShareEmail(''); }} className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium">
+                  <button type="button" onClick={() => { setShareModal(null); setShareEmail(''); }} className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium">
                     Cancel
                   </button>
-                  <button type="button" onClick={handleShareTemplate} disabled={sharing || !shareEmail.trim()} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[14px] font-medium hover:bg-[#2db14e] disabled:opacity-50">
+                  <button type="button" onClick={handleShareTemplate} disabled={sharing || !shareEmail.trim()} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive disabled:opacity-50">
                     <Share2 className="w-4 h-4" />
                     {sharing ? 'Sharing…' : 'Share'}
                   </button>
@@ -404,8 +405,8 @@ const TemplateEditor = ({ onClose, currentUser }) => {
           )}
           {templates.length === 0 && (
             <div className="text-center py-12">
-              <Sparkles className="w-12 h-12 text-[#86868b] mx-auto mb-3" />
-              <p className="text-[15px] text-[#86868b]">No templates yet. Create your first template!</p>
+              <Sparkles className="w-12 h-12 text-ink-muted mx-auto mb-3" />
+              <p className="text-[15px] text-ink-muted">No templates yet. Create your first template!</p>
             </div>
           )}
         </div>

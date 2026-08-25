@@ -367,8 +367,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
     if (modalOnly) return null;
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-[14px] text-[#86868b]">Loading client profiles...</p>
+        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-[14px] text-ink-muted">Loading client profiles...</p>
       </div>
     );
   }
@@ -379,11 +379,11 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
     <div className="space-y-6">
       {/* Header Actions */}
       {displayClients.length === 0 && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-6">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Get Started</h2>
-              <p className="text-[14px] text-[#86868b] mt-1">
+              <h2 className="text-[17px] font-semibold text-ink">Get Started</h2>
+              <p className="text-[14px] text-ink-muted mt-1">
                 Import your client list or approve pending sign-ups
               </p>
             </div>
@@ -398,7 +398,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                   toast.error('Failed to import clients: ' + error.message);
                 }
               }}
-              className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+              className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
             >
               Import All Clients
             </button>
@@ -409,69 +409,69 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       {/* Stats Cards */}
       {displayClients.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">{internalOnly ? 'Total Accounts' : 'Total Clients'}</p>
-                <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white mt-1">{stats.total}</p>
+                <p className="text-[12px] font-medium text-ink-muted">{internalOnly ? 'Total Accounts' : 'Total Clients'}</p>
+                <p className="text-[28px] font-semibold text-ink mt-1">{stats.total}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-[#0071e3]/10 flex items-center justify-center">
-                <Users className="w-5 h-5 text-[#0071e3]" />
+              <div className="h-10 w-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-brand" />
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">With Manager</p>
-                <p className="text-[28px] font-semibold text-[#34c759] mt-1">{stats.withManager}</p>
+                <p className="text-[12px] font-medium text-ink-muted">With Manager</p>
+                <p className="text-[28px] font-semibold text-positive mt-1">{stats.withManager}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-[#34c759]/10 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-[#34c759]" />
+              <div className="h-10 w-10 rounded-full bg-positive/10 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-positive" />
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">Unassigned</p>
-                <p className="text-[28px] font-semibold text-[#ff9500] mt-1">{stats.withoutManager}</p>
+                <p className="text-[12px] font-medium text-ink-muted">Unassigned</p>
+                <p className="text-[28px] font-semibold text-warning mt-1">{stats.withoutManager}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-[#ff9500]/10 flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-[#ff9500]" />
+              <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-warning" />
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">Active</p>
-                <p className="text-[28px] font-semibold text-[#0071e3] mt-1">{stats.active}</p>
+                <p className="text-[12px] font-medium text-ink-muted">Active</p>
+                <p className="text-[28px] font-semibold text-brand mt-1">{stats.active}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-[#0071e3]/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-[#0071e3]" />
+              <div className="h-10 w-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-brand" />
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">Paused</p>
-                <p className="text-[28px] font-semibold text-[#ff9500] mt-1">{stats.paused}</p>
+                <p className="text-[12px] font-medium text-ink-muted">Paused</p>
+                <p className="text-[28px] font-semibold text-warning mt-1">{stats.paused}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-[#ff9500]/10 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-[#ff9500]" />
+              <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-warning" />
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+          <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-medium text-[#86868b]">Archived</p>
-                <p className="text-[28px] font-semibold text-[#86868b] mt-1">{stats.archived}</p>
+                <p className="text-[12px] font-medium text-ink-muted">Archived</p>
+                <p className="text-[28px] font-semibold text-ink-muted mt-1">{stats.archived}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-[#86868b]/10 flex items-center justify-center">
-                <Archive className="w-5 h-5 text-[#86868b]" />
+              <div className="h-10 w-10 rounded-full bg-ink-muted/10 flex items-center justify-center">
+                <Archive className="w-5 h-5 text-ink-muted" />
               </div>
             </div>
           </div>
@@ -480,15 +480,15 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
 
       {/* Filters and Search */}
       {displayClients.length > 0 && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-4">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className="relative flex-1 w-full sm:w-auto min-w-[250px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-muted w-4 h-4" />
               <input
                 placeholder="Search clients by name, email, or package..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full h-10 pl-10 pr-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             
@@ -496,7 +496,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
               <select
                 value={managerFilter}
                 onChange={(e) => setManagerFilter(e.target.value)}
-                className="h-10 px-3 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="h-10 px-3 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="all">All Managers</option>
                 <option value="unassigned">Unassigned</option>
@@ -510,7 +510,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
               <select
                 value={packageFilter}
                 onChange={(e) => setPackageFilter(e.target.value)}
-                className="h-10 px-3 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="h-10 px-3 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="all">All Packages</option>
                 {[...new Set(displayClients.map(c => c.packageType).filter(Boolean))].map(pkg => (
@@ -521,7 +521,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-10 px-3 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="h-10 px-3 text-[13px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="all">All Status</option>
                 <option value="approved">Approved</option>
@@ -530,17 +530,17 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
               </select>
 
               {/* View Toggle */}
-              <div className="flex items-center bg-black/5 dark:bg-white/10 rounded-xl overflow-hidden">
+              <div className="flex items-center bg-surface-3 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-[#0071e3] text-white' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+                  className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-brand text-white' : 'text-ink-muted hover:text-ink dark:hover:text-white'}`}
                   title="List view"
                 >
                   <List className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('card')}
-                  className={`p-2.5 transition-colors ${viewMode === 'card' ? 'bg-[#0071e3] text-white' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+                  className={`p-2.5 transition-colors ${viewMode === 'card' ? 'bg-brand text-white' : 'text-ink-muted hover:text-ink dark:hover:text-white'}`}
                   title="Card view"
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -555,7 +555,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     setMergeChoice(null);
                     setShowDuplicatesModal(true);
                   }}
-                  className="h-10 px-3 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[13px] font-medium hover:bg-amber-500/20 transition-colors"
+                  className="h-10 px-3 rounded-xl bg-warning/10 text-warning dark:text-amber-400 text-[13px] font-medium hover:bg-warning/20 transition-colors"
                   title="Find clients that may be duplicates (same name/email)"
                 >
                   Find duplicates
@@ -568,14 +568,14 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
 
       {/* Client List */}
       {filteredClients.length === 0 ? (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-12 text-center">
-          <Users className="w-12 h-12 text-[#86868b] mx-auto mb-4" />
-          <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-12 text-center">
+          <Users className="w-12 h-12 text-ink-muted mx-auto mb-4" />
+          <h3 className="text-[17px] font-semibold text-ink mb-2">
             {searchTerm || managerFilter !== 'all' || packageFilter !== 'all' || statusFilter !== 'all' 
               ? 'No clients match your filters' 
               : 'No clients in the system yet'}
           </h3>
-          <p className="text-[14px] text-[#86868b] mb-6">
+          <p className="text-[14px] text-ink-muted mb-6">
             {searchTerm || managerFilter !== 'all' || packageFilter !== 'all' || statusFilter !== 'all' 
               ? 'Try adjusting your search or filters' 
               : (internalOnly ? 'Internal accounts will appear here once added.' : 'Clients will appear here once they are added.')}
@@ -588,7 +588,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     const event = new CustomEvent('switchTab', { detail: 'internal' });
                     window.dispatchEvent(event);
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   View Internal Accounts
                 </button>
@@ -604,7 +604,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     toast.error('Failed to import clients: ' + error.message);
                   }
                 }}
-                className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
               >
                 Import All Clients
               </button>
@@ -635,7 +635,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     toast.error('Failed to create test client: ' + error.message);
                   }
                 }}
-                className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
               >
                 Create Test Client
               </button>
@@ -644,9 +644,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
         </div>
       ) : viewMode === 'list' ? (
         /* List View */
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
           {/* List Header */}
-          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02] border-b border-black/5 dark:border-white/5 text-[11px] font-semibold text-[#86868b] uppercase tracking-wide">
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02] border-b border-black/5 dark:border-white/5 text-[11px] font-semibold text-ink-muted uppercase tracking-wide">
             <div className="col-span-4">Client</div>
             <div className="col-span-2">Package</div>
             <div className="col-span-2">Manager</div>
@@ -670,7 +670,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-brand to-brand flex items-center justify-center">
                           <span className="text-white font-medium text-sm">
                             {client.clientName ? client.clientName.charAt(0).toUpperCase() : 'C'}
                           </span>
@@ -686,20 +686,20 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                           <span
                             title={`Health: ${client.healthStatus}${client.healthScore != null ? ` (${client.healthScore})` : ''}`}
                             className={`flex-shrink-0 w-2 h-2 rounded-full ${
-                              client.healthStatus === 'healthy' ? 'bg-[#34c759]' :
-                              client.healthStatus === 'at_risk' ? 'bg-[#ff3b30]' :
-                              'bg-[#ff9500]'
+                              client.healthStatus === 'healthy' ? 'bg-positive' :
+                              client.healthStatus === 'at_risk' ? 'bg-danger' :
+                              'bg-warning'
                             }`}
                           />
                         )}
                       </div>
-                      <p className="text-[11px] text-[#86868b] truncate">{client.clientEmail || 'No email'}</p>
+                      <p className="text-[11px] text-ink-muted truncate">{client.clientEmail || 'No email'}</p>
                     </div>
                   </div>
 
                   {/* Package */}
                   <div className="col-span-2 flex items-center">
-                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
+                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-brand/10 text-brand font-medium">
                       {client.packageType || 'Standard'}
                     </span>
                   </div>
@@ -707,17 +707,17 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                   {/* Manager */}
                   <div className="col-span-2 flex items-center">
                     {manager ? (
-                      <span className="text-[12px] text-[#34c759] font-medium truncate">
+                      <span className="text-[12px] text-positive font-medium truncate">
                         {manager.displayName || manager.email}
                       </span>
                     ) : (
-                      <span className="text-[12px] text-[#ff9500]">Unassigned</span>
+                      <span className="text-[12px] text-warning">Unassigned</span>
                     )}
                   </div>
 
                   {/* Posts */}
                   <div className="col-span-2 flex items-center">
-                    <span className="text-[12px] text-[#86868b]">
+                    <span className="text-[12px] text-ink-muted">
                       {`${getPostsRemaining(client)} remaining`}
                     </span>
                   </div>
@@ -731,7 +731,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     {client.platforms?.tiktok && <TikTokIcon className="w-4 h-4 text-[#000000] dark:text-white" />}
                     {client.platforms?.x && <XIcon className="w-4 h-4 text-[#000000] dark:text-white" />}
                     {!client.platforms || !Object.values(client.platforms).some(v => v) ? (
-                      <span className="text-[11px] text-[#86868b]">—</span>
+                      <span className="text-[11px] text-ink-muted">—</span>
                     ) : null}
                     {canManageClients && (
                       <button
@@ -742,7 +742,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                         className="p-1.5 rounded-lg hover:bg-[#ff9f0a]/10 transition-colors"
                         title={isPaused(client) ? 'Resume client' : 'Pause client'}
                       >
-                        {isPaused(client) ? <Play className="w-3.5 h-3.5 text-[#34c759]" /> : <Pause className="w-3.5 h-3.5 text-[#ff9f0a]" />}
+                        {isPaused(client) ? <Play className="w-3.5 h-3.5 text-positive" /> : <Pause className="w-3.5 h-3.5 text-[#ff9f0a]" />}
                       </button>
                     )}
                     {canManageClients && (
@@ -751,10 +751,10 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                           e.stopPropagation();
                           setShowDeleteConfirm(client);
                         }}
-                        className="p-1.5 rounded-lg hover:bg-[#ff3b30]/10 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-danger/10 transition-colors"
                         title="Remove client"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" />
+                        <Trash2 className="w-3.5 h-3.5 text-danger" />
                       </button>
                     )}
                   </div>
@@ -772,7 +772,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
             return (
               <div 
                 key={client.id} 
-                className={`relative rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all cursor-pointer group ${greyOut ? 'opacity-60' : ''}`}
+                className={`relative rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5 hover:shadow-md transition-all cursor-pointer group ${greyOut ? 'opacity-60' : ''}`}
                 onClick={() => openClientCard(client)}
               >
                 {/* Edit/Delete buttons at top right */}
@@ -780,10 +780,10 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                   {(canManageClients || canEditPackages) && (
                     <button
                       onClick={(e) => { e.stopPropagation(); openClientCard(client); }}
-                      className="p-2 rounded-lg bg-white dark:bg-[#2c2c2e] shadow-sm border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                      className="p-2 rounded-lg bg-surface shadow-sm border border-hairline hover:bg-surface-3 transition-colors"
                       title="Edit client"
                     >
-                      <Pencil className="w-3.5 h-3.5 text-[#0071e3]" />
+                      <Pencil className="w-3.5 h-3.5 text-brand" />
                     </button>
                   )}
                   {canManageClients && (
@@ -792,10 +792,10 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                         e.stopPropagation();
                         handleTogglePause(client);
                       }}
-                      className="p-2 rounded-lg bg-white dark:bg-[#2c2c2e] shadow-sm border border-black/5 dark:border-white/10 hover:bg-[#ff9f0a]/10 transition-colors"
+                      className="p-2 rounded-lg bg-surface shadow-sm border border-hairline hover:bg-[#ff9f0a]/10 transition-colors"
                       title={isPaused(client) ? 'Resume client' : 'Pause client'}
                     >
-                      {isPaused(client) ? <Play className="w-3.5 h-3.5 text-[#34c759]" /> : <Pause className="w-3.5 h-3.5 text-[#ff9f0a]" />}
+                      {isPaused(client) ? <Play className="w-3.5 h-3.5 text-positive" /> : <Pause className="w-3.5 h-3.5 text-[#ff9f0a]" />}
                     </button>
                   )}
                   {canManageClients && (
@@ -804,10 +804,10 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                         e.stopPropagation();
                         setShowDeleteConfirm(client);
                       }}
-                      className="p-2 rounded-lg bg-white dark:bg-[#2c2c2e] shadow-sm border border-black/5 dark:border-white/10 hover:bg-[#ff3b30]/10 transition-colors"
+                      className="p-2 rounded-lg bg-surface shadow-sm border border-hairline hover:bg-danger/10 transition-colors"
                       title="Remove client"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" />
+                      <Trash2 className="w-3.5 h-3.5 text-danger" />
                     </button>
                   )}
                 </div>
@@ -818,7 +818,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-brand to-brand flex items-center justify-center">
                           <span className="text-white font-semibold text-lg">
                             {client.clientName ? client.clientName.charAt(0).toUpperCase() : 'C'}
                           </span>
@@ -834,22 +834,22 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                           <span
                             title={`Health: ${client.healthStatus}${client.healthScore != null ? ` (${client.healthScore})` : ''}`}
                             className={`flex-shrink-0 w-2 h-2 rounded-full ${
-                              client.healthStatus === 'healthy' ? 'bg-[#34c759]' :
-                              client.healthStatus === 'at_risk' ? 'bg-[#ff3b30]' :
-                              'bg-[#ff9500]'
+                              client.healthStatus === 'healthy' ? 'bg-positive' :
+                              client.healthStatus === 'at_risk' ? 'bg-danger' :
+                              'bg-warning'
                             }`}
                           />
                         )}
                       </div>
                       {client.brokerage && (
-                        <p className="text-[11px] text-[#86868b] truncate">{client.brokerage}</p>
+                        <p className="text-[11px] text-ink-muted truncate">{client.brokerage}</p>
                       )}
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#0071e3]/10 text-[#0071e3] font-medium">
+                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-brand/10 text-brand font-medium">
                           {client.packageType || 'Standard'}
                         </span>
                         {client.healthStatus === 'at_risk' && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#ff3b30]/10 text-[#ff3b30] font-medium">At Risk</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-danger/10 text-danger font-medium">At Risk</span>
                         )}
                       </div>
                     </div>
@@ -864,16 +864,16 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
-                    <div className="h-5 w-5 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-2 text-[12px] text-ink-muted">
+                    <div className="h-5 w-5 rounded-full bg-surface-3 flex items-center justify-center flex-shrink-0">
                       <Mail className="w-3 h-3" />
                     </div>
                     <span className="truncate">{client.clientEmail || 'No email'}</span>
                   </div>
 
                   {client.phone && (
-                    <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
-                      <div className="h-5 w-5 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-center gap-2 text-[12px] text-ink-muted">
+                      <div className="h-5 w-5 rounded-full bg-surface-3 flex items-center justify-center flex-shrink-0">
                         <Phone className="w-3 h-3" />
                       </div>
                       <span>{client.phone}</span>
@@ -882,16 +882,16 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
 
                   {manager ? (
                     <div className="flex items-center gap-2 text-[12px]">
-                      <div className="h-5 w-5 rounded-full bg-[#34c759]/10 flex items-center justify-center flex-shrink-0">
-                        <User className="w-3 h-3 text-[#34c759]" />
+                      <div className="h-5 w-5 rounded-full bg-positive/10 flex items-center justify-center flex-shrink-0">
+                        <User className="w-3 h-3 text-positive" />
                       </div>
-                      <span className="text-[#86868b]">
-                        Manager: <span className="font-medium text-[#34c759]">{manager.displayName || manager.email}</span>
+                      <span className="text-ink-muted">
+                        Manager: <span className="font-medium text-positive">{manager.displayName || manager.email}</span>
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-[12px] text-[#ff9500]">
-                      <div className="h-5 w-5 rounded-full bg-[#ff9500]/10 flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-center gap-2 text-[12px] text-warning">
+                      <div className="h-5 w-5 rounded-full bg-warning/10 flex items-center justify-center flex-shrink-0">
                         <AlertCircle className="w-3 h-3" />
                       </div>
                       <span>No manager assigned</span>
@@ -899,26 +899,26 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                   )}
 
                   {client.startDate && (
-                    <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
-                      <div className="h-5 w-5 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <div className="flex items-center gap-2 text-[12px] text-ink-muted">
+                      <div className="h-5 w-5 rounded-full bg-surface-3 flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-3 h-3" />
                       </div>
                       <span>Since {format(new Date(client.startDate), 'MMM yyyy')}</span>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 text-[12px] text-[#86868b]">
-                    <div className="h-5 w-5 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-2 text-[12px] text-ink-muted">
+                    <div className="h-5 w-5 rounded-full bg-surface-3 flex items-center justify-center flex-shrink-0">
                       <Package className="w-3 h-3" />
                     </div>
                     <span>{getPostsRemaining(client)} posts remaining</span>
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-4 border-t border-black/5 dark:border-white/10">
+                <div className="flex gap-2 pt-4 border-t border-hairline">
                   {canAssignManagers && (
                     <button
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedClient(client);
@@ -930,7 +930,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     </button>
                   )}
                   <button
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       openEmailInGmail(client.clientEmail);
@@ -962,27 +962,27 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-sm w-full border border-black/10 dark:border-white/10 shadow-2xl">
+          <div className="bg-surface rounded-xl max-w-sm w-full border border-hairline-strong shadow-lg">
             <div className="p-6 text-center">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#ff3b30]/10 flex items-center justify-center">
-                <Trash2 className="w-7 h-7 text-[#ff3b30]" />
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-danger/10 flex items-center justify-center">
+                <Trash2 className="w-7 h-7 text-danger" />
               </div>
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Remove Client?</h2>
-              <p className="text-[14px] text-[#86868b] mb-6">
-                Are you sure you want to remove <span className="font-medium text-[#1d1d1f] dark:text-white">{showDeleteConfirm.clientName || 'this client'}</span>? The client will be removed from all views.
+              <h2 className="text-[17px] font-semibold text-ink mb-2">Remove Client?</h2>
+              <p className="text-[14px] text-ink-muted mb-6">
+                Are you sure you want to remove <span className="font-medium text-ink">{showDeleteConfirm.clientName || 'this client'}</span>? The client will be removed from all views.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
                   disabled={deleting}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDeleteClient(showDeleteConfirm.id)}
                   disabled={deleting}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e53529] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e53529] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {deleting ? (
                     <>
@@ -1004,33 +1004,33 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       {/* Potential duplicates modal */}
       {showDuplicatesModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[85vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl flex flex-col">
-            <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Potential duplicates</h2>
-              <button onClick={() => { setShowDuplicatesModal(false); setDuplicateGroups([]); setMergeChoice(null); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-                <X className="w-5 h-5 text-[#86868b]" />
+          <div className="bg-surface rounded-xl max-w-lg w-full max-h-[85vh] overflow-hidden border border-hairline-strong shadow-lg flex flex-col">
+            <div className="px-6 py-4 border-b border-hairline flex items-center justify-between">
+              <h2 className="text-[17px] font-semibold text-ink">Potential duplicates</h2>
+              <button onClick={() => { setShowDuplicatesModal(false); setDuplicateGroups([]); setMergeChoice(null); }} className="p-2 rounded-lg hover:bg-surface-3">
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
             <div className="p-6 overflow-y-auto flex-1">
               {duplicateGroups.length === 0 ? (
-                <p className="text-[14px] text-[#86868b]">No potential duplicates found. Names and emails are compared to detect possible duplicates.</p>
+                <p className="text-[14px] text-ink-muted">No potential duplicates found. Names and emails are compared to detect possible duplicates.</p>
               ) : (
-                <p className="text-[13px] text-[#86868b] mb-4">These groups look like the same person (matching name and/or email). Pick which record to keep, then merge the others into it.</p>
+                <p className="text-[13px] text-ink-muted mb-4">These groups look like the same person (matching name and/or email). Pick which record to keep, then merge the others into it.</p>
               )}
               {duplicateGroups.map((group, groupIndex) => {
                 const keepId = mergeChoice?.groupIndex === groupIndex ? mergeChoice.keepId : null;
                 return (
-                  <div key={groupIndex} className="mb-6 last:mb-0 p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                    <div className="text-[12px] font-semibold text-[#86868b] uppercase tracking-wide mb-2">Group {groupIndex + 1}</div>
+                  <div key={groupIndex} className="mb-6 last:mb-0 p-4 rounded-xl bg-surface-3 border border-hairline">
+                    <div className="text-[12px] font-semibold text-ink-muted uppercase tracking-wide mb-2">Group {groupIndex + 1}</div>
                     <ul className="space-y-2 mb-3">
                       {group.map((c) => (
                         <li key={c.id} className="flex items-center justify-between gap-2 text-[14px]">
-                          <span className="text-[#1d1d1f] dark:text-white font-medium">{c.clientName || c.contactName || '—'}</span>
-                          <span className="text-[#86868b] truncate">{c.clientEmail || c.email || 'No email'}</span>
+                          <span className="text-ink font-medium">{c.clientName || c.contactName || '—'}</span>
+                          <span className="text-ink-muted truncate">{c.clientEmail || c.email || 'No email'}</span>
                           {canManageClients && (
                             <button
                               onClick={() => setMergeChoice({ groupIndex, keepId: c.id })}
-                              className={`flex-shrink-0 px-2 py-1 rounded-lg text-[12px] font-medium ${keepId === c.id ? 'bg-[#34c759] text-white' : 'bg-black/10 dark:bg-white/10 text-[#86868b] hover:bg-black/15 dark:hover:bg-white/15'}`}
+                              className={`flex-shrink-0 px-2 py-1 rounded-lg text-[12px] font-medium ${keepId === c.id ? 'bg-positive text-white' : 'bg-black/10 dark:bg-white/10 text-ink-muted hover:bg-black/15 dark:hover:bg-white/15'}`}
                             >
                               {keepId === c.id ? 'Keep' : 'Keep this one'}
                             </button>
@@ -1075,7 +1075,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                             setMerging(false);
                           }
                         }}
-                        className="w-full py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] disabled:opacity-50 disabled:pointer-events-none"
+                        className="w-full py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover disabled:opacity-50 disabled:pointer-events-none"
                       >
                         {merging ? 'Merging…' : `Merge ${group.length - 1} into kept record`}
                       </button>
@@ -1091,18 +1091,18 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       {/* Possible existing client – prompt to open or add anyway */}
       {possibleExistingMatches.length > 0 && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full p-6 border border-black/10 dark:border-white/10 shadow-2xl">
-            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Possible existing client</h3>
-            <p className="text-[13px] text-[#86868b] mb-4">
+          <div className="bg-surface rounded-xl max-w-md w-full p-6 border border-hairline-strong shadow-lg">
+            <h3 className="text-[17px] font-semibold text-ink mb-1">Possible existing client</h3>
+            <p className="text-[13px] text-ink-muted mb-4">
               A client with the same or similar name/email may already exist. Open existing or add as new?
             </p>
             <ul className="space-y-2 mb-4 max-h-40 overflow-y-auto">
               {possibleExistingMatches.map((c) => (
-                <li key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-black/5 dark:bg-white/5">
-                  <span className="text-[14px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                <li key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-3">
+                  <span className="text-[14px] font-medium text-ink truncate">
                     {c.clientName || c.contactName || '—'}
                   </span>
-                  <span className="text-[12px] text-[#86868b] truncate">{c.clientEmail || c.email || ''}</span>
+                  <span className="text-[12px] text-ink-muted truncate">{c.clientEmail || c.email || ''}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -1110,7 +1110,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       setPossibleExistingMatches([]);
                       openClientCard(c);
                     }}
-                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed]"
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-brand text-white text-[12px] font-medium hover:bg-brand-hover"
                   >
                     Open
                   </button>
@@ -1122,14 +1122,14 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                 type="button"
                 onClick={handleAddAsNewAnyway}
                 disabled={adding}
-                className="flex-1 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-ink text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
               >
                 {adding ? 'Adding…' : 'Add as new anyway'}
               </button>
               <button
                 type="button"
                 onClick={() => setPossibleExistingMatches([])}
-                className="flex-1 py-2.5 rounded-xl border border-black/10 dark:border-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5"
+                className="flex-1 py-2.5 rounded-xl border border-hairline-strong text-ink-muted text-[13px] font-medium hover:bg-surface-3"
               >
                 Cancel
               </button>
@@ -1141,9 +1141,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
       {/* Add Client Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">{internalOnly ? 'Add Internal Account' : 'Add New Client'}</h2>
+          <div className="bg-surface rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
+            <div className="sticky top-0 bg-surface px-6 py-4 border-b border-hairline flex items-center justify-between z-10">
+              <h2 className="text-[17px] font-semibold text-ink">{internalOnly ? 'Add Internal Account' : 'Add New Client'}</h2>
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -1164,21 +1164,21 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     isInternal: false
                   });
                 }}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
             <div className="p-6">
               {!internalOnly && (
-                <p className="text-[13px] text-[#86868b] mb-4">
+                <p className="text-[13px] text-ink-muted mb-4">
                   This will add the client to your CRM and record today&apos;s date.
                 </p>
               )}
               <div className="space-y-4">
                 {/* Type(s) multi-select */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Type(s) *
                   </label>
                   <div className="flex flex-wrap gap-3">
@@ -1194,9 +1194,9 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                               clientTypes: e.target.checked ? [...prev, value] : prev.filter(t => t !== value)
                             }));
                           }}
-                          className="w-4 h-4 rounded border-black/20 text-[#0071e3] focus:ring-[#0071e3]"
+                          className="w-4 h-4 rounded border-black/20 text-brand focus:ring-brand"
                         />
-                        <span className="text-[13px] text-[#1d1d1f] dark:text-white">{label}</span>
+                        <span className="text-[13px] text-ink">{label}</span>
                       </label>
                     ))}
                   </div>
@@ -1204,32 +1204,32 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                 {/* First name / Last name */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    <label className="block text-[13px] font-medium text-ink mb-2">
                       First name *
                     </label>
                     <input
                       value={addForm.firstName}
                       onChange={(e) => setAddForm({...addForm, firstName: e.target.value})}
                       placeholder="First name"
-                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    <label className="block text-[13px] font-medium text-ink mb-2">
                       Last name *
                     </label>
                     <input
                       value={addForm.lastName}
                       onChange={(e) => setAddForm({...addForm, lastName: e.target.value})}
                       placeholder="Last name"
-                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Email *
                   </label>
                   <input
@@ -1237,57 +1237,57 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     value={addForm.clientEmail}
                     onChange={(e) => setAddForm({...addForm, clientEmail: e.target.value})}
                     placeholder="client@example.com"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
 
                 {/* Location */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Location
                   </label>
                   <LocationSelect
                     value={addForm.location || ''}
                     onChange={(loc) => setAddForm({ ...addForm, location: loc || '' })}
                     placeholder="Search or select location"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                     allowLegacy={false}
                   />
                 </div>
 
                 {/* Primary contact (optional) */}
-                <div className="border-t border-black/5 dark:border-white/10 pt-4">
-                  <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white mb-3">Primary contact (optional)</h4>
+                <div className="border-t border-hairline pt-4">
+                  <h4 className="text-[13px] font-semibold text-ink mb-3">Primary contact (optional)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Name</label>
-                      <input type="text" value={addForm.primaryContact?.name || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), name: e.target.value } }))} placeholder="Contact name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1">Name</label>
+                      <input type="text" value={addForm.primaryContact?.name || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), name: e.target.value } }))} placeholder="Contact name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong" />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Email</label>
-                      <input type="email" value={addForm.primaryContact?.email || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), email: e.target.value } }))} placeholder="contact@example.com" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1">Email</label>
+                      <input type="email" value={addForm.primaryContact?.email || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), email: e.target.value } }))} placeholder="contact@example.com" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong" />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Phone</label>
-                      <input type="tel" value={addForm.primaryContact?.phone || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), phone: e.target.value } }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1">Phone</label>
+                      <input type="tel" value={addForm.primaryContact?.phone || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), phone: e.target.value } }))} placeholder="+1 (555) 000-0000" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong" />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1">Role</label>
-                      <input type="text" value={addForm.primaryContact?.role || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), role: e.target.value } }))} placeholder="e.g. Marketing Manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0" />
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1">Role</label>
+                      <input type="text" value={addForm.primaryContact?.role || ''} onChange={(e) => setAddForm(prev => ({ ...prev, primaryContact: { ...(prev.primaryContact || {}), role: e.target.value } }))} placeholder="e.g. Marketing Manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong" />
                     </div>
                   </div>
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Phone
                   </label>
                   <input
                     value={addForm.phone}
                     onChange={(e) => setAddForm({...addForm, phone: e.target.value})}
                     placeholder="+1 (555) 123-4567"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
 
@@ -1297,28 +1297,28 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                     type="checkbox"
                     checked={!!addForm.isInternal}
                     onChange={(e) => setAddForm({ ...addForm, isInternal: e.target.checked })}
-                    className="w-4 h-4 rounded border-black/20 dark:border-white/20 text-[#0071e3] focus:ring-[#0071e3]"
+                    className="w-4 h-4 rounded border-black/20 dark:border-white/20 text-brand focus:ring-brand"
                   />
-                  <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Internal account (our company page)</span>
+                  <span className="text-[13px] font-medium text-ink">Internal account (our company page)</span>
                 </label>
 
                 {/* Package Type & Size */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    <label className="block text-[13px] font-medium text-ink mb-2">
                       Package Type
                     </label>
                     <select
                       value={addForm.packageType}
                       onChange={(e) => setAddForm({...addForm, packageType: e.target.value})}
-                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                     >
                       <option value="Standard">Standard</option>
                       <option value="Bundled">Bundled</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    <label className="block text-[13px] font-medium text-ink mb-2">
                       Posts Included
                     </label>
                     <input
@@ -1326,14 +1326,14 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       min="0"
                       value={addForm.postsRemaining}
                       onChange={(e) => setAddForm({...addForm, postsRemaining: parseInt(e.target.value) || 0, packageSize: parseInt(e.target.value) || 0})}
-                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                   </div>
                 </div>
 
                 {/* Social Media Platforms */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-3">
+                  <label className="block text-[13px] font-medium text-ink mb-3">
                     Social Media Platforms
                   </label>
                   <div className="grid grid-cols-3 gap-2">
@@ -1357,8 +1357,8 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                         })}
                         className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors ${
                           addForm.platforms[key]
-                            ? 'bg-[#0071e3] text-white'
-                            : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                            ? 'bg-brand text-white'
+                            : 'bg-surface-3 text-ink-muted hover:text-ink dark:hover:text-white'
                         }`}
                       >
                         {Icon && <Icon className="w-3.5 h-3.5" />}
@@ -1370,24 +1370,24 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
 
                 {/* Notes */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Notes
                   </label>
                   <textarea
                     value={addForm.notes}
                     onChange={(e) => setAddForm({...addForm, notes: e.target.value})}
                     placeholder="Additional notes about this client..."
-                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                    className="w-full px-4 py-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                     rows={3}
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-6 pt-6 border-t border-black/5 dark:border-white/10">
+              <div className="flex gap-3 mt-6 pt-6 border-t border-hairline">
                 <button
                   onClick={handleAddClient}
                   disabled={adding || !([addForm.firstName, addForm.lastName].filter(Boolean).join(' ').trim()) || (!internalOnly && !addForm.clientEmail?.trim())}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {adding ? (
                     <>
@@ -1421,7 +1421,7 @@ const ClientProfilesList = ({ internalOnly = false, modalOnly = false }) => {
                       isInternal: false
                     });
                   }}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Cancel
                 </button>

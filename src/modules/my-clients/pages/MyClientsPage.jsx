@@ -215,9 +215,9 @@ const MyClientsPage = () => {
     // 1. Check for manual override
     if (client.healthStatus) {
       const status = client.healthStatus.toLowerCase();
-      if (status === 'good') return { label: 'Good', color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10' };
-      if (status === 'at_risk') return { label: 'At Risk', color: 'text-[#ff9500]', bgColor: 'bg-[#ff9500]/10' };
-      if (status === 'churned') return { label: 'Churned', color: 'text-[#ff3b30]', bgColor: 'bg-[#ff3b30]/10' };
+      if (status === 'good') return { label: 'Good', color: 'text-positive', bgColor: 'bg-positive/10' };
+      if (status === 'at_risk') return { label: 'At Risk', color: 'text-warning', bgColor: 'bg-warning/10' };
+      if (status === 'churned') return { label: 'Churned', color: 'text-danger', bgColor: 'bg-danger/10' };
     }
 
     // 2. Check for AI prediction (real-time)
@@ -226,8 +226,8 @@ const MyClientsPage = () => {
       const status = prediction.status.toLowerCase();
       return { 
         label: status === 'good' ? 'Good' : status === 'at_risk' ? 'At Risk' : 'Churned',
-        color: status === 'good' ? 'text-[#34c759]' : status === 'at_risk' ? 'text-[#ff9500]' : 'text-[#ff3b30]',
-        bgColor: status === 'good' ? 'bg-[#34c759]/10' : status === 'at_risk' ? 'bg-[#ff9500]/10' : 'bg-[#ff3b30]/10',
+        color: status === 'good' ? 'text-positive' : status === 'at_risk' ? 'text-warning' : 'text-danger',
+        bgColor: status === 'good' ? 'bg-positive/10' : status === 'at_risk' ? 'bg-warning/10' : 'bg-danger/10',
         aiEnhanced: true,
         churnRisk: prediction.churnRisk,
         healthScore: prediction.healthScore,
@@ -242,8 +242,8 @@ const MyClientsPage = () => {
       const status = snapshot.status.toLowerCase();
       return {
         label: status === 'good' ? 'Good' : status === 'at_risk' ? 'At Risk' : 'Churned',
-        color: status === 'good' ? 'text-[#34c759]' : status === 'at_risk' ? 'text-[#ff9500]' : 'text-[#ff3b30]',
-        bgColor: status === 'good' ? 'bg-[#34c759]/10' : status === 'at_risk' ? 'bg-[#ff9500]/10' : 'bg-[#ff3b30]/10',
+        color: status === 'good' ? 'text-positive' : status === 'at_risk' ? 'text-warning' : 'text-danger',
+        bgColor: status === 'good' ? 'bg-positive/10' : status === 'at_risk' ? 'bg-warning/10' : 'bg-danger/10',
         aiEnhanced: true,
         churnRisk: snapshot.churnRisk,
         healthScore: snapshot.healthScore,
@@ -253,13 +253,13 @@ const MyClientsPage = () => {
     }
 
     // 4. Default to Good
-    return { label: 'Good', color: 'text-[#34c759]', bgColor: 'bg-[#34c759]/10' };
+    return { label: 'Good', color: 'text-positive', bgColor: 'bg-positive/10' };
   };
 
   if (clientsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="w-6 h-6 text-[#0071e3] animate-spin" />
+        <RefreshCw className="w-6 h-6 text-brand animate-spin" />
       </div>
     );
   }
@@ -277,31 +277,31 @@ const MyClientsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">My Clients</h1>
-          <p className="text-[17px] text-[#86868b] mt-1">Managing {clients.length} active partnerships</p>
+          <h1 className="text-[34px] font-semibold text-ink tracking-[-0.02em]">My Clients</h1>
+          <p className="text-[17px] text-ink-muted mt-1">Managing {clients.length} active partnerships</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
             <input
               type="text"
               placeholder="Search clients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-black/5 dark:bg-white/5 border-none rounded-xl text-[14px] w-64 focus:ring-2 focus:ring-[#0071e3] transition-all"
+              className="pl-10 pr-4 py-2 bg-surface-3 border-none rounded-xl text-[14px] w-64 focus:ring-2 focus:ring-brand transition-all"
             />
           </div>
-          <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
+          <div className="flex items-center gap-1 p-1 bg-surface-3 rounded-xl">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${filterStatus === 'all' ? 'bg-white dark:bg-[#2d2d2d] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${filterStatus === 'all' ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted hover:text-ink dark:hover:text-white'}`}
             >
               All
             </button>
             <button
               onClick={() => setFilterStatus('at_risk')}
-              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${filterStatus === 'at_risk' ? 'bg-white dark:bg-[#2d2d2d] text-[#ff9500] shadow-sm' : 'text-[#86868b] hover:text-[#ff9500]'}`}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${filterStatus === 'at_risk' ? 'bg-surface text-warning shadow-sm' : 'text-ink-muted hover:text-warning'}`}
             >
               At Risk
             </button>
@@ -328,7 +328,7 @@ const MyClientsPage = () => {
               <div 
                 key={client.id}
                 onClick={() => openClientCard(client)}
-                className="group bg-white dark:bg-[#1c1c1e] rounded-[24px] border border-black/5 dark:border-white/5 p-6 hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer"
+                className="group bg-surface rounded-[24px] border border-black/5 dark:border-white/5 p-6 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer"
               >
                 {/* Header */}
                 <div className="flex flex-col gap-4 mb-4">
@@ -337,7 +337,7 @@ const MyClientsPage = () => {
                       {client.profilePhoto ? (
                         <img src={client.profilePhoto} alt="" className="w-full h-full object-cover rounded-xl" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-[15px] font-semibold">
+                        <div className="w-full h-full bg-gradient-to-br from-brand to-brand flex items-center justify-center text-white text-[15px] font-semibold">
                           {client.clientName?.charAt(0) || 'C'}
                         </div>
                       )}
@@ -347,9 +347,9 @@ const MyClientsPage = () => {
                         <ClientLink client={client} showId />
                       </h3>
                       {client.brokerage ? (
-                        <p className="text-[12px] text-[#86868b]">{client.brokerage}</p>
+                        <p className="text-[12px] text-ink-muted">{client.brokerage}</p>
                       ) : (
-                        <p className="text-[12px] text-[#86868b]">{client.packageType || 'Standard'} Package</p>
+                        <p className="text-[12px] text-ink-muted">{client.packageType || 'Standard'} Package</p>
                       )}
                     </div>
                   </div>
@@ -359,14 +359,14 @@ const MyClientsPage = () => {
                         e.stopPropagation();
                         navigate(`/my-clients/${client.id}`);
                       }}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0071e3]/10 text-[#0071e3] hover:bg-[#0071e3]/20 text-[12px] font-medium transition-colors shadow-sm whitespace-nowrap"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-brand/10 text-brand hover:bg-brand/20 text-[12px] font-medium transition-colors shadow-sm whitespace-nowrap"
                     >
                       <Building2 className="w-4 h-4" strokeWidth={2} />
                       Workspace
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setLogPostClient(client); setLogPlatform('instagram'); }}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#34c759] text-white hover:bg-[#2db84e] text-[12px] font-medium transition-colors shadow-sm whitespace-nowrap"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-positive text-white hover:bg-[#2db84e] text-[12px] font-medium transition-colors shadow-sm whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4" strokeWidth={2} />
                       Log post
@@ -374,7 +374,7 @@ const MyClientsPage = () => {
                     {canManageAllClients && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditPostsClient(client); setShowEditPostsModal(true); }}
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15 text-[12px] font-medium transition-colors whitespace-nowrap"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-3 text-ink-muted hover:bg-hairline-strong text-[12px] font-medium transition-colors whitespace-nowrap"
                       >
                         <Pencil className="w-4 h-4" strokeWidth={2} />
                         Edit posts
@@ -401,28 +401,28 @@ const MyClientsPage = () => {
 
                       {/* AI Health Tooltip */}
                       {showAiTooltip === client.id && health.aiEnhanced && (
-                        <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-white dark:bg-[#2d2d2d] rounded-xl shadow-xl border border-black/10 dark:border-white/10 z-20">
+                        <div className="absolute right-0 top-full mt-2 w-64 p-3 bg-surface rounded-xl shadow-lg border border-hairline-strong z-20">
                           <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-purple-500" />
-                            <span className="text-[12px] font-semibold text-[#1d1d1f] dark:text-white">AI Health Analysis</span>
+                            <Sparkles className="w-4 h-4 text-brand" />
+                            <span className="text-[12px] font-semibold text-ink">AI Health Analysis</span>
                           </div>
                           <div className="space-y-2 text-[11px]">
                             <div className="flex items-center justify-between">
-                              <span className="text-[#86868b]">Churn Risk</span>
-                              <span className={`font-medium ${(health.healthScore ?? (100 - (health.churnRisk ?? 50))) < 40 ? 'text-[#ff3b30]' : (health.healthScore ?? (100 - (health.churnRisk ?? 50))) < 70 ? 'text-[#ff9500]' : 'text-[#34c759]'}`}>
+                              <span className="text-ink-muted">Churn Risk</span>
+                              <span className={`font-medium ${(health.healthScore ?? (100 - (health.churnRisk ?? 50))) < 40 ? 'text-danger' : (health.healthScore ?? (100 - (health.churnRisk ?? 50))) < 70 ? 'text-warning' : 'text-positive'}`}>
                                 {health.healthScore != null ? `${health.healthScore}/100` : `${health.churnRisk}% risk`}
                               </span>
                             </div>
                             {health.reason && (
                               <div>
-                                <span className="text-[#86868b] block mb-1">Insight</span>
-                                <p className="text-[#1d1d1f] dark:text-white">{health.reason}</p>
+                                <span className="text-ink-muted block mb-1">Insight</span>
+                                <p className="text-ink">{health.reason}</p>
                               </div>
                             )}
                             {health.action && (
-                              <div className="pt-2 border-t border-black/5 dark:border-white/10">
-                                <span className="text-[#86868b] block mb-1">Recommended Action</span>
-                                <p className="text-[#0071e3] font-medium">{health.action}</p>
+                              <div className="pt-2 border-t border-hairline">
+                                <span className="text-ink-muted block mb-1">Recommended Action</span>
+                                <p className="text-brand font-medium">{health.action}</p>
                               </div>
                             )}
                           </div>
@@ -435,14 +435,14 @@ const MyClientsPage = () => {
                 {/* Progress */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[12px] text-[#86868b]">Posts Used</span>
-                    <span className="text-[12px] font-medium text-[#1d1d1f] dark:text-white">
+                    <span className="text-[12px] text-ink-muted">Posts Used</span>
+                    <span className="text-[12px] font-medium text-ink">
                       {postsUsed} / {packageSize}
                     </span>
                   </div>
-                  <div className="h-1.5 w-full bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-surface-3 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full transition-all duration-500 ${isCritical ? 'bg-[#ff3b30]' : 'bg-[#0071e3]'}`}
+                      className={`h-full transition-all duration-500 ${isCritical ? 'bg-danger' : 'bg-brand'}`}
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -450,21 +450,21 @@ const MyClientsPage = () => {
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
+                  <div className="p-3 rounded-xl bg-surface-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <Calendar className="w-3.5 h-3.5 text-[#86868b]" />
-                      <span className="text-[11px] text-[#86868b]">Last Post</span>
+                      <Calendar className="w-3.5 h-3.5 text-ink-muted" />
+                      <span className="text-[11px] text-ink-muted">Last Post</span>
                     </div>
-                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                    <p className="text-[13px] font-medium text-ink">
                       {client.lastInstagramPostDate ? format(parseISO(client.lastInstagramPostDate), 'MMM d') : 'Never'}
                     </p>
                   </div>
-                  <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
+                  <div className="p-3 rounded-xl bg-surface-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <TrendingUp className="w-3.5 h-3.5 text-[#86868b]" />
-                      <span className="text-[11px] text-[#86868b]">Status</span>
+                      <TrendingUp className="w-3.5 h-3.5 text-ink-muted" />
+                      <span className="text-[11px] text-ink-muted">Status</span>
                     </div>
-                    <p className="text-[13px] font-medium text-[#34c759]">Active</p>
+                    <p className="text-[13px] font-medium text-positive">Active</p>
                   </div>
                 </div>
 
@@ -474,7 +474,7 @@ const MyClientsPage = () => {
                     <div className="w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center text-[10px] font-bold">
                       {client.assignedManager.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-[11px] text-[#86868b]">Managed by {client.assignedManager}</span>
+                    <span className="text-[11px] text-ink-muted">Managed by {client.assignedManager}</span>
                   </div>
                 )}
               </div>
@@ -482,12 +482,12 @@ const MyClientsPage = () => {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-[#1c1c1e] rounded-[32px] border border-black/5 dark:border-white/5">
-          <div className="w-20 h-20 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
-            <Users className="w-10 h-10 text-[#86868b]" />
+        <div className="flex flex-col items-center justify-center py-20 bg-surface rounded-[32px] border border-black/5 dark:border-white/5">
+          <div className="w-20 h-20 bg-surface-3 rounded-full flex items-center justify-center mb-6">
+            <Users className="w-10 h-10 text-ink-muted" />
           </div>
-          <h2 className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">No clients found</h2>
-          <p className="text-[17px] text-[#86868b] mt-2 text-center max-w-md px-6">
+          <h2 className="text-[24px] font-semibold text-ink">No clients found</h2>
+          <p className="text-[17px] text-ink-muted mt-2 text-center max-w-md px-6">
             {searchQuery ? `We couldn't find any clients matching "${searchQuery}"` : "You haven't been assigned any clients yet."}
           </p>
         </div>
@@ -530,22 +530,22 @@ const MyClientsPage = () => {
       {/* Log Post Confirmation Modal */}
       {logPostClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] w-full max-w-md p-6 shadow-2xl border border-black/5 dark:border-white/5">
+          <div className="bg-surface rounded-[24px] w-full max-w-md p-6 shadow-lg border border-black/5 dark:border-white/5">
             <h2 className="text-[20px] font-semibold mb-2">Log Instagram Post</h2>
-            <p className="text-[15px] text-[#86868b] mb-6">
+            <p className="text-[15px] text-ink-muted mb-6">
               Confirm you want to log an Instagram post for <strong>{logPostClient.clientName}</strong>. This will decrement their remaining post count.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setLogPostClient(null)}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 text-[15px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-surface-3 text-[15px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleLogPost(logPostClient, logPlatform)}
                 disabled={logSaving}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center"
               >
                 {logSaving ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Confirm Log'}
               </button>

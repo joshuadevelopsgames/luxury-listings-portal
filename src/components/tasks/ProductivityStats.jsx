@@ -53,9 +53,9 @@ const ProductivityStats = ({ tasks, onClose }) => {
   if (!stats) {
     return createPortal(
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl p-8 text-center border border-black/10 dark:border-white/10">
-          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-[15px] text-[#86868b]">Loading statistics...</p>
+        <div className="bg-surface rounded-xl p-8 text-center border border-hairline-strong">
+          <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-[15px] text-ink-muted">Loading statistics...</p>
         </div>
       </div>,
       document.body
@@ -66,57 +66,57 @@ const ProductivityStats = ({ tasks, onClose }) => {
 
   const getPriorityStyle = (priority) => {
     switch (priority) {
-      case 'urgent': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
-      case 'high': return 'bg-[#ff9500]/10 text-[#ff9500]';
-      case 'medium': return 'bg-[#0071e3]/10 text-[#0071e3]';
-      case 'low': return 'bg-[#86868b]/10 text-[#86868b]';
-      default: return 'bg-black/5 text-[#86868b]';
+      case 'urgent': return 'bg-danger/10 text-danger';
+      case 'high': return 'bg-warning/10 text-warning';
+      case 'medium': return 'bg-brand/10 text-brand';
+      case 'low': return 'bg-ink-muted/10 text-ink-muted';
+      default: return 'bg-black/5 text-ink-muted';
     }
   };
 
   return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
+      <div className="bg-surface rounded-xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border border-hairline-strong shadow-lg">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-hairline flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ff9500] to-[#ff3b30] flex items-center justify-center shadow-lg shadow-[#ff9500]/25">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-warning to-danger flex items-center justify-center shadow-lg shadow-warning/25">
               <Trophy className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">Your Productivity Stats</h2>
+            <h2 className="text-[20px] font-semibold text-ink">Your Productivity Stats</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full hover:bg-surface-3 flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5 text-[#86868b]" />
+            <X className="w-5 h-5 text-ink-muted" />
           </button>
         </div>
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Karma Level */}
-          <div className="bg-gradient-to-br from-[#af52de]/10 to-[#0071e3]/10 rounded-2xl p-5 border border-[#af52de]/20">
+          <div className="bg-gradient-to-br from-brand/10 to-brand/10 rounded-xl p-5 border border-brand/20">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">{stats.karma} Karma</h3>
-                <p className="text-[15px] font-semibold text-[#af52de]">
+                <h3 className="text-[24px] font-bold text-ink">{stats.karma} Karma</h3>
+                <p className="text-[15px] font-semibold text-brand">
                   {karmaLevel.level} Level
                 </p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-[#af52de]/20 flex items-center justify-center">
-                <Award className="w-7 h-7 text-[#af52de]" />
+              <div className="w-14 h-14 rounded-xl bg-brand/20 flex items-center justify-center">
+                <Award className="w-7 h-7 text-brand" />
               </div>
             </div>
             {karmaLevel.next && (
               <div className="space-y-2">
-                <div className="flex justify-between text-[13px] text-[#86868b]">
+                <div className="flex justify-between text-[13px] text-ink-muted">
                   <span>Progress to next level</span>
                   <span>{stats.karma} / {karmaLevel.next}</span>
                 </div>
                 <div className="w-full bg-white/50 dark:bg-white/10 rounded-full h-2">
                   <div 
-                    className="bg-gradient-to-r from-[#af52de] to-[#0071e3] h-2 rounded-full transition-all"
+                    className="bg-gradient-to-r from-brand to-brand h-2 rounded-full transition-all"
                     style={{ width: `${Math.min((stats.karma / karmaLevel.next) * 100, 100)}%` }}
                   />
                 </div>
@@ -127,66 +127,66 @@ const ProductivityStats = ({ tasks, onClose }) => {
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Streak */}
-            <div className="bg-[#ff9500]/10 rounded-2xl p-4 text-center border border-[#ff9500]/20">
-              <div className="w-10 h-10 rounded-xl bg-[#ff9500]/20 flex items-center justify-center mx-auto mb-2">
-                <Flame className="w-5 h-5 text-[#ff9500]" />
+            <div className="bg-warning/10 rounded-xl p-4 text-center border border-warning/20">
+              <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center mx-auto mb-2">
+                <Flame className="w-5 h-5 text-warning" />
               </div>
-              <p className="text-[28px] font-bold text-[#1d1d1f] dark:text-white">{stats.streak}</p>
-              <p className="text-[12px] text-[#86868b]">Day Streak</p>
+              <p className="text-[28px] font-bold text-ink">{stats.streak}</p>
+              <p className="text-[12px] text-ink-muted">Day Streak</p>
             </div>
 
             {/* Completion Rate */}
-            <div className="bg-[#34c759]/10 rounded-2xl p-4 text-center border border-[#34c759]/20">
-              <div className="w-10 h-10 rounded-xl bg-[#34c759]/20 flex items-center justify-center mx-auto mb-2">
-                <Target className="w-5 h-5 text-[#34c759]" />
+            <div className="bg-positive/10 rounded-xl p-4 text-center border border-positive/20">
+              <div className="w-10 h-10 rounded-xl bg-positive/20 flex items-center justify-center mx-auto mb-2">
+                <Target className="w-5 h-5 text-positive" />
               </div>
-              <p className="text-[28px] font-bold text-[#1d1d1f] dark:text-white">{stats.completionRate}%</p>
-              <p className="text-[12px] text-[#86868b]">Completion</p>
+              <p className="text-[28px] font-bold text-ink">{stats.completionRate}%</p>
+              <p className="text-[12px] text-ink-muted">Completion</p>
             </div>
 
             {/* Today's Tasks */}
-            <div className="bg-[#0071e3]/10 rounded-2xl p-4 text-center border border-[#0071e3]/20">
-              <div className="w-10 h-10 rounded-xl bg-[#0071e3]/20 flex items-center justify-center mx-auto mb-2">
-                <Calendar className="w-5 h-5 text-[#0071e3]" />
+            <div className="bg-brand/10 rounded-xl p-4 text-center border border-brand/20">
+              <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center mx-auto mb-2">
+                <Calendar className="w-5 h-5 text-brand" />
               </div>
-              <p className="text-[28px] font-bold text-[#1d1d1f] dark:text-white">{stats.completedToday}</p>
-              <p className="text-[12px] text-[#86868b]">Today</p>
+              <p className="text-[28px] font-bold text-ink">{stats.completedToday}</p>
+              <p className="text-[12px] text-ink-muted">Today</p>
             </div>
 
             {/* Average Per Day */}
-            <div className="bg-[#af52de]/10 rounded-2xl p-4 text-center border border-[#af52de]/20">
-              <div className="w-10 h-10 rounded-xl bg-[#af52de]/20 flex items-center justify-center mx-auto mb-2">
-                <TrendingUp className="w-5 h-5 text-[#af52de]" />
+            <div className="bg-brand/10 rounded-xl p-4 text-center border border-brand/20">
+              <div className="w-10 h-10 rounded-xl bg-brand/20 flex items-center justify-center mx-auto mb-2">
+                <TrendingUp className="w-5 h-5 text-brand" />
               </div>
-              <p className="text-[28px] font-bold text-[#1d1d1f] dark:text-white">{stats.avgTasksPerDay}</p>
-              <p className="text-[12px] text-[#86868b]">Daily Avg</p>
+              <p className="text-[28px] font-bold text-ink">{stats.avgTasksPerDay}</p>
+              <p className="text-[12px] text-ink-muted">Daily Avg</p>
             </div>
           </div>
 
           {/* Period Stats */}
-          <div className="bg-black/[0.02] dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/10">
-            <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Completion Summary</h3>
+          <div className="bg-surface-2 rounded-xl p-5 border border-hairline">
+            <h3 className="text-[15px] font-semibold text-ink mb-4">Completion Summary</h3>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-[24px] font-bold text-[#0071e3]">{stats.completedThisWeek}</p>
-                <p className="text-[12px] text-[#86868b]">This Week</p>
+                <p className="text-[24px] font-bold text-brand">{stats.completedThisWeek}</p>
+                <p className="text-[12px] text-ink-muted">This Week</p>
               </div>
               <div>
-                <p className="text-[24px] font-bold text-[#af52de]">{stats.completedThisMonth}</p>
-                <p className="text-[12px] text-[#86868b]">This Month</p>
+                <p className="text-[24px] font-bold text-brand">{stats.completedThisMonth}</p>
+                <p className="text-[12px] text-ink-muted">This Month</p>
               </div>
               <div>
-                <p className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">{stats.completed}</p>
-                <p className="text-[12px] text-[#86868b]">All Time</p>
+                <p className="text-[24px] font-bold text-ink">{stats.completed}</p>
+                <p className="text-[12px] text-ink-muted">All Time</p>
               </div>
             </div>
           </div>
 
           {/* Weekly Chart */}
-          <div className="bg-black/[0.02] dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/10">
+          <div className="bg-surface-2 rounded-xl p-5 border border-hairline">
             <div className="flex items-center gap-2 mb-4">
-              <BarChart3 className="w-4 h-4 text-[#0071e3]" />
-              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">This Week's Activity</h3>
+              <BarChart3 className="w-4 h-4 text-brand" />
+              <h3 className="text-[15px] font-semibold text-ink">This Week's Activity</h3>
             </div>
             <div className="flex items-end justify-between gap-2 h-32">
               {weeklyData.map((day, index) => (
@@ -195,7 +195,7 @@ const ProductivityStats = ({ tasks, onClose }) => {
                     <div 
                       className={`w-full rounded-t-lg transition-all ${
                         day.completed > 0 
-                          ? 'bg-gradient-to-t from-[#0071e3] to-[#5856d6]' 
+                          ? 'bg-gradient-to-t from-brand to-brand' 
                           : 'bg-black/10 dark:bg-white/10'
                       }`}
                       style={{ 
@@ -206,8 +206,8 @@ const ProductivityStats = ({ tasks, onClose }) => {
                     />
                   </div>
                   <div className="text-center">
-                    <p className="text-[12px] font-medium text-[#1d1d1f] dark:text-white">{day.day}</p>
-                    <p className="text-[11px] text-[#86868b]">{day.completed}</p>
+                    <p className="text-[12px] font-medium text-ink">{day.day}</p>
+                    <p className="text-[11px] text-ink-muted">{day.completed}</p>
                   </div>
                 </div>
               ))}
@@ -215,47 +215,47 @@ const ProductivityStats = ({ tasks, onClose }) => {
           </div>
 
           {/* Priority Breakdown */}
-          <div className="bg-black/[0.02] dark:bg-white/5 rounded-2xl p-5 border border-black/5 dark:border-white/10">
-            <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white mb-4">Tasks by Priority</h3>
+          <div className="bg-surface-2 rounded-xl p-5 border border-hairline">
+            <h3 className="text-[15px] font-semibold text-ink mb-4">Tasks by Priority</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-medium mb-2 ${getPriorityStyle('urgent')}`}>
                   P1 Urgent
                 </span>
-                <p className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">{stats.priorityBreakdown.urgent}</p>
+                <p className="text-[24px] font-bold text-ink">{stats.priorityBreakdown.urgent}</p>
               </div>
               <div className="text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-medium mb-2 ${getPriorityStyle('high')}`}>
                   P2 High
                 </span>
-                <p className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">{stats.priorityBreakdown.high}</p>
+                <p className="text-[24px] font-bold text-ink">{stats.priorityBreakdown.high}</p>
               </div>
               <div className="text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-medium mb-2 ${getPriorityStyle('medium')}`}>
                   P3 Medium
                 </span>
-                <p className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">{stats.priorityBreakdown.medium}</p>
+                <p className="text-[24px] font-bold text-ink">{stats.priorityBreakdown.medium}</p>
               </div>
               <div className="text-center">
                 <span className={`inline-block px-3 py-1 rounded-full text-[12px] font-medium mb-2 ${getPriorityStyle('low')}`}>
                   P4 Low
                 </span>
-                <p className="text-[24px] font-bold text-[#1d1d1f] dark:text-white">{stats.priorityBreakdown.low}</p>
+                <p className="text-[24px] font-bold text-ink">{stats.priorityBreakdown.low}</p>
               </div>
             </div>
           </div>
 
           {/* Most Productive Day */}
-          <div className="text-center p-5 bg-gradient-to-r from-[#0071e3]/10 to-[#af52de]/10 rounded-2xl border border-[#0071e3]/20">
-            <p className="text-[13px] text-[#86868b] mb-1">Most Productive Day</p>
-            <p className="text-[20px] font-bold text-[#0071e3]">{stats.mostProductiveDay}</p>
+          <div className="text-center p-5 bg-gradient-to-r from-brand/10 to-brand/10 rounded-xl border border-brand/20">
+            <p className="text-[13px] text-ink-muted mb-1">Most Productive Day</p>
+            <p className="text-[20px] font-semibold text-ink">{stats.mostProductiveDay}</p>
           </div>
 
           {/* Motivational Message */}
-          <div className="text-center text-[#86868b] text-[14px]">
-            {stats.streak > 7 && "🔥 You're on fire! Keep up the amazing streak!"}
-            {stats.streak > 0 && stats.streak <= 7 && "⭐ Great start! Keep the momentum going!"}
-            {stats.streak === 0 && "💪 Ready to start a new streak? You've got this!"}
+          <div className="text-center text-ink-muted text-[14px]">
+            {stats.streak > 7 && `${stats.streak}-day streak — your longest run yet.`}
+            {stats.streak > 0 && stats.streak <= 7 && `${stats.streak}-day streak in progress.`}
+            {stats.streak === 0 && 'No active streak. Complete a task today to start one.'}
           </div>
         </div>
       </div>

@@ -169,7 +169,7 @@ const V3Layout = ({ basePath = '' }) => {
   }, [themeMode]);
 
   useEffect(() => {
-    const color = darkMode ? '#161617' : '#f5f5f7';
+    const color = darkMode ? '#0b0b0d' : '#f7f7f8';
     const fallback = document.getElementById('theme-color-meta');
     if (fallback) fallback.setAttribute('content', color);
     document.querySelectorAll('meta[name="theme-color"]').forEach(tag => {
@@ -340,16 +340,16 @@ const V3Layout = ({ basePath = '' }) => {
           title={sidebarCollapsed ? page.name : undefined}
           onClick={() => handleNavigation(page.path)}
           className={`
-            w-full flex items-center gap-3 px-3 py-2 rounded-lg
+            w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg
             transition-all duration-200 ease-out text-left
             ${active
-              ? 'bg-[#0071e3] text-white shadow-sm shadow-[#0071e3]/30'
-              : 'text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-black/5 dark:hover:bg-white/5'
+              ? 'bg-brand-soft text-brand font-medium'
+              : 'text-ink-muted hover:bg-surface-3 hover:text-ink'
             }
           `}
         >
           <Icon
-            className={`w-[18px] h-[18px] shrink-0 ${sidebarCollapsed ? 'mx-auto' : ''}`}
+            className={`w-4 h-4 shrink-0 ${sidebarCollapsed ? 'mx-auto' : ''}`}
             strokeWidth={1.5}
           />
           {!sidebarCollapsed && (
@@ -364,8 +364,8 @@ const V3Layout = ({ basePath = '' }) => {
             onClick={(e) => { e.stopPropagation(); toggleHiddenNavItem(pageId); }}
             className={`absolute right-1 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded text-[10px] font-medium transition-all opacity-0 group-hover/navitem:opacity-100 ${
               hiddenNavItems.includes(pageId)
-                ? 'bg-[#0071e3]/10 text-[#0071e3]'
-                : 'bg-black/10 dark:bg-white/10 text-[#86868b]'
+                ? 'bg-brand/10 text-brand'
+                : 'bg-black/10 dark:bg-white/10 text-ink-muted'
             }`}
           >
             {hiddenNavItems.includes(pageId) ? 'Show' : 'Hide'}
@@ -379,16 +379,16 @@ const V3Layout = ({ basePath = '' }) => {
     <div className={`min-h-screen ${darkMode ? 'dark' : ''} ${isMichelle ? 'michelle-theme' : ''}`}>
       {/* Background */}
       <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#161617]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/20 dark:from-blue-950/10 dark:via-transparent dark:to-purple-950/5" />
+        <div className="absolute inset-0 bg-surface-2 dark:bg-canvas" />
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-soft/30 via-transparent to-brand-soft/20 dark:from-blue-950/10 dark:via-transparent dark:to-purple-950/5" />
       </div>
 
       {isFeaturesPage && (
         <div className="fixed inset-0 z-0 min-h-[100vh] w-full" aria-hidden style={{ minWidth: '100vw' }}>
-          <div className="absolute inset-0 bg-[#f5f5f7] dark:bg-[#1d1d1f]" />
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-transparent to-purple-50/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" />
-          <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#0071e3]/10 to-[#5856d6]/10 blur-3xl" />
-          <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#5856d6]/10 to-[#ff2d55]/10 blur-3xl" />
+          <div className="absolute inset-0 bg-surface-2 dark:bg-ink" />
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-soft/80 via-transparent to-brand-soft/50 dark:from-blue-950/30 dark:via-transparent dark:to-purple-950/20" />
+          <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-brand/10 to-brand/10 blur-3xl" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-brand/10 to-[#ff2d55]/10 blur-3xl" />
         </div>
       )}
 
@@ -407,7 +407,7 @@ const V3Layout = ({ basePath = '' }) => {
         ${sidebarCollapsed ? 'w-[72px]' : 'w-[260px]'}
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="h-full bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-r border-gray-200 dark:border-white/5 flex flex-col">
+        <div className="h-full bg-surface dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-r border-gray-200 dark:border-white/5 flex flex-col">
 
           {/* Logo */}
           <div className={`h-[72px] flex items-center border-b border-black/5 dark:border-white/5 ${sidebarCollapsed ? 'px-2 justify-center' : 'px-4 justify-between'}`}>
@@ -422,10 +422,10 @@ const V3Layout = ({ basePath = '' }) => {
                 </Link>
                 <button
                   onClick={() => setSidebarCollapsed(false)}
-                  className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg bg-surface-3 hover:bg-hairline-strong transition-colors"
                   title="Expand sidebar"
                 >
-                  <ChevronRight className="w-4 h-4 text-[#86868b]" />
+                  <ChevronRight className="w-4 h-4 text-ink-muted" />
                 </button>
               </div>
             ) : (
@@ -439,18 +439,18 @@ const V3Layout = ({ basePath = '' }) => {
                     />
                   </div>
                   <div className="animate-in fade-in slide-in-from-left-2 duration-200 min-w-0">
-                    <h1 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white tracking-[-0.01em] leading-tight">
+                    <h1 className="font-semibold text-[15px] text-ink tracking-[-0.01em] leading-tight">
                       Luxury Listings
                     </h1>
-                    <p className="text-[11px] text-[#86868b] font-medium mt-0.5">Portal</p>
+                    <p className="text-[11px] text-ink-muted font-medium mt-0.5">Portal</p>
                   </div>
                 </Link>
                 <button
                   onClick={() => setSidebarCollapsed(true)}
-                  className="hidden lg:flex w-7 h-7 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/10 flex-shrink-0"
+                  className="hidden lg:flex w-7 h-7 items-center justify-center rounded-md hover:bg-surface-3 flex-shrink-0"
                   title="Collapse sidebar (⌘\)"
                 >
-                  <ChevronRight className="w-4 h-4 text-[#86868b] rotate-180" />
+                  <ChevronRight className="w-4 h-4 text-ink-muted rotate-180" />
                 </button>
               </>
             )}
@@ -460,33 +460,39 @@ const V3Layout = ({ basePath = '' }) => {
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
             {/* Edit mode header */}
             {sidebarEditMode && !sidebarCollapsed && (
-              <div className="mb-3 px-3 py-2 bg-[#0071e3]/8 rounded-xl">
-                <p className="text-[11px] font-medium text-[#0071e3]">
+              <div className="mb-3 px-3 py-2 bg-brand/8 rounded-xl">
+                <p className="text-[11px] font-medium text-brand">
                   Customizing sidebar — hover any item to show/hide it
                 </p>
               </div>
             )}
 
-            {visibleSections.map((section, sIdx) => (
-              <div key={sIdx} className="mb-6">
-                {!sidebarCollapsed && (
-                  <p className="px-3 mb-2 text-[11px] font-semibold text-[#86868b] uppercase tracking-wider">
-                    {section.title}
-                  </p>
-                )}
-                <div className="space-y-1">
-                  {section.items.map(pageId => (
-                    <NavItem key={pageId} pageId={pageId} />
-                  ))}
+            {visibleSections.map((section, sIdx) => {
+              // A section header only earns its vertical space once it groups
+              // something. Single-item sections ("DASHBOARD" > Dashboard) just
+              // restate the item, so render the item on its own.
+              const showTitle = !sidebarCollapsed && section.items.length > 1;
+              return (
+                <div key={sIdx} className={showTitle ? 'mb-5' : 'mb-2'}>
+                  {showTitle && (
+                    <p className="px-3 mb-1.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">
+                      {section.title}
+                    </p>
+                  )}
+                  <div className="space-y-1">
+                    {section.items.map(pageId => (
+                      <NavItem key={pageId} pageId={pageId} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* ── More section ─── */}
             {morePageIds.length > 0 && (
               <div className="mb-4">
                 {!sidebarCollapsed && (
-                  <p className="px-3 mb-2 text-[11px] font-semibold text-[#86868b] uppercase tracking-wider">
+                  <p className="px-3 mb-2 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">
                     More
                   </p>
                 )}
@@ -494,26 +500,26 @@ const V3Layout = ({ basePath = '' }) => {
                   <button
                     type="button"
                     onClick={() => setMoreExpanded(prev => !prev)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-200"
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-ink hover:bg-surface-3 transition-all duration-200"
                     title={sidebarCollapsed ? 'More' : undefined}
                   >
                     <MoreHorizontal
-                      className={`w-[18px] h-[18px] shrink-0 ${sidebarCollapsed ? 'mx-auto' : ''}`}
+                      className={`w-4 h-4 shrink-0 ${sidebarCollapsed ? 'mx-auto' : ''}`}
                       strokeWidth={1.5}
                     />
                     {!sidebarCollapsed && (
                       <>
                         <span className="text-[13px] font-medium flex-1 text-left">More</span>
-                        <span className="text-[11px] text-[#86868b] mr-1">{morePageIds.length}</span>
+                        <span className="text-[11px] text-ink-muted mr-1">{morePageIds.length}</span>
                         {moreExpanded
-                          ? <ChevronUp className="w-3.5 h-3.5 text-[#86868b]" />
-                          : <ChevronDown className="w-3.5 h-3.5 text-[#86868b]" />
+                          ? <ChevronUp className="w-3.5 h-3.5 text-ink-muted" />
+                          : <ChevronDown className="w-3.5 h-3.5 text-ink-muted" />
                         }
                       </>
                     )}
                   </button>
                   {moreExpanded && (
-                    <div className="space-y-1 pl-1 border-l-2 border-black/5 dark:border-white/10 ml-3">
+                    <div className="space-y-1 pl-1 border-l-2 border-hairline ml-3">
                       {morePageIds.filter(id => allPages[id]).map(pageId => (
                         <NavItem key={pageId} pageId={pageId} isInMore />
                       ))}
@@ -531,14 +537,14 @@ const V3Layout = ({ basePath = '' }) => {
               <button
                 type="button"
                 onClick={() => setSidebarEditMode(prev => !prev)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-[13px] font-medium ${
+                className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-200 text-[13px] font-medium ${
                   sidebarEditMode
-                    ? 'bg-[#0071e3]/10 text-[#0071e3]'
-                    : 'text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#1d1d1f] dark:hover:text-white'
+                    ? 'bg-brand/10 text-brand'
+                    : 'text-ink-muted hover:bg-surface-3 hover:text-ink dark:hover:text-white'
                 }`}
                 title="Customize which pages appear in the sidebar"
               >
-                <SlidersHorizontal className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
+                <SlidersHorizontal className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                 <span>{sidebarEditMode ? 'Done customizing' : 'Customize sidebar'}</span>
               </button>
             )}
@@ -548,20 +554,20 @@ const V3Layout = ({ basePath = '' }) => {
               <button
                 type="button"
                 onClick={() => setShortcutsOpen(true)}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#1d1d1f] dark:hover:text-white transition-all duration-200 text-[13px] font-medium"
+                className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-ink-muted hover:bg-surface-3 hover:text-ink dark:hover:text-white transition-all duration-200 text-[13px] font-medium"
               >
-                <Keyboard className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
+                <Keyboard className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                 <span>Shortcuts</span>
-                <kbd className="ml-auto text-[10px] px-1 py-0.5 bg-black/5 dark:bg-white/10 rounded font-mono">?</kbd>
+                <kbd className="ml-auto text-[10px] px-1 py-0.5 bg-surface-3 rounded font-mono">?</kbd>
               </button>
             )}
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-all duration-200"
+              className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-danger hover:bg-danger/10 transition-all duration-200"
             >
               <svg
-                className={`w-[18px] h-[18px] ${sidebarCollapsed ? 'mx-auto' : ''}`}
+                className={`w-4 h-4 ${sidebarCollapsed ? 'mx-auto' : ''}`}
                 fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
@@ -573,11 +579,11 @@ const V3Layout = ({ basePath = '' }) => {
       </aside>
 
       {/* ── Main Content ─────────────────────────────────────────────────────── */}
-      <div className={`${isFullHeightPage ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'} transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-[#f5f5f7] dark:bg-[#161617]'}`}>
+      <div className={`${isFullHeightPage ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'} transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} relative ${isFeaturesPage ? 'bg-transparent' : 'bg-surface-2 dark:bg-canvas'}`}>
 
         {/* View As Banner */}
         {isViewingAs && viewingAsUser && (
-          <div className="sticky top-0 z-40 bg-gradient-to-r from-[#5856d6] to-[#af52de] text-white px-4 py-2.5 shadow-lg">
+          <div className="sticky top-0 z-40 bg-gradient-to-r from-brand to-brand text-white px-4 py-2.5 shadow-lg">
             <div className="flex items-center justify-between max-w-[1600px] mx-auto">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
@@ -599,7 +605,7 @@ const V3Layout = ({ basePath = '' }) => {
                 </span>
                 <button
                   onClick={stopViewingAs}
-                  className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white text-[#5856d6] hover:bg-white/90 transition-colors text-[13px] font-semibold shadow-sm"
+                  className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-white text-brand hover:bg-white/90 transition-colors text-[13px] font-semibold shadow-sm"
                 >
                   <X className="w-4 h-4" />
                   Exit
@@ -614,7 +620,7 @@ const V3Layout = ({ basePath = '' }) => {
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <header
-          className="sticky z-30 h-[60px] bg-[#ffffff] dark:bg-[#1c1c1e]/95 dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-b border-gray-200 dark:border-white/5"
+          className="sticky z-30 h-[60px] bg-surface dark:backdrop-blur-2xl dark:backdrop-saturate-200 border-b border-gray-200 dark:border-white/5"
           style={{ top: (isViewingAs ? 44 : 0) + announcementHeight }}
         >
           <div className="h-full flex items-center justify-between px-4 lg:px-6">
@@ -622,20 +628,20 @@ const V3Layout = ({ basePath = '' }) => {
               {/* Mobile menu */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-3 transition-colors"
               >
-                <Menu className="w-[18px] h-[18px] text-[#1d1d1f] dark:text-[#f5f5f7]" strokeWidth={1.5} />
+                <Menu className="w-[18px] h-[18px] text-ink" strokeWidth={1.5} />
               </button>
 
               {/* Search → opens command palette */}
               <button
                 type="button"
                 onClick={() => setCommandPaletteOpen(true)}
-                className="hidden md:flex items-center gap-2 h-9 w-64 px-3 rounded-lg bg-black/5 dark:bg-white/5 text-[13px] text-[#86868b] hover:bg-black/8 dark:hover:bg-white/8 transition-colors text-left"
+                className="hidden md:flex items-center gap-2 h-9 w-64 px-3 rounded-lg bg-surface-3 text-[13px] text-ink-muted hover:bg-black/8 dark:hover:bg-white/8 transition-colors text-left"
               >
                 <Search className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
                 <span className="flex-1">Search</span>
-                <div className="flex items-center gap-0.5 text-[#86868b]">
+                <div className="flex items-center gap-0.5 text-ink-muted">
                   <Command className="w-3 h-3" strokeWidth={1.5} />
                   <span className="text-[11px] font-medium">K</span>
                 </div>
@@ -646,15 +652,15 @@ const V3Layout = ({ basePath = '' }) => {
               {/* Dark mode toggle */}
               <button
                 onClick={handleDarkModeToggle}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-3 transition-colors"
                 title={`Theme: ${themeMode === 'auto' ? 'Auto' : themeMode === 'dark' ? 'Dark' : 'Light'}`}
               >
                 {themeMode === 'auto' ? (
-                  <Command className="w-[18px] h-[18px] text-[#86868b]" strokeWidth={1.5} />
+                  <Command className="w-[18px] h-[18px] text-ink-muted" strokeWidth={1.5} />
                 ) : darkMode ? (
-                  <Sun className="w-[18px] h-[18px] text-[#f5f5f7]" strokeWidth={1.5} />
+                  <Sun className="w-[18px] h-[18px] text-ink" strokeWidth={1.5} />
                 ) : (
-                  <Moon className="w-[18px] h-[18px] text-[#1d1d1f]" strokeWidth={1.5} />
+                  <Moon className="w-[18px] h-[18px] text-ink" strokeWidth={1.5} />
                 )}
               </button>
 
@@ -668,10 +674,10 @@ const V3Layout = ({ basePath = '' }) => {
                   className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 >
                   <div className="text-right hidden sm:block">
-                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-[#f5f5f7]">
+                    <p className="text-[13px] font-medium text-ink">
                       {currentUser?.displayName || 'User'}
                     </p>
-                    <p className="text-[11px] text-[#86868b]">
+                    <p className="text-[11px] text-ink-muted">
                       {currentUser?.position ||
                         (currentRole
                           ? String(currentRole).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -685,43 +691,43 @@ const V3Layout = ({ basePath = '' }) => {
                       className="w-9 h-9 rounded-full object-cover shadow-sm"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white text-[13px] font-semibold shadow-sm">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand flex items-center justify-center text-white text-[13px] font-semibold shadow-sm">
                       {currentUser?.displayName?.charAt(0) || 'U'}
                     </div>
                   )}
-                  <ChevronDown className="w-4 h-4 text-[#86868b] hidden sm:block" />
+                  <ChevronDown className="w-4 h-4 text-ink-muted hidden sm:block" />
                 </button>
 
                 {profileMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-56 py-2 bg-[#ffffff] dark:bg-[#2c2c2e] rounded-xl shadow-xl border border-gray-200 dark:border-white/10 z-50">
+                    <div className="absolute right-0 top-full mt-2 w-56 py-2 bg-surface rounded-xl shadow-lg border border-gray-200 dark:border-white/10 z-50">
                       <div className="px-4 py-2 border-b border-black/5 dark:border-white/5">
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{currentUser?.displayName}</p>
-                        <p className="text-[12px] text-[#86868b]">
+                        <p className="text-[13px] font-medium text-ink">{currentUser?.displayName}</p>
+                        <p className="text-[12px] text-ink-muted">
                           {currentUser?.position ||
                             (currentRole
                               ? String(currentRole).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
                               : 'Member')}
                         </p>
-                        <p className="text-[12px] text-[#86868b] truncate">{currentUser?.email}</p>
+                        <p className="text-[12px] text-ink-muted truncate">{currentUser?.email}</p>
                       </div>
                       <div className="py-1">
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/self-service')); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/self-service')); }}>
                           <UserCircle className="w-4 h-4" strokeWidth={1.5} />
                           My Profile
                         </button>
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/my-time-off')); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/my-time-off')); }}>
                           <Clock className="w-4 h-4" strokeWidth={1.5} />
                           My Time Off
                         </button>
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/resources')); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/resources')); }}>
                           <FileText className="w-4 h-4" strokeWidth={1.5} />
                           Resources
                         </button>
                       </div>
                       <div className="py-1 border-t border-black/5 dark:border-white/5">
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-red-600 dark:text-red-400 hover:bg-black/5 dark:hover:bg-white/5 text-left" onClick={() => { setProfileMenuOpen(false); logout(); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-danger dark:text-red-400 hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); logout(); }}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                           </svg>
@@ -753,7 +759,7 @@ const V3Layout = ({ basePath = '' }) => {
 
         {!isFullHeightPage && (
           <footer className="py-6 px-8 text-center border-t border-black/5 dark:border-white/5">
-            <p className="text-[12px] text-[#86868b]">© 2026 Luxury Listings. All rights reserved.</p>
+            <p className="text-[12px] text-ink-muted">© 2026 Luxury Listings. All rights reserved.</p>
           </footer>
         )}
       </div>
@@ -779,6 +785,7 @@ const V3Layout = ({ basePath = '' }) => {
         isOpen={shortcutsOpen}
         onClose={() => setShortcutsOpen(false)}
       />
+
 
       {/* Feedback & Support */}
       <FeedbackButton />

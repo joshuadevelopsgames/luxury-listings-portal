@@ -228,24 +228,24 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
   return createPortal(
     <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="bg-[#f5f5f7] dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-black/5 dark:border-white/10"
+        className="bg-surface-2 rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] overflow-hidden border border-hairline"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10 px-6 py-4 z-10">
+        <div className="sticky top-0 bg-white/80 dark:bg-surface backdrop-blur-xl border-b border-hairline px-6 py-4 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center shadow-lg shadow-brand/20">
                 <Users className="w-5 h-5 text-white" strokeWidth={1.5} />
               </div>
               <div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Employee Details</h2>
+                <h2 className="text-[17px] font-semibold text-ink">Employee Details</h2>
                 {loading ? (
-                  <p className="text-[13px] text-[#86868b]">Loading...</p>
+                  <p className="text-[13px] text-ink-muted">Loading...</p>
                 ) : employee ? (
-                  <p className="text-[13px] text-[#86868b] flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-[#1d1d1f] dark:text-white">{employee.name}</span>
+                  <p className="text-[13px] text-ink-muted flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-ink">{employee.name}</span>
                     {(employee.uid || employee.id || employee.email) && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#5856d6]/10 text-[#5856d6] font-mono">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-brand/10 text-brand font-mono">
                         USR-{String(employee.uid || employee.id || employee.email).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0).toString().slice(-4).padStart(4, '0')}
                       </span>
                     )}
@@ -256,135 +256,135 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
             <div className="flex items-center gap-1.5">
               {isEditMode && employee ? (
                 <>
-                  <button type="button" onClick={() => setIsEditMode(false)} disabled={saving} className="px-3 py-1.5 rounded-lg text-[14px] font-medium text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50">Cancel</button>
-                  <button type="button" onClick={saveAll} disabled={saving} className="px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center gap-2">
+                  <button type="button" onClick={() => setIsEditMode(false)} disabled={saving} className="px-3 py-1.5 rounded-lg text-[14px] font-medium text-ink-muted hover:bg-surface-3 transition-colors disabled:opacity-50">Cancel</button>
+                  <button type="button" onClick={saveAll} disabled={saving} className="px-3 py-1.5 rounded-lg bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-2">
                     {saving ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</>) : 'Save'}
                   </button>
                 </>
               ) : canEdit && employee ? (
-                <button type="button" onClick={openEditMode} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors" title="Edit profile and leave">
-                  <Edit className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
+                <button type="button" onClick={openEditMode} className="p-2 rounded-lg hover:bg-surface-3 transition-colors" title="Edit profile and leave">
+                  <Edit className="w-5 h-5 text-ink-muted" strokeWidth={1.5} />
                 </button>
               ) : null}
-              <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                <XCircle className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
+              <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-3 transition-colors">
+                <XCircle className="w-5 h-5 text-ink-muted" strokeWidth={1.5} />
               </button>
             </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-[#86868b]">Loading...</div>
+          <div className="p-8 text-center text-ink-muted">Loading...</div>
         ) : !employee ? (
-          <div className="p-8 text-center text-[#86868b]">Could not load employee.</div>
+          <div className="p-8 text-center text-ink-muted">Could not load employee.</div>
         ) : isEditMode ? (
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-            <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+            <div className="bg-surface backdrop-blur-xl rounded-xl border border-hairline overflow-hidden">
+              <div className="px-6 py-4 border-b border-hairline flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center shadow-lg shadow-brand/20">
                   <Edit className="w-4 h-4 text-white" strokeWidth={1.5} />
                 </div>
-                <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Edit Employee</h3>
+                <h3 className="font-semibold text-[17px] text-ink">Edit Employee</h3>
               </div>
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">First Name</label>
-                    <input type="text" value={editProfileForm.firstName} onChange={(e) => setEditProfileForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">First Name</label>
+                    <input type="text" value={editProfileForm.firstName} onChange={(e) => setEditProfileForm((p) => ({ ...p, firstName: e.target.value }))} placeholder="First name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Last Name</label>
-                    <input type="text" value={editProfileForm.lastName} onChange={(e) => setEditProfileForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Last Name</label>
+                    <input type="text" value={editProfileForm.lastName} onChange={(e) => setEditProfileForm((p) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Email</label>
-                    <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.email}</div>
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Email</label>
+                    <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-ink-muted">{employee.email}</div>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Phone</label>
-                    <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Phone</label>
+                    <input type="tel" value={editProfileForm.phone} onChange={(e) => setEditProfileForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Department</label>
-                    <select value={editProfileForm.department} onChange={(e) => setEditProfileForm((p) => ({ ...p, department: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]">
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Department</label>
+                    <select value={editProfileForm.department} onChange={(e) => setEditProfileForm((p) => ({ ...p, department: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand">
                       <option value="">Select department...</option>
                       {DEPARTMENTS.map((d) => (<option key={d} value={d}>{d}</option>))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Position</label>
-                    <input type="text" value={editProfileForm.position} onChange={(e) => setEditProfileForm((p) => ({ ...p, position: e.target.value }))} placeholder="e.g. social_media_manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Position</label>
+                    <input type="text" value={editProfileForm.position} onChange={(e) => setEditProfileForm((p) => ({ ...p, position: e.target.value }))} placeholder="e.g. social_media_manager" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Employee ID</label>
-                    <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-[#86868b]">{employee.employeeId || 'Not assigned'}</div>
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Employee ID</label>
+                    <div className="h-10 px-3 flex items-center text-[14px] rounded-xl bg-black/[0.04] dark:bg-white/5 text-ink-muted">{employee.employeeId || 'Not assigned'}</div>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Manager</label>
-                    <input type="text" value={editProfileForm.manager} onChange={(e) => setEditProfileForm((p) => ({ ...p, manager: e.target.value }))} placeholder="Manager name or email" className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Manager</label>
+                    <input type="text" value={editProfileForm.manager} onChange={(e) => setEditProfileForm((p) => ({ ...p, manager: e.target.value }))} placeholder="Manager name or email" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#86868b] mb-1.5">Start Date</label>
-                    <input type="date" value={editProfileForm.startDate} onChange={(e) => setEditProfileForm((p) => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <label className="block text-[13px] font-medium text-ink-muted mb-1.5">Start Date</label>
+                    <input type="date" value={editProfileForm.startDate} onChange={(e) => setEditProfileForm((p) => ({ ...p, startDate: e.target.value }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                   </div>
                 </div>
                 {canViewLeaveBalance && (
-                <div className="border-t border-black/5 dark:border-white/10 pt-6">
+                <div className="border-t border-hairline pt-6">
                   <div className="flex items-center gap-2 mb-4">
-                    <Calendar className="w-4 h-4 text-[#0071e3]" strokeWidth={1.5} />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Leave Balance</h4>
+                    <Calendar className="w-4 h-4 text-brand" strokeWidth={1.5} />
+                    <h4 className="text-[14px] font-semibold text-ink">Leave Balance</h4>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                    <div className="bg-surface-3 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
-                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Vacation</span>
+                        <div className="w-3 h-3 rounded-full bg-brand" />
+                        <span className="text-[13px] font-medium text-ink">Vacation</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
-                          <input type="number" min="0" value={editLeaveForm.vacation.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Total</label>
+                          <input type="number" min="0" value={editLeaveForm.vacation.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                         </div>
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
-                          <input type="number" min="0" value={editLeaveForm.vacation.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Used</label>
+                          <input type="number" min="0" value={editLeaveForm.vacation.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, vacation: { ...p.vacation, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                         </div>
                       </div>
-                      <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.vacation.total - editLeaveForm.vacation.used} days</p>
+                      <p className="text-[11px] text-ink-muted mt-2">Remaining: {editLeaveForm.vacation.total - editLeaveForm.vacation.used} days</p>
                     </div>
-                    <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                    <div className="bg-surface-3 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
-                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Sick</span>
+                        <div className="w-3 h-3 rounded-full bg-danger" />
+                        <span className="text-[13px] font-medium text-ink">Sick</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
-                          <input type="number" min="0" value={editLeaveForm.sick.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Total</label>
+                          <input type="number" min="0" value={editLeaveForm.sick.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                         </div>
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
-                          <input type="number" min="0" value={editLeaveForm.sick.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Used</label>
+                          <input type="number" min="0" value={editLeaveForm.sick.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, sick: { ...p.sick, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                         </div>
                       </div>
-                      <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days</p>
+                      <p className="text-[11px] text-ink-muted mt-2">Remaining: {editLeaveForm.sick.total - editLeaveForm.sick.used} days</p>
                     </div>
-                    <div className="bg-black/5 dark:bg-white/5 rounded-xl p-4">
+                    <div className="bg-surface-3 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-[#5856d6]" />
-                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Remote</span>
+                        <div className="w-3 h-3 rounded-full bg-brand" />
+                        <span className="text-[13px] font-medium text-ink">Remote</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total</label>
-                          <input type="number" min="0" value={editLeaveForm.remote.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]" />
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Total</label>
+                          <input type="number" min="0" value={editLeaveForm.remote.total} onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, total: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                         </div>
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
-                          <input type="number" min="0" value={editLeaveForm.remote.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]" />
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Used</label>
+                          <input type="number" min="0" value={editLeaveForm.remote.used} onChange={(e) => setEditLeaveForm((p) => ({ ...p, remote: { ...p.remote, used: parseInt(e.target.value, 10) || 0 } }))} className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                         </div>
                       </div>
-                      <p className="text-[11px] text-[#86868b] mt-2">Remaining: {editLeaveForm.remote.total - editLeaveForm.remote.used} days</p>
+                      <p className="text-[11px] text-ink-muted mt-2">Remaining: {editLeaveForm.remote.total - editLeaveForm.remote.used} days</p>
                     </div>
                   </div>
                 </div>
@@ -430,14 +430,14 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
             />
 
             {canViewLeaveBalance && (
-            <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-              <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
+            <div className="bg-surface backdrop-blur-xl rounded-xl border border-hairline overflow-hidden">
+              <div className="px-6 py-4 border-b border-hairline">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5ac8fa] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-[#5ac8fa] flex items-center justify-center shadow-lg shadow-brand/20">
                       <Calendar className="w-4 h-4 text-white" strokeWidth={1.5} />
                     </div>
-                    <h3 className="font-semibold text-[17px] text-[#1d1d1f] dark:text-white">Leave Balance</h3>
+                    <h3 className="font-semibold text-[17px] text-ink">Leave Balance</h3>
                   </div>
                   {canEditLeave && (
                     isEditingLeave ? (
@@ -446,7 +446,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           type="button"
                           onClick={() => setIsEditingLeave(false)}
                           disabled={savingLeave}
-                          className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-ink-muted hover:bg-surface-3 transition-colors disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -454,7 +454,7 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           type="button"
                           onClick={saveLeaveOnly}
                           disabled={savingLeave}
-                          className="px-3 py-1.5 rounded-lg bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                          className="px-3 py-1.5 rounded-lg bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-1.5"
                         >
                           {savingLeave ? (
                             <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</>
@@ -474,10 +474,10 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
                           );
                           setIsEditingLeave(true);
                         }}
-                        className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
                         title="Edit leave balance"
                       >
-                        <Edit className="w-4 h-4 text-[#86868b]" strokeWidth={1.5} />
+                        <Edit className="w-4 h-4 text-ink-muted" strokeWidth={1.5} />
                       </button>
                     )
                   )}
@@ -486,118 +486,118 @@ const EmployeeDetailsModal = ({ user: userProp, onClose, onEmployeeUpdate, start
               <div className="p-6">
                 {isEditingLeave ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl p-4">
+                    <div className="bg-brand/5 dark:bg-brand/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-[#0071e3]" />
-                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Vacation</span>
+                        <div className="w-3 h-3 rounded-full bg-brand" />
+                        <span className="text-[13px] font-medium text-ink">Vacation</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Total Days</label>
                           <input
                             type="number" min="0"
                             value={leaveEdit.vacation.total}
                             onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, vacation: { ...n.vacation, total: parseInt(e.target.value, 10) || 0 } }; })}
-                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Used</label>
                           <input
                             type="number" min="0"
                             value={leaveEdit.vacation.used}
                             onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, vacation: { ...n.vacation, used: parseInt(e.target.value, 10) || 0 } }; })}
-                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                       </div>
-                      <p className="text-[11px] text-[#86868b] mt-2">
-                        Remaining: <span className="font-semibold text-[#0071e3]">{leaveEdit.vacation.total - leaveEdit.vacation.used}</span> days
+                      <p className="text-[11px] text-ink-muted mt-2">
+                        Remaining: <span className="font-semibold text-brand">{leaveEdit.vacation.total - leaveEdit.vacation.used}</span> days
                       </p>
                     </div>
-                    <div className="bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 rounded-xl p-4">
+                    <div className="bg-danger/5 dark:bg-danger/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-[#ff3b30]" />
-                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Sick</span>
+                        <div className="w-3 h-3 rounded-full bg-danger" />
+                        <span className="text-[13px] font-medium text-ink">Sick</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Total Days</label>
                           <input
                             type="number" min="0"
                             value={leaveEdit.sick.total}
                             onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, sick: { ...n.sick, total: parseInt(e.target.value, 10) || 0 } }; })}
-                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Used</label>
                           <input
                             type="number" min="0"
                             value={leaveEdit.sick.used}
                             onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, sick: { ...n.sick, used: parseInt(e.target.value, 10) || 0 } }; })}
-                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                       </div>
-                      <p className="text-[11px] text-[#86868b] mt-2">
-                        Remaining: <span className="font-semibold text-[#ff3b30]">{leaveEdit.sick.total - leaveEdit.sick.used}</span> days
+                      <p className="text-[11px] text-ink-muted mt-2">
+                        Remaining: <span className="font-semibold text-danger">{leaveEdit.sick.total - leaveEdit.sick.used}</span> days
                       </p>
                     </div>
-                    <div className="bg-[#5856d6]/5 dark:bg-[#5856d6]/10 rounded-xl p-4">
+                    <div className="bg-brand/5 dark:bg-brand/10 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full bg-[#5856d6]" />
-                        <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Remote</span>
+                        <div className="w-3 h-3 rounded-full bg-brand" />
+                        <span className="text-[13px] font-medium text-ink">Remote</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Total Days</label>
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Total Days</label>
                           <input
                             type="number" min="0"
                             value={leaveEdit.remote.total}
                             onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, remote: { ...n.remote, total: parseInt(e.target.value, 10) || 0 } }; })}
-                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1">Used</label>
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1">Used</label>
                           <input
                             type="number" min="0"
                             value={leaveEdit.remote.used}
                             onChange={(e) => setEditLeaveForm((p) => { const n = normalizeLeaveEditForm(p); return { ...n, remote: { ...n.remote, used: parseInt(e.target.value, 10) || 0 } }; })}
-                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                            className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-white/10 border-0 text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                       </div>
-                      <p className="text-[11px] text-[#86868b] mt-2">
-                        Remaining: <span className="font-semibold text-[#5856d6]">{leaveEdit.remote.total - leaveEdit.remote.used}</span> days
+                      <p className="text-[11px] text-ink-muted mt-2">
+                        Remaining: <span className="font-semibold text-brand">{leaveEdit.remote.total - leaveEdit.remote.used}</span> days
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-5 bg-[#0071e3]/5 dark:bg-[#0071e3]/10 rounded-xl">
-                      <p className="text-[32px] font-semibold text-[#0071e3]">{employee.leaveBalance?.vacation?.remaining ?? 0}</p>
-                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Vacation Days</p>
-                      <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.vacation?.used ?? 0} of {employee.leaveBalance?.vacation?.total ?? 15}</p>
-                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#0071e3] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.vacation?.remaining ?? 0) / (employee.leaveBalance?.vacation?.total || 1)) * 100}%` }} />
+                    <div className="text-center p-5 bg-brand/5 dark:bg-brand/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-brand">{employee.leaveBalance?.vacation?.remaining ?? 0}</p>
+                      <p className="text-[15px] font-medium text-ink mt-1">Vacation Days</p>
+                      <p className="text-[13px] text-ink-muted mt-1">Used: {employee.leaveBalance?.vacation?.used ?? 0} of {employee.leaveBalance?.vacation?.total ?? 15}</p>
+                      <div className="mt-3 h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                        <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.vacation?.remaining ?? 0) / (employee.leaveBalance?.vacation?.total || 1)) * 100}%` }} />
                       </div>
                     </div>
-                    <div className="text-center p-5 bg-[#ff3b30]/5 dark:bg-[#ff3b30]/10 rounded-xl">
-                      <p className="text-[32px] font-semibold text-[#ff3b30]">{employee.leaveBalance?.sick?.remaining ?? 0}</p>
-                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Sick Days</p>
-                      <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.sick?.used ?? 0} of {employee.leaveBalance?.sick?.total ?? 3}</p>
-                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#ff3b30] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.sick?.remaining ?? 0) / (employee.leaveBalance?.sick?.total || 1)) * 100}%` }} />
+                    <div className="text-center p-5 bg-danger/5 dark:bg-danger/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-danger">{employee.leaveBalance?.sick?.remaining ?? 0}</p>
+                      <p className="text-[15px] font-medium text-ink mt-1">Sick Days</p>
+                      <p className="text-[13px] text-ink-muted mt-1">Used: {employee.leaveBalance?.sick?.used ?? 0} of {employee.leaveBalance?.sick?.total ?? 3}</p>
+                      <div className="mt-3 h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                        <div className="h-full bg-danger rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.sick?.remaining ?? 0) / (employee.leaveBalance?.sick?.total || 1)) * 100}%` }} />
                       </div>
                     </div>
-                    <div className="text-center p-5 bg-[#5856d6]/5 dark:bg-[#5856d6]/10 rounded-xl">
-                      <p className="text-[32px] font-semibold text-[#5856d6]">{employee.leaveBalance?.remote?.remaining ?? 0}</p>
-                      <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mt-1">Remote Days</p>
-                      <p className="text-[13px] text-[#86868b] mt-1">Used: {employee.leaveBalance?.remote?.used ?? 0} of {employee.leaveBalance?.remote?.total ?? 10}</p>
-                      <div className="mt-3 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#5856d6] rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.remote?.remaining ?? 0) / (employee.leaveBalance?.remote?.total || 1)) * 100}%` }} />
+                    <div className="text-center p-5 bg-brand/5 dark:bg-brand/10 rounded-xl">
+                      <p className="text-[32px] font-semibold text-brand">{employee.leaveBalance?.remote?.remaining ?? 0}</p>
+                      <p className="text-[15px] font-medium text-ink mt-1">Remote Days</p>
+                      <p className="text-[13px] text-ink-muted mt-1">Used: {employee.leaveBalance?.remote?.used ?? 0} of {employee.leaveBalance?.remote?.total ?? 10}</p>
+                      <div className="mt-3 h-1.5 bg-surface-3 rounded-full overflow-hidden">
+                        <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${((employee.leaveBalance?.remote?.remaining ?? 0) / (employee.leaveBalance?.remote?.total || 1)) * 100}%` }} />
                       </div>
                     </div>
                   </div>

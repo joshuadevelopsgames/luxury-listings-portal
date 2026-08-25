@@ -82,7 +82,7 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
         <p className="text-gray-600 mt-4">Loading messages...</p>
       </div>
     );
@@ -92,7 +92,7 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
     <div className="space-y-6">
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-6">
-          <MessageSquare className="w-5 h-5 text-blue-600" />
+          <MessageSquare className="w-5 h-5 text-brand" />
           <h2 className="text-lg font-semibold text-gray-900">Messages with Media Manager</h2>
         </div>
 
@@ -114,7 +114,7 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
                   <div
                     className={`max-w-md rounded-lg p-4 ${
                       isClient
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-brand text-white'
                         : 'bg-gray-100 text-gray-900'
                     }`}
                   >
@@ -124,7 +124,7 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
                         {msg.senderName || (isClient ? 'You' : 'Media Manager')}
                       </span>
                       {!msg.read && !isClient && (
-                        <Badge className="bg-yellow-500 text-white text-xs">New</Badge>
+                        <Badge className="bg-warning text-white text-xs">New</Badge>
                       )}
                     </div>
                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
@@ -146,13 +146,13 @@ const ClientMessaging = ({ clientId, clientEmail }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand"
             disabled={sending}
           />
           <Button
             type="submit"
             disabled={sending || !newMessage.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-brand hover:bg-brand-hover text-white"
           >
             <Send className="w-4 h-4 mr-2" />
             {sending ? 'Sending...' : 'Send'}

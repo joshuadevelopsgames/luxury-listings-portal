@@ -46,16 +46,16 @@ export default function PostPreviewCard({ item, variant = 'instagram' }) {
 
   if (effectiveVariant === 'facebook') {
     return (
-      <div className="rounded-xl overflow-hidden bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 shadow-lg" style={{ maxWidth: 500 }}>
+      <div className="rounded-xl overflow-hidden bg-surface border border-hairline-strong shadow-lg" style={{ maxWidth: 500 }}>
         <div className="p-3 flex items-center gap-2">
           <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600" />
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-[#1d1d1f] dark:text-white truncate">Page name</p>
-            <p className="text-xs text-[#86868b]">Sponsored · Now</p>
+            <p className="font-semibold text-sm text-ink truncate">Page name</p>
+            <p className="text-xs text-ink-muted">Sponsored · Now</p>
           </div>
-          <span className="text-[#86868b] text-xl">⋯</span>
+          <span className="text-ink-muted text-xl">⋯</span>
         </div>
-        <p className="px-3 pb-2 text-sm text-[#1d1d1f] dark:text-white line-clamp-2">{caption || 'What\'s on your mind?'}</p>
+        <p className="px-3 pb-2 text-sm text-ink line-clamp-2">{caption || 'What\'s on your mind?'}</p>
         <div className="relative aspect-[1.91/1] bg-black/5 dark:bg-black/20">
           {primaryUrl ? (
             primaryType === 'video' ? (
@@ -64,7 +64,7 @@ export default function PostPreviewCard({ item, variant = 'instagram' }) {
               <img src={primaryUrl} alt="" className="w-full h-full object-contain" />
             )
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#86868b] text-sm">No media</div>
+            <div className="w-full h-full flex items-center justify-center text-ink-muted text-sm">No media</div>
           )}
           {hasMultiple && (
             <div className="absolute bottom-2 right-2 flex gap-1">
@@ -79,10 +79,10 @@ export default function PostPreviewCard({ item, variant = 'instagram' }) {
             </div>
           )}
         </div>
-        <div className="flex border-t border-black/10 dark:border-white/10">
-          <span className="flex-1 py-2 text-center text-sm text-[#86868b]">Like</span>
-          <span className="flex-1 py-2 text-center text-sm text-[#86868b]">Comment</span>
-          <span className="flex-1 py-2 text-center text-sm text-[#86868b]">Share</span>
+        <div className="flex border-t border-hairline-strong">
+          <span className="flex-1 py-2 text-center text-sm text-ink-muted">Like</span>
+          <span className="flex-1 py-2 text-center text-sm text-ink-muted">Comment</span>
+          <span className="flex-1 py-2 text-center text-sm text-ink-muted">Share</span>
         </div>
       </div>
     );
@@ -90,11 +90,11 @@ export default function PostPreviewCard({ item, variant = 'instagram' }) {
 
   // Instagram
   return (
-    <div className="rounded-xl overflow-hidden bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 shadow-lg" style={{ maxWidth: 400 }}>
+    <div className="rounded-xl overflow-hidden bg-surface border border-hairline-strong shadow-lg" style={{ maxWidth: 400 }}>
       <div className="p-3 flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600" />
-        <span className="flex-1 text-sm font-semibold text-[#1d1d1f] dark:text-white">{handlePlaceholder}</span>
-        <span className="text-[#1d1d1f] dark:text-white text-xl">⋯</span>
+        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-brand" />
+        <span className="flex-1 text-sm font-semibold text-ink">{handlePlaceholder}</span>
+        <span className="text-ink text-xl">⋯</span>
       </div>
       <div className="relative aspect-square bg-black">
         {primaryUrl ? (
@@ -104,7 +104,7 @@ export default function PostPreviewCard({ item, variant = 'instagram' }) {
             <img src={primaryUrl} alt="" className="w-full h-full object-cover" />
           )
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#86868b] text-sm">No media</div>
+          <div className="w-full h-full flex items-center justify-center text-ink-muted text-sm">No media</div>
         )}
         {hasMultiple && (
           <>
@@ -128,7 +128,7 @@ export default function PostPreviewCard({ item, variant = 'instagram' }) {
           <span className="text-lg">💬</span>
           <span className="text-lg">↗</span>
         </div>
-        <p className="text-sm text-[#1d1d1f] dark:text-white">
+        <p className="text-sm text-ink">
           <span className="font-semibold mr-1">{handlePlaceholder}</span>
           {caption ? (caption.length > MAX_CAPTION_PREVIEW ? caption.slice(0, MAX_CAPTION_PREVIEW) + '...' : caption) : 'Caption'}
         </p>

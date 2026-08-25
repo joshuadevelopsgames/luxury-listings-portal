@@ -124,7 +124,7 @@ if (typeof window !== 'undefined') {
 function PageSpinner() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
@@ -178,10 +178,10 @@ function LoginPage() {
   // show a spinner instead — Supabase is processing the token exchange.
   if ((loading || !authHydrated) && window.location.hash?.includes('access_token=')) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
+      <div className="min-h-screen flex items-center justify-center bg-surface-2">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#86868b] text-sm">Signing in...</p>
+          <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-ink-muted text-sm">Signing in...</p>
         </div>
       </div>
     );
@@ -219,10 +219,10 @@ function ProtectedApp() {
   }
   if (loading || (!authHydrated && (!currentUser || hashHasAuthTokens))) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
+      <div className="min-h-screen flex items-center justify-center bg-surface-2">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#86868b] text-sm">Loading...</p>
+          <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-ink-muted text-sm">Loading...</p>
         </div>
       </div>
     );

@@ -6,15 +6,15 @@ const LAST_UPDATED = 'June 2, 2026';
 
 const TermsOfService = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-8 sm:p-12">
+    <div className="min-h-screen bg-gradient-to-br from-brand-soft via-white to-brand-soft py-12 px-4">
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-8 sm:p-12">
         <Link to="/login" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8">
           <ArrowLeft className="w-4 h-4" /> Back to sign in
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-            <FileText className="w-6 h-6 text-purple-600" />
+          <div className="w-12 h-12 bg-brand-soft rounded-full flex items-center justify-center">
+            <FileText className="w-6 h-6 text-brand" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Terms of Service</h1>
         </div>
@@ -24,7 +24,7 @@ const TermsOfService = () => {
           <p>
             These Terms of Service ("Terms") govern your access to and use of the SMM Luxury Listings
             portal at{' '}
-            <a href="https://smmluxurylistings.com" className="text-blue-600 hover:underline">smmluxurylistings.com</a>{' '}
+            <a href="https://smmluxurylistings.com" className="text-brand hover:underline">smmluxurylistings.com</a>{' '}
             (the "Service"), operated by <strong>Luxury Listings Corp.</strong> ("we", "us", or "our"). By
             accessing or using the Service, you agree to be bound by these Terms.
           </p>
@@ -71,7 +71,7 @@ const TermsOfService = () => {
             <h2 className="text-xl font-semibold text-gray-900">5. Privacy</h2>
             <p>
               Your use of the Service is also governed by our{' '}
-              <Link to="/privacy-policy" className="text-blue-600 hover:underline">Privacy Policy</Link>,
+              <Link to="/privacy-policy" className="text-brand hover:underline">Privacy Policy</Link>,
               which explains how we collect and handle your information.
             </p>
           </section>
@@ -115,7 +115,7 @@ const TermsOfService = () => {
             <p>
               Luxury Listings Corp.<br />
               Duncan, British Columbia, Canada<br />
-              <a href="mailto:jrsschroeder@gmail.com" className="text-blue-600 hover:underline">
+              <a href="mailto:jrsschroeder@gmail.com" className="text-brand hover:underline">
                 jrsschroeder@gmail.com
               </a>
             </p>
@@ -124,7 +124,7 @@ const TermsOfService = () => {
 
         <div className="mt-10 pt-6 border-t border-gray-100 text-sm text-gray-500">
           See also our{' '}
-          <Link to="/privacy-policy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
+          <Link to="/privacy-policy" className="text-brand hover:underline">Privacy Policy</Link>.
         </div>
       </div>
     </div>

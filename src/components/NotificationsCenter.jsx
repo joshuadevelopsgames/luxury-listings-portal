@@ -71,52 +71,52 @@ const NotificationsCenter = () => {
     switch (type) {
       // Time off notifications
       case 'time_off_request':
-        return <Calendar className="w-4 h-4 text-[#ff9500]" />;
+        return <Calendar className="w-4 h-4 text-warning" />;
       case 'time_off_approved':
-        return <CheckCircle className="w-4 h-4 text-[#34c759]" />;
+        return <CheckCircle className="w-4 h-4 text-positive" />;
       case 'time_off_rejected':
-        return <X className="w-4 h-4 text-[#ff3b30]" />;
+        return <X className="w-4 h-4 text-danger" />;
       case 'time_off_cancelled':
-        return <AlertCircle className="w-4 h-4 text-[#ff9500]" />;
+        return <AlertCircle className="w-4 h-4 text-warning" />;
       case 'leave_balance_updated':
-        return <Calendar className="w-4 h-4 text-[#5856d6]" />;
+        return <Calendar className="w-4 h-4 text-brand" />;
       case 'leave_request':
-        return <Calendar className="w-4 h-4 text-purple-600" />;
+        return <Calendar className="w-4 h-4 text-brand" />;
       // Support tickets
       case 'ticket_comment':
-        return <MessageSquare className="w-4 h-4 text-blue-600" />;
+        return <MessageSquare className="w-4 h-4 text-brand" />;
       case 'ticket_status':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-positive" />;
       // Tasks
       case 'task_request':
-        return <MessageSquare className="w-4 h-4 text-orange-600" />;
+        return <MessageSquare className="w-4 h-4 text-warning" />;
       case 'task_accepted':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-positive" />;
       case 'task_completed':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-positive" />;
       case 'task_rejected':
-        return <Bell className="w-4 h-4 text-red-600" />;
+        return <Bell className="w-4 h-4 text-danger" />;
       // Error reports
       case 'error_report':
-        return <AlertCircle className="w-4 h-4 text-[#ff3b30]" />;
+        return <AlertCircle className="w-4 h-4 text-danger" />;
       // Instagram reports
       case 'instagram_report_reminder':
         return <Instagram className="w-4 h-4 text-pink-500" />;
       // Post logging (SMM)
       case 'post_log_reminder_week':
-        return <AlertCircle className="w-4 h-4 text-amber-500" />;
+        return <AlertCircle className="w-4 h-4 text-warning" />;
       case 'team_post_log_support':
-        return <AlertCircle className="w-4 h-4 text-amber-500" />;
+        return <AlertCircle className="w-4 h-4 text-warning" />;
       // Feedback & Support
       case 'bug_report':
-        return <Bug className="w-4 h-4 text-[#ff3b30]" />;
+        return <Bug className="w-4 h-4 text-danger" />;
       case 'feature_request':
-        return <Lightbulb className="w-4 h-4 text-[#ff9500]" />;
+        return <Lightbulb className="w-4 h-4 text-warning" />;
       case 'chat_started':
-        return <MessageSquare className="w-4 h-4 text-[#5856d6]" />;
+        return <MessageSquare className="w-4 h-4 text-brand" />;
       case 'post_due':
       case 'task_reminder':
-        return <Calendar className="w-4 h-4 text-[#0071e3]" />;
+        return <Calendar className="w-4 h-4 text-brand" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-600" />;
     }
@@ -151,10 +151,10 @@ const NotificationsCenter = () => {
   const ctaClass = (style) => {
     switch (style) {
       case 'pink': return 'bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C]/20';
-      case 'orange': return 'bg-[#ff9500]/10 text-[#ff9500] hover:bg-[#ff9500]/20';
-      case 'purple': return 'bg-[#5856d6]/10 text-[#5856d6] hover:bg-[#5856d6]/20';
-      case 'gray': return 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15';
-      default: return 'bg-[#0071e3]/10 text-[#0071e3] hover:bg-[#0071e3]/20';
+      case 'orange': return 'bg-warning/10 text-warning hover:bg-warning/20';
+      case 'purple': return 'bg-brand/10 text-brand hover:bg-brand/20';
+      case 'gray': return 'bg-surface-3 text-ink-muted hover:bg-hairline-strong';
+      default: return 'bg-brand/10 text-brand hover:bg-brand/20';
     }
   };
 
@@ -163,11 +163,11 @@ const NotificationsCenter = () => {
       {/* Bell Icon */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-lg transition-colors"
+        className="relative p-2 text-ink-muted hover:text-ink dark:hover:text-white hover:bg-surface-3 rounded-lg transition-colors"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 bg-[#ff3b30] text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+          <span className="absolute top-1 right-1 bg-danger text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -183,13 +183,13 @@ const NotificationsCenter = () => {
           />
           
           {/* Dropdown Panel: on mobile fixed and centered; on desktop absolute under bell */}
-          <div className="fixed left-4 right-4 top-14 z-50 max-h-[600px] flex flex-col w-[calc(100vw-2rem)] max-w-96 mx-auto sm:absolute sm:right-0 sm:left-auto sm:top-auto sm:mt-2 sm:w-96 sm:max-w-none sm:mx-0 bg-[#ffffff] dark:bg-[#2c2c2e] rounded-xl shadow-2xl border border-gray-200 dark:border-white/10">
+          <div className="fixed left-4 right-4 top-14 z-50 max-h-[600px] flex flex-col w-[calc(100vw-2rem)] max-w-96 mx-auto sm:absolute sm:right-0 sm:left-auto sm:top-auto sm:mt-2 sm:w-96 sm:max-w-none sm:mx-0 bg-surface rounded-xl shadow-lg border border-gray-200 dark:border-white/10">
             {/* Header */}
             <div className="p-4 border-b border-gray-200 dark:border-white/5 flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-[#1d1d1f] dark:text-white">Notifications</h3>
+                <h3 className="font-semibold text-ink">Notifications</h3>
                 {unreadCount > 0 && (
-                  <p className="text-xs text-[#86868b]">{unreadCount} unread</p>
+                  <p className="text-xs text-ink-muted">{unreadCount} unread</p>
                 )}
               </div>
               {unreadCount > 0 && (
@@ -209,13 +209,13 @@ const NotificationsCenter = () => {
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0071e3] mx-auto"></div>
-                  <p className="text-sm text-[#86868b] mt-2">Loading...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
+                  <p className="text-sm text-ink-muted mt-2">Loading...</p>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="p-8 text-center">
-                  <Bell className="w-12 h-12 text-[#86868b] mx-auto mb-2" />
-                  <p className="text-sm text-[#86868b]">No notifications</p>
+                  <Bell className="w-12 h-12 text-ink-muted mx-auto mb-2" />
+                  <p className="text-sm text-ink-muted">No notifications</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-white/5">
@@ -223,8 +223,8 @@ const NotificationsCenter = () => {
                     <div
                       key={notification.id}
                       onClick={() => handleNotificationClick(notification)}
-                      className={`p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${
-                        !notification.read ? 'bg-[#0071e3]/5' : ''
+                      className={`p-4 cursor-pointer hover:bg-surface-3 transition-colors ${
+                        !notification.read ? 'bg-brand/5' : ''
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -235,13 +235,13 @@ const NotificationsCenter = () => {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#1d1d1f] dark:text-white mb-1">
+                          <p className="text-sm font-medium text-ink mb-1">
                             {notification.title}
                             {(notification.count || 0) > 1 && (
-                              <span className="ml-1.5 text-[#86868b] font-normal">({notification.count})</span>
+                              <span className="ml-1.5 text-ink-muted font-normal">({notification.count})</span>
                             )}
                           </p>
-                          <p className="text-xs text-[#86868b] mb-2">
+                          <p className="text-xs text-ink-muted mb-2">
                             {notification.message}
                           </p>
                           {(() => {
@@ -261,7 +261,7 @@ const NotificationsCenter = () => {
                               </button>
                             ) : null;
                           })()}
-                          <p className="text-xs text-[#86868b]">
+                          <p className="text-xs text-ink-muted">
                             {notification.updatedAt?.toDate
                               ? format(notification.updatedAt.toDate(), 'MMM dd, h:mm a')
                               : notification.createdAt?.toDate
@@ -273,11 +273,11 @@ const NotificationsCenter = () => {
                         {/* Actions */}
                         <div className="flex-shrink-0 flex items-center gap-1">
                           {!notification.read && (
-                            <div className="w-2 h-2 bg-[#0071e3] rounded-full"></div>
+                            <div className="w-2 h-2 bg-brand rounded-full"></div>
                           )}
                           <button
                             onClick={(e) => handleDeleteNotification(notification.id, e)}
-                            className="p-1 text-[#86868b] hover:text-[#ff3b30] hover:bg-[#ff3b30]/10 rounded"
+                            className="p-1 text-ink-muted hover:text-danger hover:bg-danger/10 rounded"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -299,7 +299,7 @@ const NotificationsCenter = () => {
                     setIsOpen(false);
                     navigate('/notifications');
                   }}
-                  className="text-xs text-[#0071e3] hover:text-[#0077ed] dark:hover:bg-white/5"
+                  className="text-xs text-brand hover:text-brand-hover dark:hover:bg-white/5"
                 >
                   View All Notifications
                 </Button>

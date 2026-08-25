@@ -28,7 +28,7 @@ const Breadcrumb = ({ items = [] }) => {
         <button
           type="button"
           onClick={() => navigate(parent.path)}
-          className="sm:hidden flex items-center gap-1 text-[#0071e3] hover:underline font-medium"
+          className="sm:hidden flex items-center gap-1 text-brand hover:underline font-medium"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           {parent.label}
@@ -42,7 +42,7 @@ const Breadcrumb = ({ items = [] }) => {
           return (
             <li key={i} className="flex items-center gap-1.5">
               {isLast ? (
-                <span className="text-[#1d1d1f] dark:text-white font-medium truncate max-w-[200px]">
+                <span className="text-ink font-medium truncate max-w-[200px]">
                   {item.label}
                 </span>
               ) : (
@@ -50,11 +50,11 @@ const Breadcrumb = ({ items = [] }) => {
                   <button
                     type="button"
                     onClick={() => item.path && navigate(item.path)}
-                    className="text-[#0071e3] hover:underline truncate max-w-[160px]"
+                    className="text-brand hover:underline truncate max-w-[160px]"
                   >
                     {item.label}
                   </button>
-                  <ChevronRight className="w-3 h-3 text-[#86868b] flex-shrink-0" />
+                  <ChevronRight className="w-3 h-3 text-ink-muted flex-shrink-0" />
                 </>
               )}
             </li>

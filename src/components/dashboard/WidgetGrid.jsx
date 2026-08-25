@@ -23,20 +23,20 @@ const widgetComponents = {
 
 // Widget loading skeleton
 const WidgetSkeleton = () => (
-  <div className="min-h-[280px] sm:min-h-[327px] bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
+  <div className="min-h-[280px] sm:min-h-[327px] bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline animate-pulse">
     <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
     <div className="space-y-3">
-      <div className="h-4 w-full bg-black/5 dark:bg-white/5 rounded" />
-      <div className="h-4 w-3/4 bg-black/5 dark:bg-white/5 rounded" />
-      <div className="h-4 w-1/2 bg-black/5 dark:bg-white/5 rounded" />
+      <div className="h-4 w-full bg-surface-3 rounded" />
+      <div className="h-4 w-3/4 bg-surface-3 rounded" />
+      <div className="h-4 w-1/2 bg-surface-3 rounded" />
     </div>
   </div>
 );
 
 // Widget error boundary fallback
 const WidgetError = ({ widgetId }) => (
-  <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-red-200 dark:border-red-900/30">
-    <p className="text-sm text-red-500 dark:text-red-400">
+  <div className="bg-surface backdrop-blur-xl rounded-xl p-6 border border-red-200 dark:border-red-900/30">
+    <p className="text-sm text-danger dark:text-red-400">
       Failed to load widget: {widgetId}
     </p>
   </div>
@@ -144,7 +144,7 @@ const WidgetGrid = ({ enabledModules = [], widgetOrder = null, isEditMode = fals
   if (widgets.length === 0) {
     return (
       <div className={`text-center py-12 ${className}`}>
-        <p className="text-[#86868b] text-sm">
+        <p className="text-ink-muted text-sm">
           No widgets available. Enable modules to see dashboard content.
         </p>
       </div>

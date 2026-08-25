@@ -179,10 +179,10 @@ const HRCalendar = () => {
 
   // Leave type definitions with colors (Other includes Bereavement, Maternity, Custom via otherSubType)
   const leaveTypes = {
-    vacation: { label: 'Vacation', color: 'bg-blue-100 text-blue-800', dotColor: 'bg-blue-500' },
-    sick: { label: 'Sick Leave', color: 'bg-red-100 text-red-800', dotColor: 'bg-red-500' },
-    remote: { label: 'Remote', color: 'bg-green-100 text-green-800', dotColor: 'bg-green-500' },
-    other: { label: 'Other', color: 'bg-indigo-100 text-indigo-800', dotColor: 'bg-indigo-500' }
+    vacation: { label: 'Vacation', color: 'bg-brand-soft text-brand', dotColor: 'bg-brand' },
+    sick: { label: 'Sick Leave', color: 'bg-danger-soft text-danger', dotColor: 'bg-danger' },
+    remote: { label: 'Remote', color: 'bg-positive-soft text-positive', dotColor: 'bg-positive' },
+    other: { label: 'Other', color: 'bg-brand-soft text-brand', dotColor: 'bg-brand' }
   };
 
   const getLeaveTypeLabel = (request) => {
@@ -193,8 +193,8 @@ const HRCalendar = () => {
   // Priority levels
   const priorityLevels = {
     low: { label: 'Low', color: 'bg-gray-100 text-gray-800' },
-    medium: { label: 'Medium', color: 'bg-yellow-100 text-yellow-800' },
-    high: { label: 'High', color: 'bg-red-100 text-red-800' }
+    medium: { label: 'Medium', color: 'bg-warning-soft text-warning' },
+    high: { label: 'High', color: 'bg-danger-soft text-danger' }
   };
 
   // Recurrence options
@@ -889,10 +889,10 @@ const HRCalendar = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'approved': return 'bg-[#34c759]/10 text-[#34c759]';
-      case 'pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
-      case 'rejected': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
-      default: return 'bg-black/5 text-[#86868b]';
+      case 'approved': return 'bg-positive/10 text-positive';
+      case 'pending': return 'bg-warning/10 text-warning';
+      case 'rejected': return 'bg-danger/10 text-danger';
+      default: return 'bg-black/5 text-ink-muted';
     }
   };
 
@@ -927,32 +927,32 @@ const HRCalendar = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">HR Calendar</h1>
-          <p className="text-[15px] sm:text-[17px] text-[#86868b] mt-1">Track team leave, vacation days, and sync with Google Calendar</p>
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">HR Calendar</h1>
+          <p className="text-[15px] sm:text-[17px] text-ink-muted mt-1">Track team leave, vacation days, and sync with Google Calendar</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button 
             onClick={checkGoogleCalendarConnection}
             disabled={isLoadingGoogle}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isLoadingGoogle ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Sync</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors">
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filter</span>
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
           >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export</span>
           </button>
           <button 
             onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Add Leave</span>
@@ -961,23 +961,23 @@ const HRCalendar = () => {
       </div>
 
       {/* Google Calendar Connection Status */}
-      <div className={`rounded-2xl border p-5 ${isGoogleConnected ? 'border-[#34c759]/30 bg-[#34c759]/5' : 'border-[#0071e3]/30 bg-[#0071e3]/5'}`}>
+      <div className={`rounded-xl border p-5 ${isGoogleConnected ? 'border-positive/30 bg-positive/5' : 'border-brand/30 bg-brand/5'}`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-full ${isGoogleConnected ? 'bg-[#34c759]/10' : 'bg-[#0071e3]/10'}`}>
-              <CalendarIcon className={`w-5 h-5 ${isGoogleConnected ? 'text-[#34c759]' : 'text-[#0071e3]'}`} />
+            <div className={`p-2.5 rounded-full ${isGoogleConnected ? 'bg-positive/10' : 'bg-brand/10'}`}>
+              <CalendarIcon className={`w-5 h-5 ${isGoogleConnected ? 'text-positive' : 'text-brand'}`} />
             </div>
             <div>
-              <h3 className="text-[14px] font-medium text-[#1d1d1f] dark:text-white flex items-center gap-2">
+              <h3 className="text-[14px] font-medium text-ink flex items-center gap-2">
                 Google Calendar 
                 {isGoogleConnected && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#34c759]/10 text-[#34c759]">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-positive/10 text-positive">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Connected
                   </span>
                 )}
               </h3>
-              <p className="text-[12px] text-[#86868b] mt-0.5">
+              <p className="text-[12px] text-ink-muted mt-0.5">
                 {isGoogleConnected 
                   ? `${googleEvents.length} events synced • Approved leave will sync to your calendar`
                   : 'Connect to sync events and automatically add approved leave to your calendar'
@@ -996,14 +996,14 @@ const HRCalendar = () => {
                     toast.success('Calendar refreshed');
                   }}
                   disabled={isLoadingGoogle}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoadingGoogle ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
                 <button 
                   onClick={disconnectGoogleCalendar}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors"
                 >
                   Disconnect
                 </button>
@@ -1012,7 +1012,7 @@ const HRCalendar = () => {
               <button 
                 onClick={connectGoogleCalendar}
                 disabled={isLoadingGoogle}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
               >
                 {isLoadingGoogle ? (
                   <>
@@ -1036,18 +1036,18 @@ const HRCalendar = () => {
         {getRoleSpecificStats().map((stat, index) => {
           const Icon = stat.icon;
           const colorMap = {
-            blue: { bg: 'bg-[#0071e3]/10', text: 'text-[#0071e3]' },
-            yellow: { bg: 'bg-[#ff9500]/10', text: 'text-[#ff9500]' },
-            green: { bg: 'bg-[#34c759]/10', text: 'text-[#34c759]' },
-            purple: { bg: 'bg-[#af52de]/10', text: 'text-[#af52de]' }
+            blue: { bg: 'bg-brand/10', text: 'text-brand' },
+            yellow: { bg: 'bg-warning/10', text: 'text-warning' },
+            green: { bg: 'bg-positive/10', text: 'text-positive' },
+            purple: { bg: 'bg-brand/10', text: 'text-brand' }
           };
           const colors = colorMap[stat.color] || colorMap.blue;
           return (
-            <div key={index} className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-shadow">
+            <div key={index} className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[12px] font-medium text-[#86868b] mb-1">{stat.label}</p>
-                  <p className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white">{stat.value}</p>
+                  <p className="text-[12px] font-medium text-ink-muted mb-1">{stat.label}</p>
+                  <p className="text-[28px] font-semibold text-ink">{stat.value}</p>
                 </div>
                 <div className={`p-2.5 rounded-full ${colors.bg}`}>
                   <Icon className={`w-5 h-5 ${colors.text}`} />
@@ -1059,16 +1059,16 @@ const HRCalendar = () => {
       </div>
 
       {/* Leave Requests - Moved to top for quick admin access */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-              <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">
+              <Clock className="w-5 h-5 text-ink" />
+              <span className="text-[15px] font-medium text-ink">
                 {showArchived ? 'Archived Requests' : 'Leave Requests'}
               </span>
               {!showArchived && activeRequests.filter(r => r.status === 'pending').length > 0 && (
-                <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#ff9500]/10 text-[#ff9500] font-medium">
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-warning/10 text-warning font-medium">
                   {activeRequests.filter(r => r.status === 'pending').length} Pending
                 </span>
               )}
@@ -1076,7 +1076,7 @@ const HRCalendar = () => {
             {archivedRequests.length > 0 && (
               <button
                 onClick={() => setShowArchived(!showArchived)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors bg-surface-3 text-ink-muted hover:bg-hairline-strong"
               >
                 {showArchived ? (
                   <>
@@ -1099,8 +1099,8 @@ const HRCalendar = () => {
               onClick={() => setFilterType('all')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'all' 
-                  ? 'bg-[#0071e3] text-white' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-brand text-white' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <ListFilter className="w-3.5 h-3.5" />
@@ -1110,8 +1110,8 @@ const HRCalendar = () => {
               onClick={() => setFilterType('pending')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'pending' 
-                  ? 'bg-[#ff9500] text-white' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-warning text-white' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -1121,8 +1121,8 @@ const HRCalendar = () => {
               onClick={() => setFilterType('approved')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'approved' 
-                  ? 'bg-[#34c759] text-white' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-positive text-white' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <Check className="w-3.5 h-3.5" />
@@ -1132,8 +1132,8 @@ const HRCalendar = () => {
               onClick={() => setFilterType('vacation')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'vacation' 
-                  ? 'bg-[#0071e3] text-white' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-brand text-white' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <Plane className="w-3.5 h-3.5" />
@@ -1143,8 +1143,8 @@ const HRCalendar = () => {
               onClick={() => setFilterType('sick')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'sick' 
-                  ? 'bg-[#ff3b30] text-white' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-danger text-white' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <Heart className="w-3.5 h-3.5" />
@@ -1154,8 +1154,8 @@ const HRCalendar = () => {
               onClick={() => setFilterType('remote')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'remote' 
-                  ? 'bg-[#34c759] text-white' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-positive text-white' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <Laptop className="w-3.5 h-3.5" />
@@ -1165,8 +1165,8 @@ const HRCalendar = () => {
               onClick={() => setFilterType('other')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 filterType === 'other' 
-                  ? 'bg-indigo-500 text-white' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-brand text-white' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <Tag className="w-3.5 h-3.5" />
@@ -1176,8 +1176,8 @@ const HRCalendar = () => {
 
           {filteredRequests.length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="w-12 h-12 mx-auto mb-2 text-[#86868b] opacity-50" />
-              <p className="text-[14px] text-[#86868b]">No leave requests found</p>
+              <Clock className="w-12 h-12 mx-auto mb-2 text-ink-muted opacity-50" />
+              <p className="text-[14px] text-ink-muted">No leave requests found</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1186,39 +1186,39 @@ const HRCalendar = () => {
                   key={request.id} 
                   className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl transition-colors gap-3
                     ${request.status === 'pending' 
-                      ? 'bg-[#ff9500]/5 border border-[#ff9500]/20' 
-                      : 'bg-black/[0.02] dark:bg-white/5 border border-transparent hover:bg-black/5 dark:hover:bg-white/10'
+                      ? 'bg-warning/5 border border-warning/20' 
+                      : 'bg-surface-2 border border-transparent hover:bg-surface-3'
                     }`}
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                       request.type === 'vacation' 
-                        ? 'bg-[#0071e3]/10' 
+                        ? 'bg-brand/10' 
                         : request.type === 'sick' 
-                          ? 'bg-[#ff3b30]/10' 
+                          ? 'bg-danger/10' 
                           : request.type === 'remote'
-                            ? 'bg-[#34c759]/10'
+                            ? 'bg-positive/10'
                             : request.type === 'other'
-                              ? 'bg-indigo-500/10'
-                              : 'bg-[#86868b]/10'
+                              ? 'bg-brand/10'
+                              : 'bg-ink-muted/10'
                     }`}>
                       {request.type === 'vacation' 
-                        ? <Plane className="w-5 h-5 text-[#0071e3]" /> 
+                        ? <Plane className="w-5 h-5 text-brand" /> 
                         : request.type === 'sick' 
-                          ? <Heart className="w-5 h-5 text-[#ff3b30]" />
+                          ? <Heart className="w-5 h-5 text-danger" />
                           : request.type === 'remote'
-                            ? <Laptop className="w-5 h-5 text-[#34c759]" />
+                            ? <Laptop className="w-5 h-5 text-positive" />
                             : request.type === 'other'
-                              ? <Tag className="w-5 h-5 text-indigo-500" />
-                              : <CalendarIcon className="w-5 h-5 text-[#86868b]" />
+                              ? <Tag className="w-5 h-5 text-brand" />
+                              : <CalendarIcon className="w-5 h-5 text-ink-muted" />
                       }
                     </div>
                     <div>
-                      <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">{request.employeeName}</p>
-                      <p className="text-[12px] text-[#86868b]">
+                      <p className="text-[14px] font-medium text-ink">{request.employeeName}</p>
+                      <p className="text-[12px] text-ink-muted">
                         {getLeaveTypeLabel(request)} · {request.startDate} - {request.endDate} ({request.days} days)
                       </p>
-                      {request.reason && <p className="text-[12px] text-[#86868b] mt-0.5">{request.reason}</p>}
+                      {request.reason && <p className="text-[12px] text-ink-muted mt-0.5">{request.reason}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-11 sm:ml-0">
@@ -1231,14 +1231,14 @@ const HRCalendar = () => {
                         <button 
                           onClick={() => openNotesModal(request.id, 'approve')}
                           disabled={processingRequest === request.id}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-positive text-white text-[12px] font-medium hover:bg-positive transition-colors disabled:opacity-50"
                         >
                           {processingRequest === request.id ? 'Processing...' : <><Check className="w-3.5 h-3.5" /> Approve</>}
                         </button>
                         <button 
                           onClick={() => openNotesModal(request.id, 'reject')}
                           disabled={processingRequest === request.id}
-                          className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50"
                         >
                           ✗ Reject
                         </button>
@@ -1248,7 +1248,7 @@ const HRCalendar = () => {
                     {request.status === 'approved' && canManageLeave && (
                       <button
                         onClick={() => openEditLeaveModal(request)}
-                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-brand/10 text-brand text-[12px] font-medium hover:bg-brand/20 transition-colors"
                         title="Edit request"
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -1265,8 +1265,8 @@ const HRCalendar = () => {
                         disabled={archiving === request.id}
                         className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50 ${
                           request.archived 
-                            ? 'bg-[#34c759]/10 text-[#34c759] hover:bg-[#34c759]/20'
-                            : 'bg-black/5 dark:bg-white/10 text-[#86868b] hover:bg-black/10 dark:hover:bg-white/15'
+                            ? 'bg-positive/10 text-positive hover:bg-positive/20'
+                            : 'bg-surface-3 text-ink-muted hover:bg-hairline-strong'
                         }`}
                         title={request.archived ? 'Restore' : 'Archive'}
                       >
@@ -1285,11 +1285,11 @@ const HRCalendar = () => {
                       <button 
                         onClick={() => setShowDeleteConfirm(request.id)}
                         disabled={deleting === request.id}
-                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50"
                         title="Delete permanently"
                       >
                         {deleting === request.id ? (
-                          <div className="w-3.5 h-3.5 border-2 border-[#ff3b30] border-t-transparent rounded-full animate-spin" />
+                          <div className="w-3.5 h-3.5 border-2 border-danger border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <Trash2 className="w-3.5 h-3.5" />
                         )}
@@ -1306,28 +1306,28 @@ const HRCalendar = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-md border border-black/10 dark:border-white/10 shadow-2xl">
+          <div className="bg-surface rounded-xl w-full max-w-md border border-hairline-strong shadow-lg">
             <div className="p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-[#ff3b30]/10 flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-6 h-6 text-[#ff3b30]" />
+              <div className="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-danger" />
               </div>
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+              <h3 className="text-[17px] font-semibold text-ink mb-2">
                 Delete Request Permanently?
               </h3>
-              <p className="text-[14px] text-[#86868b] mb-6">
+              <p className="text-[14px] text-ink-muted mb-6">
                 This action cannot be undone. The leave request will be permanently removed from the system.
               </p>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDeleteRequest(showDeleteConfirm)}
                   disabled={deleting}
-                  className="px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#ff453a] transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#ff453a] transition-colors disabled:opacity-50"
                 >
                   {deleting ? 'Deleting...' : 'Delete Permanently'}
                 </button>
@@ -1341,31 +1341,31 @@ const HRCalendar = () => {
       {/* Edit Approved Leave Modal */}
       {showEditLeaveModal && editingLeaveRequest && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-lg border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl w-full max-w-lg border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Leave Request</h2>
-                <button onClick={() => { setShowEditLeaveModal(false); setEditingLeaveRequest(null); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                  <XCircle className="w-5 h-5 text-[#86868b]" />
+                <h2 className="text-[17px] font-semibold text-ink">Edit Leave Request</h2>
+                <button onClick={() => { setShowEditLeaveModal(false); setEditingLeaveRequest(null); }} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                  <XCircle className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
-              <p className="text-[13px] text-[#86868b] mt-1">{editingLeaveRequest.employeeName}</p>
+              <p className="text-[13px] text-ink-muted mt-1">{editingLeaveRequest.employeeName}</p>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Start Date</label>
-                  <input type="date" value={editLeaveForm.startDate} onChange={(e) => handleEditLeaveFormChange('startDate', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" />
+                  <label className="block text-[13px] font-medium text-ink mb-1">Start Date</label>
+                  <input type="date" value={editLeaveForm.startDate} onChange={(e) => handleEditLeaveFormChange('startDate', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px]" />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">End Date</label>
-                  <input type="date" value={editLeaveForm.endDate} onChange={(e) => handleEditLeaveFormChange('endDate', e.target.value)} min={editLeaveForm.startDate} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" />
+                  <label className="block text-[13px] font-medium text-ink mb-1">End Date</label>
+                  <input type="date" value={editLeaveForm.endDate} onChange={(e) => handleEditLeaveFormChange('endDate', e.target.value)} min={editLeaveForm.startDate} className="w-full h-11 px-3 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px]" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Type</label>
-                  <select value={editLeaveForm.type} onChange={(e) => handleEditLeaveFormChange('type', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]">
+                  <label className="block text-[13px] font-medium text-ink mb-1">Type</label>
+                  <select value={editLeaveForm.type} onChange={(e) => handleEditLeaveFormChange('type', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px]">
                     <option value="vacation">Vacation</option>
                     <option value="sick">Sick</option>
                     <option value="remote">Remote</option>
@@ -1373,35 +1373,35 @@ const HRCalendar = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Work days</label>
-                  <p className="h-11 flex items-center text-[14px] font-medium text-[#0071e3]">{editLeaveForm.days}</p>
+                  <label className="block text-[13px] font-medium text-ink mb-1">Work days</label>
+                  <p className="h-11 flex items-center text-[14px] font-medium text-brand">{editLeaveForm.days}</p>
                 </div>
               </div>
               {editLeaveForm.type === 'other' && (
                 <div className="space-y-2">
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white">Kind of leave</label>
-                  <select value={editLeaveForm.otherSubType} onChange={(e) => handleEditLeaveFormChange('otherSubType', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]">
+                  <label className="block text-[13px] font-medium text-ink">Kind of leave</label>
+                  <select value={editLeaveForm.otherSubType} onChange={(e) => handleEditLeaveFormChange('otherSubType', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px]">
                     <option value="">Select...</option>
                     <option value="bereavement">Bereavement</option>
                     <option value="maternity">Maternity Leave</option>
                     <option value="custom">Custom</option>
                   </select>
                   {editLeaveForm.otherSubType === 'custom' && (
-                    <input type="text" value={editLeaveForm.otherCustomLabel} onChange={(e) => handleEditLeaveFormChange('otherCustomLabel', e.target.value)} placeholder="Custom label (optional)" className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" />
+                    <input type="text" value={editLeaveForm.otherCustomLabel} onChange={(e) => handleEditLeaveFormChange('otherCustomLabel', e.target.value)} placeholder="Custom label (optional)" className="w-full h-11 px-3 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px]" />
                   )}
                 </div>
               )}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Reason</label>
-                <input type="text" value={editLeaveForm.reason} onChange={(e) => handleEditLeaveFormChange('reason', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px]" placeholder="Reason" />
+                <label className="block text-[13px] font-medium text-ink mb-1">Reason</label>
+                <input type="text" value={editLeaveForm.reason} onChange={(e) => handleEditLeaveFormChange('reason', e.target.value)} className="w-full h-11 px-3 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px]" placeholder="Reason" />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1">Notes / Manager notes</label>
-                <textarea value={editLeaveForm.managerNotes || editLeaveForm.notes} onChange={(e) => { handleEditLeaveFormChange('managerNotes', e.target.value); handleEditLeaveFormChange('notes', e.target.value); }} rows={2} className="w-full px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px] resize-none" placeholder="Optional" />
+                <label className="block text-[13px] font-medium text-ink mb-1">Notes / Manager notes</label>
+                <textarea value={editLeaveForm.managerNotes || editLeaveForm.notes} onChange={(e) => { handleEditLeaveFormChange('managerNotes', e.target.value); handleEditLeaveFormChange('notes', e.target.value); }} rows={2} className="w-full px-3 py-2 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px] resize-none" placeholder="Optional" />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => { setShowEditLeaveModal(false); setEditingLeaveRequest(null); }} className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium">Cancel</button>
-                <button type="button" onClick={handleSaveEditLeave} disabled={savingEditLeave} className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50">{savingEditLeave ? 'Saving...' : 'Save & notify requester'}</button>
+                <button type="button" onClick={() => { setShowEditLeaveModal(false); setEditingLeaveRequest(null); }} className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium">Cancel</button>
+                <button type="button" onClick={handleSaveEditLeave} disabled={savingEditLeave} className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50">{savingEditLeave ? 'Saving...' : 'Save & notify requester'}</button>
               </div>
             </div>
           </div>
@@ -1412,23 +1412,23 @@ const HRCalendar = () => {
       {/* View Member Details Modal */}
       {viewingMember && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4 z-10">
+          <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-hairline-strong shadow-lg">
+            <div className="sticky top-0 bg-surface border-b border-hairline px-6 py-4 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center text-white text-[15px] font-medium">
+                  <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand rounded-full flex items-center justify-center text-white text-[15px] font-medium">
                     {viewingMember.avatar}
                   </div>
                   <div>
-                    <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">{viewingMember.name}</h2>
-                    <p className="text-[13px] text-[#86868b]">{viewingMember.position} • {viewingMember.department}</p>
+                    <h2 className="text-[17px] font-semibold text-ink">{viewingMember.name}</h2>
+                    <p className="text-[13px] text-ink-muted">{viewingMember.position} • {viewingMember.department}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setViewingMember(null)}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
                 >
-                  <XCircle className="w-5 h-5 text-[#86868b]" />
+                  <XCircle className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
@@ -1436,40 +1436,40 @@ const HRCalendar = () => {
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
               {isTimeOffAdmin && viewingMember.totalVacationDays != null && (
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="rounded-xl bg-[#0071e3]/5 border border-[#0071e3]/20 p-4">
+                <div className="rounded-xl bg-brand/5 border border-brand/20 p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Plane className="w-4 h-4 text-[#0071e3]" />
-                    <span className="text-[13px] font-medium text-[#0071e3]">Vacation Days</span>
+                    <Plane className="w-4 h-4 text-brand" />
+                    <span className="text-[13px] font-medium text-brand">Vacation Days</span>
                   </div>
-                  <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+                  <p className="text-[24px] font-semibold text-ink">
                     {viewingMember.totalVacationDays - viewingMember.usedVacationDays}
-                    <span className="text-[14px] text-[#86868b] font-normal ml-1">remaining</span>
+                    <span className="text-[14px] text-ink-muted font-normal ml-1">remaining</span>
                   </p>
-                  <p className="text-[12px] text-[#86868b] mt-1">
+                  <p className="text-[12px] text-ink-muted mt-1">
                     {viewingMember.usedVacationDays} used of {viewingMember.totalVacationDays} total
                   </p>
-                  <div className="mt-2 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div className="mt-2 h-1.5 bg-surface-3 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-[#0071e3] rounded-full" 
+                      className="h-full bg-brand rounded-full" 
                       style={{ width: `${(viewingMember.usedVacationDays / viewingMember.totalVacationDays) * 100}%` }}
                     />
                   </div>
                 </div>
-                <div className="rounded-xl bg-[#ff3b30]/5 border border-[#ff3b30]/20 p-4">
+                <div className="rounded-xl bg-danger/5 border border-danger/20 p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Heart className="w-4 h-4 text-[#ff3b30]" />
-                    <span className="text-[13px] font-medium text-[#ff3b30]">Sick Days</span>
+                    <Heart className="w-4 h-4 text-danger" />
+                    <span className="text-[13px] font-medium text-danger">Sick Days</span>
                   </div>
-                  <p className="text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+                  <p className="text-[24px] font-semibold text-ink">
                     {viewingMember.totalSickDays - viewingMember.usedSickDays}
-                    <span className="text-[14px] text-[#86868b] font-normal ml-1">remaining</span>
+                    <span className="text-[14px] text-ink-muted font-normal ml-1">remaining</span>
                   </p>
-                  <p className="text-[12px] text-[#86868b] mt-1">
+                  <p className="text-[12px] text-ink-muted mt-1">
                     {viewingMember.usedSickDays} used of {viewingMember.totalSickDays} total
                   </p>
-                  <div className="mt-2 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div className="mt-2 h-1.5 bg-surface-3 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-[#ff3b30] rounded-full" 
+                      className="h-full bg-danger rounded-full" 
                       style={{ width: `${(viewingMember.usedSickDays / viewingMember.totalSickDays) * 100}%` }}
                     />
                   </div>
@@ -1478,7 +1478,7 @@ const HRCalendar = () => {
               )}
               {/* Leave Request History */}
               <div>
-                <h3 className="text-[15px] font-medium text-[#1d1d1f] dark:text-white mb-3">Leave Request History</h3>
+                <h3 className="text-[15px] font-medium text-ink mb-3">Leave Request History</h3>
                 {(() => {
                   const memberRequests = leaveRequests.filter(
                     r => r.employeeEmail === viewingMember.email || r.employeeId === viewingMember.email
@@ -1486,9 +1486,9 @@ const HRCalendar = () => {
                   
                   if (memberRequests.length === 0) {
                     return (
-                      <div className="text-center py-8 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-                        <CalendarIcon className="w-10 h-10 text-[#86868b] mx-auto mb-2 opacity-50" />
-                        <p className="text-[14px] text-[#86868b]">No leave requests found</p>
+                      <div className="text-center py-8 bg-surface-2 rounded-xl">
+                        <CalendarIcon className="w-10 h-10 text-ink-muted mx-auto mb-2 opacity-50" />
+                        <p className="text-[14px] text-ink-muted">No leave requests found</p>
                       </div>
                     );
                   }
@@ -1500,55 +1500,55 @@ const HRCalendar = () => {
                           key={request.id}
                           className={`flex items-center justify-between p-3 rounded-xl border ${
                             request.status === 'pending' 
-                              ? 'bg-[#ff9500]/5 border-[#ff9500]/20' 
+                              ? 'bg-warning/5 border-warning/20' 
                               : request.status === 'approved'
-                                ? 'bg-[#34c759]/5 border-[#34c759]/20'
+                                ? 'bg-positive/5 border-positive/20'
                                 : request.status === 'rejected'
-                                  ? 'bg-[#ff3b30]/5 border-[#ff3b30]/20'
-                                  : 'bg-black/[0.02] dark:bg-white/5 border-black/5 dark:border-white/10'
+                                  ? 'bg-danger/5 border-danger/20'
+                                  : 'bg-surface-2 border-hairline'
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-lg ${
                               request.type === 'vacation' 
-                                ? 'bg-[#0071e3]/10' 
+                                ? 'bg-brand/10' 
                                 : request.type === 'sick'
-                                  ? 'bg-[#ff3b30]/10'
+                                  ? 'bg-danger/10'
                                   : request.type === 'remote'
-                                    ? 'bg-[#34c759]/10'
+                                    ? 'bg-positive/10'
                                     : request.type === 'other'
-                                      ? 'bg-indigo-500/10'
-                                      : 'bg-[#86868b]/10'
+                                      ? 'bg-brand/10'
+                                      : 'bg-ink-muted/10'
                             }`}>
                               {request.type === 'vacation' 
-                                ? <Plane className="w-4 h-4 text-[#0071e3]" />
+                                ? <Plane className="w-4 h-4 text-brand" />
                                 : request.type === 'sick'
-                                  ? <Heart className="w-4 h-4 text-[#ff3b30]" />
+                                  ? <Heart className="w-4 h-4 text-danger" />
                                   : request.type === 'remote'
-                                    ? <Laptop className="w-4 h-4 text-[#34c759]" />
+                                    ? <Laptop className="w-4 h-4 text-positive" />
                                     : request.type === 'other'
-                                      ? <Tag className="w-4 h-4 text-indigo-500" />
-                                      : <CalendarIcon className="w-4 h-4 text-[#86868b]" />
+                                      ? <Tag className="w-4 h-4 text-brand" />
+                                      : <CalendarIcon className="w-4 h-4 text-ink-muted" />
                               }
                             </div>
                             <div>
-                              <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{getLeaveTypeLabel(request)}</p>
-                              <p className="text-[12px] text-[#86868b]">
+                              <p className="text-[13px] font-medium text-ink">{getLeaveTypeLabel(request)}</p>
+                              <p className="text-[12px] text-ink-muted">
                                 {request.startDate} - {request.endDate} ({request.days} days)
                               </p>
                               {request.reason && (
-                                <p className="text-[11px] text-[#86868b] mt-0.5">{request.reason}</p>
+                                <p className="text-[11px] text-ink-muted mt-0.5">{request.reason}</p>
                               )}
                             </div>
                           </div>
                           <span className={`text-[11px] px-2 py-1 rounded-md font-medium capitalize ${
                             request.status === 'approved' 
-                              ? 'bg-[#34c759]/10 text-[#34c759]'
+                              ? 'bg-positive/10 text-positive'
                               : request.status === 'pending'
-                                ? 'bg-[#ff9500]/10 text-[#ff9500]'
+                                ? 'bg-warning/10 text-warning'
                                 : request.status === 'rejected'
-                                  ? 'bg-[#ff3b30]/10 text-[#ff3b30]'
-                                  : 'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                                  ? 'bg-danger/10 text-danger'
+                                  : 'bg-surface-3 text-ink-muted'
                           }`}>
                             {request.status}
                           </span>
@@ -1560,7 +1560,7 @@ const HRCalendar = () => {
               </div>
               
               {/* Actions */}
-              <div className="mt-6 pt-4 border-t border-black/5 dark:border-white/10 flex justify-end gap-3">
+              <div className="mt-6 pt-4 border-t border-hairline flex justify-end gap-3">
                 <button
                   onClick={() => {
                     startEditingUser(allUsers.find(u => u.email === viewingMember.email) || {
@@ -1573,13 +1573,13 @@ const HRCalendar = () => {
                     });
                     setViewingMember(null);
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
                 >
                   Edit Balances
                 </button>
                 <button
                   onClick={() => setViewingMember(null)}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Close
                 </button>
@@ -1591,13 +1591,13 @@ const HRCalendar = () => {
       )}
 
       {/* Calendar View */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <div className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Calendar View</span>
+            <CalendarIcon className="w-5 h-5 text-ink" />
+            <span className="text-[15px] font-medium text-ink">Calendar View</span>
             {isGoogleConnected && (
-              <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#34c759]/10 text-[#34c759] font-medium">
+              <span className="text-[11px] px-2 py-0.5 rounded-md bg-positive/10 text-positive font-medium">
                 Google Calendar Synced
               </span>
             )}
@@ -1605,13 +1605,13 @@ const HRCalendar = () => {
         </div>
         <div className="p-5">
           {/* Leave Type Legend */}
-          <div className="mb-6 p-4 bg-black/[0.02] dark:bg-white/5 rounded-xl">
-            <h4 className="text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-3">Leave Type Legend</h4>
+          <div className="mb-6 p-4 bg-surface-2 rounded-xl">
+            <h4 className="text-[12px] font-medium text-ink mb-3">Leave Type Legend</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {Object.entries(leaveTypes).map(([key, type]) => (
                 <div key={key} className="flex items-center gap-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${type.dotColor}`}></div>
-                  <span className="text-[11px] text-[#86868b]">{type.label}</span>
+                  <span className="text-[11px] text-ink-muted">{type.label}</span>
                 </div>
               ))}
             </div>
@@ -1627,22 +1627,22 @@ const HRCalendar = () => {
 
       {/* Team Overview - leave balance visible to time-off admins only */}
       {isTimeOffAdmin && (
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10">
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
-            <span className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">Team Leave Overview</span>
+            <Users className="w-5 h-5 text-ink" />
+            <span className="text-[15px] font-medium text-ink">Team Leave Overview</span>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-black/5 dark:border-white/10">
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Employee</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Department</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Vacation Days</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Sick Days</th>
-                <th className="text-left py-3 px-4 text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Actions</th>
+              <tr className="border-b border-hairline">
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Employee</th>
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Department</th>
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Vacation Days</th>
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Sick Days</th>
+                <th className="text-left py-3 px-4 text-[12px] font-medium text-ink-muted uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1650,24 +1650,24 @@ const HRCalendar = () => {
                 <tr key={member.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/5 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center text-white text-[13px] font-medium">
+                      <div className="w-10 h-10 bg-gradient-to-br from-brand to-brand rounded-full flex items-center justify-center text-white text-[13px] font-medium">
                         {member.avatar}
                       </div>
                       <div>
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">{member.name}</p>
-                        <p className="text-[11px] text-[#86868b]">{member.position}</p>
+                        <p className="text-[13px] font-medium text-ink">{member.name}</p>
+                        <p className="text-[11px] text-ink-muted">{member.position}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-[13px] text-[#1d1d1f] dark:text-white">{member.department}</td>
+                  <td className="py-3 px-4 text-[13px] text-ink">{member.department}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-[12px] text-[#86868b]">
+                      <span className="text-[12px] text-ink-muted">
                         {member.usedVacationDays}/{member.totalVacationDays}
                       </span>
-                      <div className="w-16 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div className="w-16 h-1.5 bg-surface-3 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-[#34c759] rounded-full" 
+                          className="h-full bg-positive rounded-full" 
                           style={{ width: `${(member.usedVacationDays / member.totalVacationDays) * 100}%` }}
                         />
                       </div>
@@ -1675,12 +1675,12 @@ const HRCalendar = () => {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-[12px] text-[#86868b]">
+                      <span className="text-[12px] text-ink-muted">
                         {member.usedSickDays}/{member.totalSickDays}
                       </span>
-                      <div className="w-16 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div className="w-16 h-1.5 bg-surface-3 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-[#ff3b30] rounded-full" 
+                          className="h-full bg-danger rounded-full" 
                           style={{ width: `${(member.usedSickDays / member.totalSickDays) * 100}%` }}
                         />
                       </div>
@@ -1699,13 +1699,13 @@ const HRCalendar = () => {
                             }
                           });
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-brand/10 text-brand text-[12px] font-medium hover:bg-brand/20 transition-colors"
                       >
                         Edit
                       </button>
                       <button 
                         onClick={() => setViewingMember(member)}
-                        className="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-surface-3 text-ink text-[12px] font-medium hover:bg-hairline-strong transition-colors"
                       >
                         View Details
                       </button>
@@ -1722,15 +1722,15 @@ const HRCalendar = () => {
       {/* Leave Request Form Modal */}
       {showAddModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4 z-10">
+          <div className="bg-surface rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
+            <div className="sticky top-0 bg-surface border-b border-hairline px-6 py-4 z-10">
               <div className="flex items-center justify-between">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Add Leave Request</h2>
+                <h2 className="text-[17px] font-semibold text-ink">Add Leave Request</h2>
                 <button 
                   onClick={() => setShowAddModal(false)}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
                 >
-                  <XCircle className="w-5 h-5 text-[#86868b]" />
+                  <XCircle className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
@@ -1749,7 +1749,7 @@ const HRCalendar = () => {
                       handleFormChange('employeeId', e.target.value);
                       handleFormChange('employeeName', employee?.name || '');
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     required
                   >
                     <option value="">Select Employee</option>
@@ -1770,7 +1770,7 @@ const HRCalendar = () => {
                   <select
                     value={leaveForm.type}
                     onChange={(e) => handleFormChange('type', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     required
                   >
                     {Object.entries(leaveTypes).map(([key, type]) => (
@@ -1786,7 +1786,7 @@ const HRCalendar = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kind of leave</label>
-                    <select value={leaveForm.otherSubType} onChange={(e) => handleFormChange('otherSubType', e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white">
+                    <select value={leaveForm.otherSubType} onChange={(e) => handleFormChange('otherSubType', e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-brand bg-white dark:bg-white/10 text-ink">
                       <option value="">Select...</option>
                       <option value="bereavement">Bereavement</option>
                       <option value="maternity">Maternity Leave</option>
@@ -1796,7 +1796,7 @@ const HRCalendar = () => {
                   {leaveForm.otherSubType === 'custom' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom label</label>
-                      <input type="text" value={leaveForm.otherCustomLabel} onChange={(e) => handleFormChange('otherCustomLabel', e.target.value)} placeholder="e.g. Jury duty" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white" />
+                      <input type="text" value={leaveForm.otherCustomLabel} onChange={(e) => handleFormChange('otherCustomLabel', e.target.value)} placeholder="e.g. Jury duty" className="w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md focus:outline-none focus:ring-2 focus:ring-brand bg-white dark:bg-white/10 text-ink" />
                     </div>
                   )}
                 </div>
@@ -1812,7 +1812,7 @@ const HRCalendar = () => {
                     type="date"
                     value={leaveForm.startDate}
                     onChange={(e) => handleDateChange('startDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     required
                   />
                 </div>
@@ -1826,7 +1826,7 @@ const HRCalendar = () => {
                     value={leaveForm.endDate}
                     onChange={(e) => handleDateChange('endDate', e.target.value)}
                     min={leaveForm.startDate}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     required
                   />
                 </div>
@@ -1852,7 +1852,7 @@ const HRCalendar = () => {
                     id="isAllDay"
                     checked={leaveForm.isAllDay}
                     onChange={(e) => handleFormChange('isAllDay', e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-brand border-gray-300 rounded focus:ring-brand"
                   />
                   <label htmlFor="isAllDay" className="text-sm font-medium text-gray-700">
                     All Day Event
@@ -1869,7 +1869,7 @@ const HRCalendar = () => {
                         type="time"
                         value={leaveForm.startTime}
                         onChange={(e) => handleFormChange('startTime', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                     </div>
                     
@@ -1881,7 +1881,7 @@ const HRCalendar = () => {
                         type="time"
                         value={leaveForm.endTime}
                         onChange={(e) => handleFormChange('endTime', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                     </div>
                   </>
@@ -1899,7 +1899,7 @@ const HRCalendar = () => {
                     value={leaveForm.reason}
                     onChange={(e) => handleFormChange('reason', e.target.value)}
                     placeholder="Brief reason for leave"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     required
                   />
                 </div>
@@ -1913,7 +1913,7 @@ const HRCalendar = () => {
                     value={leaveForm.location}
                     onChange={(e) => handleFormChange('location', e.target.value)}
                     placeholder="Where will you be?"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
@@ -1928,7 +1928,7 @@ const HRCalendar = () => {
                   onChange={(e) => handleFormChange('description', e.target.value)}
                   rows={3}
                   placeholder="Additional details about your leave request..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
@@ -1943,7 +1943,7 @@ const HRCalendar = () => {
                     value={leaveForm.attendees}
                     onChange={(e) => handleFormChange('attendees', e.target.value)}
                     placeholder="Email addresses separated by commas"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 
@@ -1954,7 +1954,7 @@ const HRCalendar = () => {
                   <select
                     value={leaveForm.priority}
                     onChange={(e) => handleFormChange('priority', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     {Object.entries(priorityLevels).map(([key, level]) => (
                       <option key={key} value={key}>{level.label}</option>
@@ -1972,7 +1972,7 @@ const HRCalendar = () => {
                   <select
                     value={leaveForm.recurrence}
                     onChange={(e) => handleFormChange('recurrence', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     {recurrenceOptions.map(option => (
                       <option key={option.value} value={option.value}>{option.label}</option>
@@ -1990,7 +1990,7 @@ const HRCalendar = () => {
                       value={leaveForm.recurrenceEndDate}
                       onChange={(e) => handleFormChange('recurrenceEndDate', e.target.value)}
                       min={leaveForm.endDate}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                   </div>
                 )}
@@ -2014,7 +2014,7 @@ const HRCalendar = () => {
                             handleFormChange('reminders', leaveForm.reminders.filter(r => r !== option.value));
                           }
                         }}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-brand border-gray-300 rounded focus:ring-brand"
                       />
                       <span className="text-sm text-gray-700">{option.label}</span>
                     </label>
@@ -2023,17 +2023,17 @@ const HRCalendar = () => {
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end gap-3 pt-6 border-t border-black/5 dark:border-white/10">
+              <div className="flex justify-end gap-3 pt-6 border-t border-hairline">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
                 >
                   Create Leave Request
                 </button>
@@ -2047,56 +2047,56 @@ const HRCalendar = () => {
       {/* Edit Leave Balances Modal */}
       {editingUser && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-between">
+          <div className="bg-surface rounded-xl max-w-md w-full border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Edit Leave Balances</h2>
-                <p className="text-[13px] text-[#86868b] mt-0.5">{editingUser.displayName || editingUser.email}</p>
+                <h2 className="text-[17px] font-semibold text-ink">Edit Leave Balances</h2>
+                <p className="text-[13px] text-ink-muted mt-0.5">{editingUser.displayName || editingUser.email}</p>
               </div>
               <button
                 onClick={() => setEditingUser(null)}
                 disabled={savingBalances}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+                className="p-2 rounded-lg hover:bg-surface-3 transition-colors disabled:opacity-50"
               >
-                <XCircle className="w-5 h-5 text-[#86868b]" />
+                <XCircle className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
             <div className="p-6 space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Vacation Total</label>
+                  <label className="block text-[12px] font-medium text-ink mb-1">Vacation Total</label>
                   <input
                     type="number" min="0"
                     value={editBalances.vacation?.total ?? 0}
                     onChange={(e) => setEditBalances(prev => ({ ...prev, vacation: { ...prev.vacation, total: parseInt(e.target.value) || 0 } }))}
-                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Vacation Used</label>
+                  <label className="block text-[12px] font-medium text-ink mb-1">Vacation Used</label>
                   <input
                     type="number" min="0"
                     value={editBalances.vacation?.used ?? 0}
                     onChange={(e) => setEditBalances(prev => ({ ...prev, vacation: { ...prev.vacation, used: parseInt(e.target.value) || 0 } }))}
-                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Sick Leave Total</label>
+                  <label className="block text-[12px] font-medium text-ink mb-1">Sick Leave Total</label>
                   <input
                     type="number" min="0"
                     value={editBalances.sick?.total ?? 0}
                     onChange={(e) => setEditBalances(prev => ({ ...prev, sick: { ...prev.sick, total: parseInt(e.target.value) || 0 } }))}
-                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#1d1d1f] dark:text-white mb-1">Sick Leave Used</label>
+                  <label className="block text-[12px] font-medium text-ink mb-1">Sick Leave Used</label>
                   <input
                     type="number" min="0"
                     value={editBalances.sick?.used ?? 0}
                     onChange={(e) => setEditBalances(prev => ({ ...prev, sick: { ...prev.sick, used: parseInt(e.target.value) || 0 } }))}
-                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
@@ -2104,14 +2104,14 @@ const HRCalendar = () => {
                 <button
                   onClick={() => setEditingUser(null)}
                   disabled={savingBalances}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={saveUserBalances}
                   disabled={savingBalances}
-                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {savingBalances ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -2125,15 +2125,15 @@ const HRCalendar = () => {
       {/* Approval/Rejection Notes Modal */}
       {showNotesModal && processingRequest && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+          <div className="bg-surface rounded-xl max-w-md w-full border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4">
+              <h2 className="text-[17px] font-semibold text-ink">
                 {showNotesModal === 'approve' ? '✓ Approve Request' : '✗ Reject Request'}
               </h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   {showNotesModal === 'approve' ? 'Notes (Optional)' : 'Reason for Rejection *'}
                 </label>
                 <textarea
@@ -2143,24 +2143,24 @@ const HRCalendar = () => {
                     ? 'Add any notes for the employee...' 
                     : 'Please provide a reason for rejection...'}
                   rows={3}
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                   required={showNotesModal === 'reject'}
                   disabled={modalLoading}
                 />
               </div>
 
               {showNotesModal === 'approve' && (
-                <label className="flex items-start gap-2.5 cursor-pointer select-none rounded-xl bg-black/5 dark:bg-white/10 px-4 py-3">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none rounded-xl bg-surface-3 px-4 py-3">
                   <input
                     type="checkbox"
                     checked={skipBalanceDeduction}
                     onChange={(e) => setSkipBalanceDeduction(e.target.checked)}
                     disabled={modalLoading}
-                    className="mt-0.5 h-4 w-4 rounded accent-[#0071e3]"
+                    className="mt-0.5 h-4 w-4 rounded accent-brand"
                   />
-                  <span className="text-[13px] text-[#1d1d1f] dark:text-white">
+                  <span className="text-[13px] text-ink">
                     Don't deduct from balance
-                    <span className="block text-[12px] text-[#86868b] mt-0.5">
+                    <span className="block text-[12px] text-ink-muted mt-0.5">
                       Approve the time off without charging it (e.g. working a stat holiday in exchange).
                     </span>
                   </span>
@@ -2175,7 +2175,7 @@ const HRCalendar = () => {
                     setApprovalNotes('');
                   }}
                   disabled={modalLoading}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -2190,8 +2190,8 @@ const HRCalendar = () => {
                   disabled={(showNotesModal === 'reject' && !approvalNotes.trim()) || modalLoading}
                   className={`px-4 py-2.5 rounded-xl text-white text-[14px] font-medium transition-colors disabled:opacity-50 ${
                     showNotesModal === 'approve' 
-                      ? 'bg-[#34c759] hover:bg-[#2db14e]' 
-                      : 'bg-[#ff3b30] hover:bg-[#e5342b]'
+                      ? 'bg-positive hover:bg-positive' 
+                      : 'bg-danger hover:bg-[#e5342b]'
                   }`}
                 >
                   {modalLoading ? (

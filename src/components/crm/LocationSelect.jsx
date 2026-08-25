@@ -62,16 +62,16 @@ export function LocationSelect({ value, onChange, placeholder = 'Search or selec
         autoComplete="off"
       />
       {open && (
-        <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-auto rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1d1d1f] shadow-lg py-1 text-[14px]">
+        <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-auto rounded-xl border border-hairline-strong bg-surface shadow-lg py-1 text-[14px]">
           {normalizedValue && (
             <li>
-              <button type="button" onClick={handleClear} className="w-full px-4 py-2.5 text-left text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5">
+              <button type="button" onClick={handleClear} className="w-full px-4 py-2.5 text-left text-ink-muted hover:bg-surface-3">
                 Clear location
               </button>
             </li>
           )}
           {showCustomOption && (
-            <li className="border-t border-black/5 dark:border-white/10 mt-1 pt-1">
+            <li className="border-t border-hairline mt-1 pt-1">
               <button
                 type="button"
                 onClick={() => {
@@ -79,21 +79,21 @@ export function LocationSelect({ value, onChange, placeholder = 'Search or selec
                   handleSelect(normalized);
                   addCustomLocation(normalized, currentUser?.email || '').catch((err) => console.warn('addCustomLocation', err));
                 }}
-                className="w-full px-4 py-2.5 text-left text-[#0071e3] hover:bg-black/5 dark:hover:bg-white/5 font-medium"
+                className="w-full px-4 py-2.5 text-left text-brand hover:bg-surface-3 font-medium"
               >
                 Use &quot;{q}&quot;
               </button>
             </li>
           )}
           {filtered.length === 0 && !showCustomOption ? (
-            <li className="px-4 py-2.5 text-[#86868b]">No matches — type to add a custom location</li>
+            <li className="px-4 py-2.5 text-ink-muted">No matches — type to add a custom location</li>
           ) : (
             filtered.map((loc) => (
               <li key={loc}>
                 <button
                   type="button"
                   onClick={() => handleSelect(loc)}
-                  className={`w-full px-4 py-2.5 text-left hover:bg-black/5 dark:hover:bg-white/5 ${loc === normalizedValue ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white'}`}
+                  className={`w-full px-4 py-2.5 text-left hover:bg-surface-3 ${loc === normalizedValue ? 'bg-brand/10 text-brand' : 'text-ink'}`}
                 >
                   {loc}
                 </button>

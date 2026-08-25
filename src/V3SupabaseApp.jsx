@@ -88,8 +88,8 @@ const ClientWorkspace = lazy(() => import('./v4-app/pages/ClientWorkspace'));
 
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7]">
-      <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-surface-2">
+      <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

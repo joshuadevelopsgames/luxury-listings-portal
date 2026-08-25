@@ -158,7 +158,7 @@ const ContractUploadModal = ({ client, onClose, onSuccess }) => {
                 >
                   {file ? (
                     <>
-                      <FileText className="w-12 h-12 text-green-500 mb-2" />
+                      <FileText className="w-12 h-12 text-positive mb-2" />
                       <p className="text-sm font-medium text-gray-900">{file.name}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {(file.size / 1024 / 1024).toFixed(2)} MB
@@ -199,7 +199,7 @@ const ContractUploadModal = ({ client, onClose, onSuccess }) => {
                 <select
                   value={formData.contractType}
                   onChange={(e) => handleInputChange('contractType', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="service_agreement">Service Agreement</option>
                   <option value="renewal">Renewal</option>
@@ -287,7 +287,7 @@ const ContractUploadModal = ({ client, onClose, onSuccess }) => {
                   <select
                     value={formData.contractDetails.paymentFrequency}
                     onChange={(e) => handleInputChange('contractDetails.paymentFrequency', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="monthly">Monthly</option>
                     <option value="quarterly">Quarterly</option>
@@ -316,7 +316,7 @@ const ContractUploadModal = ({ client, onClose, onSuccess }) => {
                   value={formData.contractDetails.specialTerms}
                   onChange={(e) => handleInputChange('contractDetails.specialTerms', e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   placeholder="Any special terms or conditions..."
                 />
               </div>
@@ -327,7 +327,7 @@ const ContractUploadModal = ({ client, onClose, onSuccess }) => {
                   id="autoRenew"
                   checked={formData.contractDetails.autoRenew}
                   onChange={(e) => handleInputChange('contractDetails.autoRenew', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-brand border-gray-300 rounded focus:ring-brand"
                 />
                 <label htmlFor="autoRenew" className="text-sm text-gray-700">
                   Auto-renewal enabled
@@ -340,7 +340,7 @@ const ContractUploadModal = ({ client, onClose, onSuccess }) => {
               <Button
                 type="submit"
                 disabled={uploading || !file}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex-1 bg-brand hover:bg-brand-hover text-white"
               >
                 {uploading ? (
                   <>

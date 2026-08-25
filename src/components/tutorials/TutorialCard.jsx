@@ -17,11 +17,11 @@ const TutorialCard = ({ tutorial, progress, onStart }) => {
   const getDifficultyIcon = (difficulty) => {
     switch (difficulty) {
       case 'beginner':
-        return <Star className="w-4 h-4 text-green-500 fill-current" />;
+        return <Star className="w-4 h-4 text-positive fill-current" />;
       case 'intermediate':
-        return <Star className="w-4 h-4 text-yellow-500 fill-current" />;
+        return <Star className="w-4 h-4 text-warning fill-current" />;
       case 'advanced':
-        return <Star className="w-4 h-4 text-red-500 fill-current" />;
+        return <Star className="w-4 h-4 text-danger fill-current" />;
       default:
         return <Star className="w-4 h-4 text-gray-500" />;
     }
@@ -30,9 +30,9 @@ const TutorialCard = ({ tutorial, progress, onStart }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-positive-soft text-positive border-green-200';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-brand-soft text-brand border-blue-200';
       case 'not_started':
         return 'bg-gray-100 text-gray-600 border-gray-200';
       default:
@@ -65,7 +65,7 @@ const TutorialCard = ({ tutorial, progress, onStart }) => {
   return (
     <Card className={`h-full transition-all duration-200 hover:shadow-md ${
       progress.status === 'completed' 
-        ? 'border-green-200 bg-green-50/30' 
+        ? 'border-green-200 bg-positive-soft/30' 
         : 'border-gray-200 hover:border-blue-300'
     }`}>
       <CardHeader className="pb-3">
@@ -80,9 +80,9 @@ const TutorialCard = ({ tutorial, progress, onStart }) => {
               <Badge 
                 variant="outline" 
                 className={`text-xs ${
-                  tutorial.difficulty === 'beginner' ? 'border-green-200 text-green-700' :
-                  tutorial.difficulty === 'intermediate' ? 'border-yellow-200 text-yellow-700' :
-                  'border-red-200 text-red-700'
+                  tutorial.difficulty === 'beginner' ? 'border-green-200 text-positive' :
+                  tutorial.difficulty === 'intermediate' ? 'border-yellow-200 text-warning' :
+                  'border-red-200 text-danger'
                 }`}
               >
                 {tutorial.difficulty}

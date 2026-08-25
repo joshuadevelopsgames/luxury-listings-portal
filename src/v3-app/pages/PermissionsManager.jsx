@@ -506,11 +506,11 @@ const PermissionsManager = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <Shield className="w-16 h-16 text-[#ff3b30] mx-auto mb-4" />
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+          <Shield className="w-16 h-16 text-danger mx-auto mb-4" />
+          <h2 className="text-[22px] font-semibold text-ink mb-2">
             Access Denied
           </h2>
-          <p className="text-[#86868b]">
+          <p className="text-ink-muted">
             You don&apos;t have permission to access this page.
           </p>
         </div>
@@ -524,16 +524,16 @@ const PermissionsManager = () => {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
+            <h1 className="text-[28px] font-semibold text-ink tracking-[-0.02em]">
               Permissions Manager
             </h1>
             {!loading && (
-              <span className="px-3 py-1 rounded-full bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-semibold">
+              <span className="px-3 py-1 rounded-full bg-brand/10 text-brand text-[13px] font-semibold">
                 {users.length} {users.length === 1 ? 'user' : 'users'}
               </span>
             )}
           </div>
-          <p className="text-[15px] text-[#86868b]">
+          <p className="text-[15px] text-ink-muted">
             {canEditPermissions
               ? 'Manage users and control which pages they can access'
               : 'View users and their permissions. Only system administrators can add, remove, or change permissions.'}
@@ -543,14 +543,14 @@ const PermissionsManager = () => {
           {isSystemAdmin && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all"
+              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all"
             >
               <UserPlus className="w-4 h-4" />
               Add User
             </button>
           )}
           {isSystemAdmin && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3]">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand/10 text-brand">
               <Shield className="w-4 h-4" />
               <span className="text-[13px] font-medium">System Admin</span>
             </div>
@@ -560,10 +560,10 @@ const PermissionsManager = () => {
 
       {/* Pending approval */}
       {canApproveUsers && pendingUsers.length > 0 && (
-        <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 p-4 space-y-3">
+        <div className="rounded-xl border border-amber-200 dark:border-warning bg-warning-soft/50 dark:bg-amber-950/30 p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-600" />
-            <h2 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+            <Clock className="w-5 h-5 text-warning" />
+            <h2 className="text-[15px] font-semibold text-ink">
               Pending approval ({pendingUsers.length})
             </h2>
           </div>
@@ -574,20 +574,20 @@ const PermissionsManager = () => {
               return (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/10 px-4 py-3 min-w-[280px]"
+                  className="flex items-center justify-between gap-4 rounded-xl bg-surface border border-gray-200 dark:border-white/10 px-4 py-3 min-w-[280px]"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium text-[#1d1d1f] dark:text-white truncate">
+                    <p className="font-medium text-ink truncate">
                       {user.firstName} {user.lastName} {!user.firstName && !user.lastName ? user.email : ''}
                     </p>
-                    <p className="text-[13px] text-[#86868b] truncate">{user.email}</p>
+                    <p className="text-[13px] text-ink-muted truncate">{user.email}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => handleApprovePendingUser(user)}
                       disabled={isBusy}
-                      className="h-8 px-3 rounded-lg bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#30b350] disabled:opacity-50"
+                      className="h-8 px-3 rounded-lg bg-positive text-white text-[13px] font-medium hover:bg-[#30b350] disabled:opacity-50"
                     >
                       {pendingAction === `approve-${email}` ? '…' : 'Approve'}
                     </button>
@@ -595,7 +595,7 @@ const PermissionsManager = () => {
                       type="button"
                       onClick={() => handleRejectPendingUser(user)}
                       disabled={isBusy}
-                      className="h-8 px-3 rounded-lg bg-black/10 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
+                      className="h-8 px-3 rounded-lg bg-black/10 dark:bg-white/10 text-ink text-[13px] font-medium hover:bg-black/15 dark:hover:bg-white/15 disabled:opacity-50"
                     >
                       {pendingAction === `reject-${email}` ? '…' : 'Reject'}
                     </button>
@@ -609,13 +609,13 @@ const PermissionsManager = () => {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#86868b]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-muted" />
         <input
           type="text"
           placeholder="Search users..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full h-11 pl-10 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 transition-all"
+          className="w-full h-11 pl-10 pr-4 rounded-xl bg-surface border border-hairline-strong text-[15px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all"
         />
       </div>
 
@@ -623,13 +623,13 @@ const PermissionsManager = () => {
       {loading ? (
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-black/5 dark:bg-white/5 animate-pulse" />
+            <div key={i} className="h-20 rounded-xl bg-surface-3 animate-pulse" />
           ))}
         </div>
       ) : filteredUsers.length === 0 ? (
         <div className="text-center py-12">
-          <Users className="w-12 h-12 text-[#86868b] mx-auto mb-4" />
-          <p className="text-[#86868b]">No users found</p>
+          <Users className="w-12 h-12 text-ink-muted mx-auto mb-4" />
+          <p className="text-ink-muted">No users found</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -645,9 +645,9 @@ const PermissionsManager = () => {
             return (
               <div
                 key={email}
-                className={`rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border transition-all ${
+                className={`rounded-xl bg-surface border transition-all ${
                   isExpanded 
-                    ? 'border-[#0071e3]/30 shadow-lg' 
+                    ? 'border-brand/30 shadow-lg' 
                     : 'border-gray-200 dark:border-white/5 hover:shadow-md'
                 }`}
               >
@@ -670,13 +670,13 @@ const PermissionsManager = () => {
                         />
                       ) : null}
                       <div 
-                        className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] items-center justify-center text-white font-semibold text-[15px] ${user.avatar || user.photoURL ? 'hidden' : 'flex'}`}
+                        className={`w-12 h-12 rounded-full bg-gradient-to-br from-brand to-brand items-center justify-center text-white font-semibold text-[15px] ${user.avatar || user.photoURL ? 'hidden' : 'flex'}`}
                       >
                         {displayNameFor(user).charAt(0).toUpperCase() || 'U'}
                       </div>
                       {isOnline(user.lastSeenAt) && (
                         <span 
-                          className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#34c759] border-2 border-white dark:border-[#2c2c2e]" 
+                          className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-positive border-2 border-white dark:border-surface" 
                           title="Online"
                           aria-hidden
                         />
@@ -684,32 +684,32 @@ const PermissionsManager = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <EmployeeLink user={user} showId className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                        <EmployeeLink user={user} showId className="text-[15px] font-semibold text-ink">
                           {displayNameFor(user)}
                         </EmployeeLink>
                         {isAdmin && (
-                          <span className="px-2 py-0.5 rounded-full bg-[#ff9500]/10 text-[#ff9500] text-[11px] font-semibold">
+                          <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning text-[11px] font-semibold">
                             System Admin
                           </span>
                         )}
                         {hasUnsavedChanges && (
-                          <span className="px-2 py-0.5 rounded-full bg-[#ff3b30]/10 text-[#ff3b30] text-[11px] font-semibold">
+                          <span className="px-2 py-0.5 rounded-full bg-danger/10 text-danger text-[11px] font-semibold">
                             Unsaved
                           </span>
                         )}
                       </div>
-                      <p className="text-[13px] text-[#86868b]">{email}</p>
+                      <p className="text-[13px] text-ink-muted">{email}</p>
                       <OnlineIndicator lastSeenAt={user.lastSeenAt} showLabel className="mt-0.5" />
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-[13px] text-[#86868b]">
+                    <span className="text-[13px] text-ink-muted">
                       {isAdmin ? 'Full Access' : `${perms.length} pages`}
                     </span>
                     {isExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-[#86868b]" />
+                      <ChevronDown className="w-5 h-5 text-ink-muted" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-[#86868b]" />
+                      <ChevronRight className="w-5 h-5 text-ink-muted" />
                     )}
                   </div>
                 </div>
@@ -719,8 +719,8 @@ const PermissionsManager = () => {
                   <div className="px-4 pb-4 border-t border-gray-200 dark:border-white/5">
                     {isOtherAdmin ? (
                       <div className="py-6 text-center">
-                        <AlertCircle className="w-8 h-8 text-[#ff9500] mx-auto mb-2" />
-                        <p className="text-[13px] text-[#86868b]">
+                        <AlertCircle className="w-8 h-8 text-warning mx-auto mb-2" />
+                        <p className="text-[13px] text-ink-muted">
                           System administrators cannot modify other admins' permissions.
                         </p>
                       </div>
@@ -731,14 +731,14 @@ const PermissionsManager = () => {
                           <div className="flex items-center justify-between flex-wrap gap-3">
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2">
-                                <UserCog className="w-4 h-4 text-[#0071e3]" />
-                                <span className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Role</span>
+                                <UserCog className="w-4 h-4 text-brand" />
+                                <span className="text-[13px] font-medium text-ink">Role</span>
                               </div>
                               <select
                                 value={userRoles[email] || 'social_media_manager'}
                                 onChange={(e) => canEditPermissions && handleRoleChange(email, e.target.value)}
                                 disabled={savingRole === email || !canEditPermissions}
-                                className="h-9 px-3 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 disabled:opacity-50"
+                                className="h-9 px-3 rounded-lg bg-surface border border-hairline-strong text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50"
                               >
                                 <option value="admin">Admin</option>
                                 <option value="director">Director</option>
@@ -750,10 +750,10 @@ const PermissionsManager = () => {
                                 <option value="assistant">Assistant</option>
                               </select>
                               {savingRole === email && (
-                                <RefreshCw className="w-4 h-4 text-[#0071e3] animate-spin" />
+                                <RefreshCw className="w-4 h-4 text-brand animate-spin" />
                               )}
                             </div>
-                            <span className="text-[11px] text-[#86868b]">
+                            <span className="text-[11px] text-ink-muted">
                               Controls dashboard view and default permissions
                             </span>
                           </div>
@@ -764,14 +764,14 @@ const PermissionsManager = () => {
                           <div className="flex items-center gap-2 flex-wrap">
                             <button
                               onClick={() => handleEditProfile(user)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand/10 text-brand text-[13px] font-medium hover:bg-brand/20 transition-colors"
                             >
                               <User className="w-3.5 h-3.5" />
                               Edit Profile
                             </button>
                             <button
                               onClick={() => handleViewAsUser(user)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand/10 text-brand text-[13px] font-medium hover:bg-brand/20 transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               View as User
@@ -780,13 +780,13 @@ const PermissionsManager = () => {
                               <>
                                 <button
                                   onClick={() => grantAllPages(email)}
-                                  className="px-3 py-1.5 rounded-lg bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors"
+                                  className="px-3 py-1.5 rounded-lg bg-positive/10 text-positive text-[13px] font-medium hover:bg-positive/20 transition-colors"
                                 >
                                   Grant All
                                 </button>
                                 <button
                                   onClick={() => revokeAllPages(email)}
-                                  className="px-3 py-1.5 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                                  className="px-3 py-1.5 rounded-lg bg-danger/10 text-danger text-[13px] font-medium hover:bg-danger/20 transition-colors"
                                 >
                                   Revoke All
                                 </button>
@@ -799,8 +799,8 @@ const PermissionsManager = () => {
                               disabled={!hasUnsavedChanges || saving === email}
                               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium transition-all ${
                                 hasUnsavedChanges
-                                  ? 'bg-[#0071e3] text-white hover:bg-[#0077ed] shadow-lg shadow-[#0071e3]/25'
-                                  : 'bg-black/5 dark:bg-white/5 text-[#86868b] cursor-not-allowed'
+                                  ? 'bg-brand text-white hover:bg-brand-hover shadow-lg shadow-brand/25'
+                                  : 'bg-surface-3 text-ink-muted cursor-not-allowed'
                               }`}
                             >
                               {saving === email ? (
@@ -816,8 +816,8 @@ const PermissionsManager = () => {
                         {/* Base Modules Section */}
                         <div className="mb-4">
                           <div className="flex items-center gap-2 mb-2">
-                            <Star className="w-4 h-4 text-[#ff9500]" />
-                            <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Base Modules</span>
+                            <Star className="w-4 h-4 text-warning" />
+                            <span className="text-[12px] font-medium text-ink-muted uppercase tracking-wide">Base Modules</span>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {Object.entries(ALL_PAGES).filter(([_, page]) => page.isBase).map(([pageId, page]) => {
@@ -833,27 +833,27 @@ const PermissionsManager = () => {
                                     canEditPermissions ? 'cursor-pointer' : 'cursor-default opacity-90'
                                   } ${
                                     hasAccess
-                                      ? 'bg-[#ff9500]/10 border-[#ff9500]/30 text-[#ff9500]'
-                                      : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
+                                      ? 'bg-warning/10 border-warning/30 text-warning'
+                                      : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent text-ink-muted hover:bg-surface-3'
                                   }`}
                                 >
                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                                     hasAccess 
-                                      ? 'bg-[#ff9500]/20' 
-                                      : 'bg-black/5 dark:bg-white/5'
+                                      ? 'bg-warning/20' 
+                                      : 'bg-surface-3'
                                   }`}>
-                                    <Icon className={`w-4 h-4 ${hasAccess ? 'text-[#ff9500]' : ''}`} />
+                                    <Icon className={`w-4 h-4 ${hasAccess ? 'text-warning' : ''}`} />
                                   </div>
                                   <div className="flex-1 text-left min-w-0">
                                     <p className={`text-[13px] font-medium truncate ${
-                                      hasAccess ? 'text-[#ff9500]' : 'text-[#1d1d1f] dark:text-white'
+                                      hasAccess ? 'text-warning' : 'text-ink'
                                     }`}>
                                       {page.name}
                                     </p>
-                                    <p className="text-[10px] text-[#86868b]">Base module</p>
+                                    <p className="text-[10px] text-ink-muted">Base module</p>
                                   </div>
                                   {hasAccess && (
-                                    <Check className="w-4 h-4 flex-shrink-0 text-[#ff9500]" />
+                                    <Check className="w-4 h-4 flex-shrink-0 text-warning" />
                                   )}
                                 </button>
                               );
@@ -863,8 +863,8 @@ const PermissionsManager = () => {
 
                         {/* Upgrade Modules Section */}
                         <div className="flex items-center gap-2 mb-2">
-                          <Plus className="w-4 h-4 text-[#0071e3]" />
-                          <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide">Additional Modules</span>
+                          <Plus className="w-4 h-4 text-brand" />
+                          <span className="text-[12px] font-medium text-ink-muted uppercase tracking-wide">Additional Modules</span>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                           {Object.entries(ALL_PAGES).filter(([_, page]) => !page.isBase).map(([pageId, page]) => {
@@ -880,25 +880,25 @@ const PermissionsManager = () => {
                                 disabled={isDashboard || !canEditPermissions}
                                 className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                                   hasAccess
-                                    ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]'
-                                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent text-[#86868b] hover:bg-black/5 dark:hover:bg-white/5'
+                                    ? 'bg-brand/10 border-brand/30 text-brand'
+                                    : 'bg-black/[0.02] dark:bg-white/[0.02] border-transparent text-ink-muted hover:bg-surface-3'
                                 } ${isDashboard || !canEditPermissions ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                               >
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                                   hasAccess 
-                                    ? 'bg-[#0071e3]/20' 
-                                    : 'bg-black/5 dark:bg-white/5'
+                                    ? 'bg-brand/20' 
+                                    : 'bg-surface-3'
                                 }`}>
                                   <Icon className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1 text-left min-w-0">
                                   <p className={`text-[13px] font-medium truncate ${
-                                    hasAccess ? 'text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white'
+                                    hasAccess ? 'text-brand' : 'text-ink'
                                   }`}>
                                     {page.name}
                                   </p>
                                   {isDashboard && (
-                                    <p className="text-[10px] text-[#86868b]">Always enabled</p>
+                                    <p className="text-[10px] text-ink-muted">Always enabled</p>
                                   )}
                                 </div>
                                 {hasAccess && (
@@ -915,7 +915,7 @@ const PermissionsManager = () => {
                           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-white/5">
                             <button
                               onClick={() => setUserToRemove(user)}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors text-[13px] font-medium"
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-danger hover:bg-danger/10 transition-colors text-[13px] font-medium"
                             >
                               <Trash2 className="w-4 h-4" />
                               Remove User
@@ -937,65 +937,65 @@ const PermissionsManager = () => {
         <>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={() => setShowAddModal(false)} />
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#ffffff] dark:bg-[#2c2c2e] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-surface rounded-xl shadow-lg w-full max-w-md overflow-hidden">
               {/* Modal Header */}
               <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0071e3]/10 flex items-center justify-center">
-                    <UserPlus className="w-5 h-5 text-[#0071e3]" />
+                  <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-brand" />
                   </div>
-                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Add New User</h2>
+                  <h2 className="text-[17px] font-semibold text-ink">Add New User</h2>
                 </div>
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full hover:bg-surface-3 flex items-center justify-center"
                 >
-                  <X className="w-5 h-5 text-[#86868b]" />
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
 
               {/* Modal Body */}
               <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                  <label className="block text-[13px] font-medium text-ink mb-1.5">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                     <input
                       type="email"
                       value={newUserForm.email}
                       onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="user@example.com"
-                      className="w-full h-11 pl-10 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                      className="w-full h-11 pl-10 pr-4 rounded-xl bg-surface border border-hairline-strong text-[15px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                  <label className="block text-[13px] font-medium text-ink mb-1.5">
                     Full Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                     <input
                       type="text"
                       value={newUserForm.displayName}
                       onChange={(e) => setNewUserForm(prev => ({ ...prev, displayName: e.target.value }))}
                       placeholder="John Doe"
-                      className="w-full h-11 pl-10 pr-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                      className="w-full h-11 pl-10 pr-4 rounded-xl bg-surface border border-hairline-strong text-[15px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                  <label className="block text-[13px] font-medium text-ink mb-1.5">
                     Role
                   </label>
                   <select
                     value={newUserForm.role}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, role: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50"
                   >
                     <option value="admin">Admin</option>
                     <option value="director">Director</option>
@@ -1008,7 +1008,7 @@ const PermissionsManager = () => {
                   </select>
                 </div>
 
-                <p className="text-[12px] text-[#86868b]">
+                <p className="text-[12px] text-ink-muted">
                   The user will be able to sign in with Google using this email. They'll get default page access which you can modify after adding.
                 </p>
               </div>
@@ -1017,14 +1017,14 @@ const PermissionsManager = () => {
               <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-white/5">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="h-10 px-4 rounded-xl text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  className="h-10 px-4 rounded-xl text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddUser}
                   disabled={addingUser || !newUserForm.email || !newUserForm.displayName}
-                  className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 h-10 px-5 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {addingUser ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1044,17 +1044,17 @@ const PermissionsManager = () => {
         <>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={() => setUserToRemove(null)} />
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#ffffff] dark:bg-[#2c2c2e] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="bg-surface rounded-xl shadow-lg w-full max-w-sm overflow-hidden">
               {/* Modal Header */}
               <div className="p-5 text-center">
-                <div className="w-16 h-16 rounded-full bg-[#ff3b30]/10 flex items-center justify-center mx-auto mb-4">
-                  <Trash2 className="w-8 h-8 text-[#ff3b30]" />
+                <div className="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="w-8 h-8 text-danger" />
                 </div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+                <h2 className="text-[17px] font-semibold text-ink mb-2">
                   Remove User?
                 </h2>
-                <p className="text-[15px] text-[#86868b]">
-                  Are you sure you want to remove <span className="font-medium text-[#1d1d1f] dark:text-white">{userToRemove.displayName || userToRemove.email}</span>? They will lose access to the platform.
+                <p className="text-[15px] text-ink-muted">
+                  Are you sure you want to remove <span className="font-medium text-ink">{userToRemove.displayName || userToRemove.email}</span>? They will lose access to the platform.
                 </p>
               </div>
 
@@ -1062,14 +1062,14 @@ const PermissionsManager = () => {
               <div className="flex items-center gap-3 p-5 border-t border-gray-200 dark:border-white/5">
                 <button
                   onClick={() => setUserToRemove(null)}
-                  className="flex-1 h-11 rounded-xl text-[15px] font-medium text-[#1d1d1f] dark:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  className="flex-1 h-11 rounded-xl text-[15px] font-medium text-ink bg-surface-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleRemoveUser}
                   disabled={removingUser}
-                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#ff3b30] text-white text-[15px] font-medium hover:bg-[#ff453a] transition-all disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-danger text-white text-[15px] font-medium hover:bg-[#ff453a] transition-all disabled:opacity-50"
                 >
                   {removingUser ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />

@@ -80,10 +80,10 @@ const ClientPasswordReset = () => {
   if (validating) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
+        <div className="max-w-md w-full bg-surface backdrop-blur-xl rounded-xl border border-hairline p-8 shadow-lg">
           <div className="text-center">
-            <div className="w-12 h-12 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-[15px] text-[#86868b]">Verifying reset link...</p>
+            <div className="w-12 h-12 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-[15px] text-ink-muted">Verifying reset link...</p>
           </div>
         </div>
       </div>
@@ -93,20 +93,20 @@ const ClientPasswordReset = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
+        <div className="max-w-md w-full bg-surface backdrop-blur-xl rounded-xl border border-hairline p-8 shadow-lg">
           <div className="text-center">
-            <div className="w-16 h-16 bg-[#34c759]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-[#34c759]" />
+            <div className="w-16 h-16 bg-positive/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-positive" />
             </div>
-            <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-4">
+            <h1 className="text-[22px] font-semibold text-ink mb-4">
               Password Reset Successful!
             </h1>
-            <p className="text-[15px] text-[#86868b] mb-6">
+            <p className="text-[15px] text-ink-muted mb-6">
               Your password has been reset successfully. Redirecting you to sign in...
             </p>
             <button
               onClick={() => navigate('/client-login')}
-              className="px-6 py-3 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors"
+              className="px-6 py-3 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors"
             >
               Go to Sign In
             </button>
@@ -119,20 +119,20 @@ const ClientPasswordReset = () => {
   if (!validCode) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
+        <div className="max-w-md w-full bg-surface backdrop-blur-xl rounded-xl border border-hairline p-8 shadow-lg">
           <div className="text-center">
-            <div className="w-16 h-16 bg-[#ff3b30]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <XCircle className="w-8 h-8 text-[#ff3b30]" />
+            <div className="w-16 h-16 bg-danger/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <XCircle className="w-8 h-8 text-danger" />
             </div>
-            <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-4">
+            <h1 className="text-[22px] font-semibold text-ink mb-4">
               Invalid Reset Link
             </h1>
-            <p className="text-[15px] text-[#86868b] mb-6">
+            <p className="text-[15px] text-ink-muted mb-6">
               {error || 'This password reset link is invalid or has expired.'}
             </p>
             <button
               onClick={() => navigate('/client-login')}
-              className="px-6 py-3 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors"
+              className="px-6 py-3 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors"
             >
               Go to Sign In
             </button>
@@ -144,32 +144,32 @@ const ClientPasswordReset = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f5f5f7] via-white to-[#f5f5f7] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
+      <div className="max-w-md w-full bg-surface backdrop-blur-xl rounded-xl border border-hairline p-8 shadow-lg">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-brand to-brand rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+          <h1 className="text-[22px] font-semibold text-ink mb-2">
             Reset Your Password
           </h1>
-          <p className="text-[15px] text-[#86868b]">
+          <p className="text-[15px] text-ink-muted">
             Enter your new password below
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-[#ff3b30]/10 border border-[#ff3b30]/20 rounded-xl">
-            <p className="text-[#ff3b30] text-[13px]">{error}</p>
+          <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-xl">
+            <p className="text-danger text-[13px]">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleResetPassword} className="space-y-4">
           <div>
-            <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+            <label className="block text-[13px] font-medium text-ink mb-2">
               New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-ink-muted" />
               <input
                 type="password"
                 value={password}
@@ -177,17 +177,17 @@ const ClientPasswordReset = () => {
                 placeholder="Enter new password (min. 6 characters)"
                 required
                 minLength={6}
-                className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+            <label className="block text-[13px] font-medium text-ink mb-2">
               Confirm New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-ink-muted" />
               <input
                 type="password"
                 value={confirmPassword}
@@ -195,7 +195,7 @@ const ClientPasswordReset = () => {
                 placeholder="Confirm new password"
                 required
                 minLength={6}
-                className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
           </div>
@@ -203,7 +203,7 @@ const ClientPasswordReset = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Resetting Password...' : 'Reset Password'}
           </button>
@@ -212,18 +212,18 @@ const ClientPasswordReset = () => {
         <div className="mt-6 text-center">
           <button
             onClick={() => navigate('/client-login')}
-            className="text-[13px] text-[#0071e3] hover:text-[#0077ed] font-medium"
+            className="text-[13px] text-brand hover:text-brand-hover font-medium"
           >
             Back to Sign In
           </button>
         </div>
 
-        <div className="mt-8 p-4 bg-[#0071e3]/5 rounded-xl border border-[#0071e3]/20">
+        <div className="mt-8 p-4 bg-brand/5 rounded-xl border border-brand/20">
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-[#0071e3] mt-0.5 flex-shrink-0" />
+            <Shield className="w-5 h-5 text-brand mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-[13px] text-[#0071e3] font-medium">Security Note</p>
-              <p className="text-[11px] text-[#0071e3]/80 mt-1">
+              <p className="text-[13px] text-brand font-medium">Security Note</p>
+              <p className="text-[11px] text-brand/80 mt-1">
                 Password reset links expire after 1 hour. Make sure to use a strong password.
               </p>
             </div>

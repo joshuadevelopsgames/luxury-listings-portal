@@ -32,36 +32,36 @@ const ClientOverviewWidget = () => {
     const packageSize = client.packageSize || 12;
     const percentage = packageSize ? (postsRemaining / packageSize) * 100 : 0;
     
-    if (percentage <= 20) return { color: 'bg-[#ff3b30]', label: 'Low' };
-    if (percentage <= 50) return { color: 'bg-[#ff9500]', label: 'Medium' };
-    return { color: 'bg-[#34c759]', label: 'Good' };
+    if (percentage <= 20) return { color: 'bg-danger', label: 'Low' };
+    if (percentage <= 50) return { color: 'bg-warning', label: 'Medium' };
+    return { color: 'bg-positive', label: 'Good' };
   };
 
   if (loading) {
     return (
-      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
+      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
         <div className="space-y-3">
-          <div className="h-12 w-full bg-black/5 dark:bg-white/5 rounded" />
-          <div className="h-12 w-full bg-black/5 dark:bg-white/5 rounded" />
+          <div className="h-12 w-full bg-surface-3 rounded" />
+          <div className="h-12 w-full bg-surface-3 rounded" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10">
+    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#0071e3]/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center shadow-lg shadow-brand/20">
             <Users className="w-4 h-4 text-white" strokeWidth={1.5} />
           </div>
-          <h3 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white">My Clients</h3>
+          <h3 className="font-semibold text-[15px] text-ink">My Clients</h3>
         </div>
         <button
           onClick={() => navigate('/my-clients')}
-          className="text-[13px] text-[#0071e3] hover:text-[#0077ed] font-medium flex items-center gap-1 transition-colors"
+          className="text-[13px] text-brand hover:text-brand-hover font-medium flex items-center gap-1 transition-colors"
         >
           View All
           <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
@@ -70,7 +70,7 @@ const ClientOverviewWidget = () => {
 
       {/* Client List */}
       {clients.length === 0 ? (
-        <p className="text-[13px] text-[#86868b] text-center py-4">
+        <p className="text-[13px] text-ink-muted text-center py-4">
           No clients assigned to you yet
         </p>
       ) : (
@@ -92,18 +92,18 @@ const ClientOverviewWidget = () => {
                     <ClientLink client={client} />
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-[#86868b]">{client.packageType || 'Standard'}</span>
+                    <span className="text-[11px] text-ink-muted">{client.packageType || 'Standard'}</span>
                     <div className={`w-2 h-2 rounded-full ${health.color}`} title={health.label} />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-surface-3 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-[#0071e3] rounded-full transition-all"
+                      className="h-full bg-brand rounded-full transition-all"
                       style={{ width: `${Math.min(progress, 100)}%` }}
                     />
                   </div>
-                  <span className="text-[11px] text-[#86868b] whitespace-nowrap">
+                  <span className="text-[11px] text-ink-muted whitespace-nowrap">
                     {postsUsed}/{packageSize}
                   </span>
                 </div>

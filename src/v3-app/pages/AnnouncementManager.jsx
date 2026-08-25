@@ -28,17 +28,17 @@ import { toast } from 'react-hot-toast';
 
 // ── Type options ──────────────────────────────────────────────────────────────
 const ANNOUNCEMENT_TYPES = [
-  { value: 'info',    label: 'Info',    icon: Info,          color: '#0071e3' },
-  { value: 'warning', label: 'Warning', icon: AlertTriangle, color: '#ff9500' },
-  { value: 'success', label: 'Success', icon: CheckCircle,   color: '#34c759' },
-  { value: 'urgent',  label: 'Urgent',  icon: AlertCircle,   color: '#ff3b30' },
+  { value: 'info',    label: 'Info',    icon: Info,          color: 'var(--ds-info)' },
+  { value: 'warning', label: 'Warning', icon: AlertTriangle, color: 'var(--ds-warning)' },
+  { value: 'success', label: 'Success', icon: CheckCircle,   color: 'var(--ds-positive)' },
+  { value: 'urgent',  label: 'Urgent',  icon: AlertCircle,   color: 'var(--ds-danger)' },
 ];
 
 const TYPE_STYLES = {
-  info:    { bg: 'bg-[#0071e3]/10', border: 'border-[#0071e3]/20', text: 'text-[#0071e3]', icon: Info },
-  warning: { bg: 'bg-[#ff9500]/10', border: 'border-[#ff9500]/20', text: 'text-[#ff9500]', icon: AlertTriangle },
-  success: { bg: 'bg-[#34c759]/10', border: 'border-[#34c759]/20', text: 'text-[#34c759]', icon: CheckCircle },
-  urgent:  { bg: 'bg-[#ff3b30]/10', border: 'border-[#ff3b30]/20', text: 'text-[#ff3b30]', icon: AlertCircle },
+  info:    { bg: 'bg-brand/10', border: 'border-brand/20', text: 'text-brand', icon: Info },
+  warning: { bg: 'bg-warning/10', border: 'border-warning/20', text: 'text-warning', icon: AlertTriangle },
+  success: { bg: 'bg-positive/10', border: 'border-positive/20', text: 'text-positive', icon: CheckCircle },
+  urgent:  { bg: 'bg-danger/10', border: 'border-danger/20', text: 'text-danger', icon: AlertCircle },
 };
 
 // ── Blank form ────────────────────────────────────────────────────────────────
@@ -194,9 +194,9 @@ const AnnouncementManager = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <Shield className="w-16 h-16 text-[#ff3b30] mx-auto mb-4" />
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Access Denied</h2>
-          <p className="text-[#86868b]">Only system administrators can manage announcements.</p>
+          <Shield className="w-16 h-16 text-danger mx-auto mb-4" />
+          <h2 className="text-[22px] font-semibold text-ink mb-2">Access Denied</h2>
+          <p className="text-ink-muted">Only system administrators can manage announcements.</p>
         </div>
       </div>
     );
@@ -209,22 +209,22 @@ const AnnouncementManager = () => {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">
+            <h1 className="text-[28px] font-semibold text-ink tracking-[-0.02em]">
               Announcements
             </h1>
             {!loading && (
-              <span className="px-3 py-1 rounded-full bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-semibold">
+              <span className="px-3 py-1 rounded-full bg-brand/10 text-brand text-[13px] font-semibold">
                 {announcements.length}
               </span>
             )}
           </div>
-          <p className="text-[15px] text-[#86868b]">
+          <p className="text-[15px] text-ink-muted">
             Create site-wide banners visible to all team members
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all"
+          className="flex items-center gap-2 h-10 px-4 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all"
         >
           <Plus className="w-4 h-4" />
           New Announcement
@@ -235,14 +235,14 @@ const AnnouncementManager = () => {
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-black/5 dark:bg-white/5 animate-pulse" />
+            <div key={i} className="h-20 rounded-xl bg-surface-3 animate-pulse" />
           ))}
         </div>
       ) : announcements.length === 0 ? (
         <div className="text-center py-16">
-          <Megaphone className="w-12 h-12 text-[#86868b] mx-auto mb-4" />
-          <p className="text-[#86868b] text-[15px]">No announcements yet</p>
-          <p className="text-[#86868b] text-[13px] mt-1">Create one to broadcast a message to all users</p>
+          <Megaphone className="w-12 h-12 text-ink-muted mx-auto mb-4" />
+          <p className="text-ink-muted text-[15px]">No announcements yet</p>
+          <p className="text-ink-muted text-[13px] mt-1">Create one to broadcast a message to all users</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -254,9 +254,9 @@ const AnnouncementManager = () => {
             return (
               <div
                 key={a.id}
-                className={`rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border transition-all ${
+                className={`rounded-xl bg-surface border transition-all ${
                   isExpanded
-                    ? 'border-[#0071e3]/30 shadow-lg'
+                    ? 'border-brand/30 shadow-lg'
                     : 'border-gray-200 dark:border-white/5 hover:shadow-md'
                 }`}
               >
@@ -271,30 +271,30 @@ const AnnouncementManager = () => {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">
+                        <span className="text-[15px] font-semibold text-ink truncate">
                           {a.title || a.message?.slice(0, 60)}
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                           a.active
-                            ? 'bg-[#34c759]/10 text-[#34c759]'
-                            : 'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                            ? 'bg-positive/10 text-positive'
+                            : 'bg-surface-3 text-ink-muted'
                         }`}>
                           {a.active ? 'Active' : 'Inactive'}
                         </span>
                       </div>
-                      <p className="text-[13px] text-[#86868b] truncate max-w-md">
+                      <p className="text-[13px] text-ink-muted truncate max-w-md">
                         {a.message}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-[12px] text-[#86868b] hidden sm:block">
+                    <span className="text-[12px] text-ink-muted hidden sm:block">
                       {formatDate(a.createdAt)}
                     </span>
                     {isExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-[#86868b]" />
+                      <ChevronDown className="w-5 h-5 text-ink-muted" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-[#86868b]" />
+                      <ChevronRight className="w-5 h-5 text-ink-muted" />
                     )}
                   </div>
                 </div>
@@ -304,7 +304,7 @@ const AnnouncementManager = () => {
                   <div className="px-4 pb-4 border-t border-gray-200 dark:border-white/5 space-y-4">
                     {/* Live preview */}
                     <div className="mt-4">
-                      <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide mb-2 block">Preview</span>
+                      <span className="text-[12px] font-medium text-ink-muted uppercase tracking-wide mb-2 block">Preview</span>
                       <div className={`${style.bg} ${style.border} border rounded-xl py-2.5 px-4`}>
                         <div className="flex items-center gap-3">
                           <Icon className={`w-4 h-4 flex-shrink-0 ${style.text}`} />
@@ -312,7 +312,7 @@ const AnnouncementManager = () => {
                             {a.title && (
                               <span className={`text-[13px] font-semibold ${style.text}`}>{a.title}</span>
                             )}
-                            <span className="text-[13px] text-[#1d1d1f] dark:text-[#f5f5f7] truncate">{a.message}</span>
+                            <span className="text-[13px] text-ink truncate">{a.message}</span>
                           </div>
                           {a.linkUrl && (
                             <span className={`flex items-center gap-1 text-[12px] font-medium ${style.text}`}>
@@ -321,7 +321,7 @@ const AnnouncementManager = () => {
                             </span>
                           )}
                           {a.dismissible !== false && (
-                            <X className="w-3.5 h-3.5 text-[#86868b]" />
+                            <X className="w-3.5 h-3.5 text-ink-muted" />
                           )}
                         </div>
                       </div>
@@ -330,28 +330,28 @@ const AnnouncementManager = () => {
                     {/* Metadata */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
                       <div>
-                        <span className="text-[#86868b] block">Type</span>
+                        <span className="text-ink-muted block">Type</span>
                         <span className={`font-medium ${style.text} capitalize`}>{a.type}</span>
                       </div>
                       <div>
-                        <span className="text-[#86868b] block">Dismissible</span>
-                        <span className="font-medium text-[#1d1d1f] dark:text-white">{a.dismissible !== false ? 'Yes' : 'No'}</span>
+                        <span className="text-ink-muted block">Dismissible</span>
+                        <span className="font-medium text-ink">{a.dismissible !== false ? 'Yes' : 'No'}</span>
                       </div>
                       <div>
-                        <span className="text-[#86868b] block">Priority</span>
-                        <span className="font-medium text-[#1d1d1f] dark:text-white">{a.priority || 0}</span>
+                        <span className="text-ink-muted block">Priority</span>
+                        <span className="font-medium text-ink">{a.priority || 0}</span>
                       </div>
                       <div>
-                        <span className="text-[#86868b] block">Expires</span>
-                        <span className="font-medium text-[#1d1d1f] dark:text-white">
+                        <span className="text-ink-muted block">Expires</span>
+                        <span className="font-medium text-ink">
                           {a.expiresAt ? formatDate(a.expiresAt) : 'Never'}
                         </span>
                       </div>
                     </div>
                     {a.linkUrl && (
                       <div className="text-[12px]">
-                        <span className="text-[#86868b] block">Link</span>
-                        <a href={a.linkUrl} target="_blank" rel="noopener noreferrer" className="text-[#0071e3] hover:underline break-all">
+                        <span className="text-ink-muted block">Link</span>
+                        <a href={a.linkUrl} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline break-all">
                           {a.linkUrl}
                         </a>
                       </div>
@@ -364,8 +364,8 @@ const AnnouncementManager = () => {
                           onClick={() => toggleActive(a)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
                             a.active
-                              ? 'bg-[#86868b]/10 text-[#86868b] hover:bg-[#86868b]/20'
-                              : 'bg-[#34c759]/10 text-[#34c759] hover:bg-[#34c759]/20'
+                              ? 'bg-ink-muted/10 text-ink-muted hover:bg-ink-muted/20'
+                              : 'bg-positive/10 text-positive hover:bg-positive/20'
                           }`}
                         >
                           {a.active ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -373,7 +373,7 @@ const AnnouncementManager = () => {
                         </button>
                         <button
                           onClick={() => openEdit(a)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand/10 text-brand text-[13px] font-medium hover:bg-brand/20 transition-colors"
                         >
                           <Save className="w-3.5 h-3.5" />
                           Edit
@@ -381,7 +381,7 @@ const AnnouncementManager = () => {
                       </div>
                       <button
                         onClick={() => setDeleteTarget(a)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors text-[13px] font-medium"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-danger hover:bg-danger/10 transition-colors text-[13px] font-medium"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Delete
@@ -400,22 +400,22 @@ const AnnouncementManager = () => {
         <>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={() => setShowCreateModal(false)} />
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#ffffff] dark:bg-[#2c2c2e] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-surface rounded-xl shadow-lg w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
               {/* Modal header */}
               <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-white/5 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0071e3]/10 flex items-center justify-center">
-                    <Megaphone className="w-5 h-5 text-[#0071e3]" />
+                  <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                    <Megaphone className="w-5 h-5 text-brand" />
                   </div>
-                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                  <h2 className="text-[17px] font-semibold text-ink">
                     {editingId ? 'Edit Announcement' : 'New Announcement'}
                   </h2>
                 </div>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full hover:bg-surface-3 flex items-center justify-center"
                 >
-                  <X className="w-5 h-5 text-[#86868b]" />
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
 
@@ -423,35 +423,35 @@ const AnnouncementManager = () => {
               <div className="p-5 space-y-4 overflow-y-auto flex-1">
                 {/* Title */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
-                    Title <span className="text-[#86868b] font-normal">(optional headline)</span>
+                  <label className="block text-[13px] font-medium text-ink mb-1.5">
+                    Title <span className="text-ink-muted font-normal">(optional headline)</span>
                   </label>
                   <input
                     type="text"
                     value={form.title}
                     onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
                     placeholder="e.g. Scheduled Maintenance"
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[15px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
                   />
                 </div>
 
                 {/* Message */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
-                    Message <span className="text-[#ff3b30]">*</span>
+                  <label className="block text-[13px] font-medium text-ink mb-1.5">
+                    Message <span className="text-danger">*</span>
                   </label>
                   <textarea
                     value={form.message}
                     onChange={(e) => setForm(p => ({ ...p, message: e.target.value }))}
                     placeholder="The message all users will see..."
                     rows={3}
-                    className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[15px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 resize-none"
+                    className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-[15px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50 resize-none"
                   />
                 </div>
 
                 {/* Type selector */}
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">Type</label>
+                  <label className="block text-[13px] font-medium text-ink mb-1.5">Type</label>
                   <div className="grid grid-cols-4 gap-2">
                     {ANNOUNCEMENT_TYPES.map((t) => {
                       const selected = form.type === t.value;
@@ -464,12 +464,12 @@ const AnnouncementManager = () => {
                           className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
                             selected
                               ? `border-[${t.color}]/30 bg-[${t.color}]/10`
-                              : 'border-transparent bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/5 dark:hover:bg-white/5'
+                              : 'border-transparent bg-black/[0.02] dark:bg-white/[0.02] hover:bg-surface-3'
                           }`}
                           style={selected ? { borderColor: `${t.color}33`, backgroundColor: `${t.color}1a` } : {}}
                         >
                           <TIcon className="w-5 h-5" style={{ color: t.color }} />
-                          <span className="text-[12px] font-medium" style={selected ? { color: t.color } : { color: '#86868b' }}>
+                          <span className="text-[12px] font-medium" style={selected ? { color: t.color } : { color: 'var(--ds-ink-muted)' }}>
                             {t.label}
                           </span>
                         </button>
@@ -481,7 +481,7 @@ const AnnouncementManager = () => {
                 {/* Row: link URL + link text */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                    <label className="block text-[13px] font-medium text-ink mb-1.5">
                       <LinkIcon className="w-3 h-3 inline mr-1" />Link URL
                     </label>
                     <input
@@ -489,11 +489,11 @@ const AnnouncementManager = () => {
                       value={form.linkUrl}
                       onChange={(e) => setForm(p => ({ ...p, linkUrl: e.target.value }))}
                       placeholder="https://..."
-                      className="w-full h-10 px-3 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[13px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                      className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                    <label className="block text-[13px] font-medium text-ink mb-1.5">
                       Link Text
                     </label>
                     <input
@@ -501,7 +501,7 @@ const AnnouncementManager = () => {
                       value={form.linkText}
                       onChange={(e) => setForm(p => ({ ...p, linkText: e.target.value }))}
                       placeholder="Learn more"
-                      className="w-full h-10 px-3 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[13px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                      className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
                     />
                   </div>
                 </div>
@@ -509,18 +509,18 @@ const AnnouncementManager = () => {
                 {/* Row: expiry + priority */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                    <label className="block text-[13px] font-medium text-ink mb-1.5">
                       <Calendar className="w-3 h-3 inline mr-1" />Expires At
                     </label>
                     <input
                       type="datetime-local"
                       value={form.expiresAt}
                       onChange={(e) => setForm(p => ({ ...p, expiresAt: e.target.value }))}
-                      className="w-full h-10 px-3 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                      className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-1.5">
+                    <label className="block text-[13px] font-medium text-ink mb-1.5">
                       <GripVertical className="w-3 h-3 inline mr-1" />Priority
                     </label>
                     <input
@@ -529,9 +529,9 @@ const AnnouncementManager = () => {
                       onChange={(e) => setForm(p => ({ ...p, priority: e.target.value }))}
                       min={0}
                       max={100}
-                      className="w-full h-10 px-3 rounded-xl bg-black/5 dark:bg-white/5 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50"
+                      className="w-full h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-brand/50"
                     />
-                    <p className="text-[11px] text-[#86868b] mt-1">Higher = shown first</p>
+                    <p className="text-[11px] text-ink-muted mt-1">Higher = shown first</p>
                   </div>
                 </div>
 
@@ -543,15 +543,15 @@ const AnnouncementManager = () => {
                       role="switch"
                       aria-checked={form.dismissible}
                       onClick={() => setForm(p => ({ ...p, dismissible: !p.dismissible }))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 ${
-                        form.dismissible ? 'bg-[#34c759]' : 'bg-black/20 dark:bg-white/20'
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-brand/50 ${
+                        form.dismissible ? 'bg-positive' : 'bg-black/20 dark:bg-white/20'
                       }`}
                     >
                       <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
                         form.dismissible ? 'translate-x-5' : 'translate-x-0'
                       }`} />
                     </button>
-                    <span className="text-[13px] text-[#1d1d1f] dark:text-white">Dismissible</span>
+                    <span className="text-[13px] text-ink">Dismissible</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <button
@@ -559,22 +559,22 @@ const AnnouncementManager = () => {
                       role="switch"
                       aria-checked={form.active}
                       onClick={() => setForm(p => ({ ...p, active: !p.active }))}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0071e3]/50 ${
-                        form.active ? 'bg-[#34c759]' : 'bg-black/20 dark:bg-white/20'
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-brand/50 ${
+                        form.active ? 'bg-positive' : 'bg-black/20 dark:bg-white/20'
                       }`}
                     >
                       <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
                         form.active ? 'translate-x-5' : 'translate-x-0'
                       }`} />
                     </button>
-                    <span className="text-[13px] text-[#1d1d1f] dark:text-white">Active immediately</span>
+                    <span className="text-[13px] text-ink">Active immediately</span>
                   </label>
                 </div>
 
                 {/* Live preview */}
                 {form.message && (
                   <div>
-                    <span className="text-[12px] font-medium text-[#86868b] uppercase tracking-wide mb-2 block">Live Preview</span>
+                    <span className="text-[12px] font-medium text-ink-muted uppercase tracking-wide mb-2 block">Live Preview</span>
                     {(() => {
                       const ps = TYPE_STYLES[form.type] || TYPE_STYLES.info;
                       const PIcon = ps.icon;
@@ -584,7 +584,7 @@ const AnnouncementManager = () => {
                             <PIcon className={`w-4 h-4 flex-shrink-0 ${ps.text}`} />
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               {form.title && <span className={`text-[13px] font-semibold ${ps.text}`}>{form.title}</span>}
-                              <span className="text-[13px] text-[#1d1d1f] dark:text-[#f5f5f7] truncate">{form.message}</span>
+                              <span className="text-[13px] text-ink truncate">{form.message}</span>
                             </div>
                             {form.linkUrl && (
                               <span className={`flex items-center gap-1 text-[12px] font-medium ${ps.text}`}>
@@ -592,7 +592,7 @@ const AnnouncementManager = () => {
                                 <ExternalLink className="w-3 h-3" />
                               </span>
                             )}
-                            {form.dismissible && <X className="w-3.5 h-3.5 text-[#86868b]" />}
+                            {form.dismissible && <X className="w-3.5 h-3.5 text-ink-muted" />}
                           </div>
                         </div>
                       );
@@ -605,14 +605,14 @@ const AnnouncementManager = () => {
               <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-white/5 flex-shrink-0">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="h-10 px-4 rounded-xl text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                  className="h-10 px-4 rounded-xl text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving || !form.message.trim()}
-                  className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 h-10 px-5 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
                   {editingId ? 'Update' : 'Publish'}
@@ -628,29 +628,29 @@ const AnnouncementManager = () => {
         <>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" onClick={() => setDeleteTarget(null)} />
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#ffffff] dark:bg-[#2c2c2e] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="bg-surface rounded-xl shadow-lg w-full max-w-sm overflow-hidden">
               <div className="p-5 text-center">
-                <div className="w-16 h-16 rounded-full bg-[#ff3b30]/10 flex items-center justify-center mx-auto mb-4">
-                  <Trash2 className="w-8 h-8 text-[#ff3b30]" />
+                <div className="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-4">
+                  <Trash2 className="w-8 h-8 text-danger" />
                 </div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+                <h2 className="text-[17px] font-semibold text-ink mb-2">
                   Delete Announcement?
                 </h2>
-                <p className="text-[15px] text-[#86868b]">
+                <p className="text-[15px] text-ink-muted">
                   This will permanently remove "{deleteTarget.title || deleteTarget.message?.slice(0, 40)}".
                 </p>
               </div>
               <div className="flex items-center gap-3 p-5 border-t border-gray-200 dark:border-white/5">
                 <button
                   onClick={() => setDeleteTarget(null)}
-                  className="flex-1 h-11 rounded-xl text-[15px] font-medium text-[#1d1d1f] dark:text-white bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  className="flex-1 h-11 rounded-xl text-[15px] font-medium text-ink bg-surface-3 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#ff3b30] text-white text-[15px] font-medium hover:bg-[#ff453a] transition-all disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-danger text-white text-[15px] font-medium hover:bg-[#ff453a] transition-all disabled:opacity-50"
                 >
                   {deleting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   Delete

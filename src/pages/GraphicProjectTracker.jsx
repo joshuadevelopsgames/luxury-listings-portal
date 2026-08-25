@@ -46,22 +46,22 @@ import { format, parseISO, getYear } from 'date-fns';
 // Priority configuration with Apple-style colors
 const priorityConfig = {
   high: { 
-    bg: 'bg-[#ff3b30]/10 dark:bg-[#ff453a]/20', 
-    text: 'text-[#ff3b30] dark:text-[#ff453a]', 
+    bg: 'bg-danger/10 dark:bg-[#ff453a]/20', 
+    text: 'text-danger dark:text-[#ff453a]', 
     label: 'High',
-    dot: 'bg-[#ff3b30]'
+    dot: 'bg-danger'
   },
   medium: { 
-    bg: 'bg-[#ff9500]/10 dark:bg-[#ff9f0a]/20', 
-    text: 'text-[#ff9500] dark:text-[#ff9f0a]', 
+    bg: 'bg-warning/10 dark:bg-[#ff9f0a]/20', 
+    text: 'text-warning dark:text-[#ff9f0a]', 
     label: 'Medium',
-    dot: 'bg-[#ff9500]'
+    dot: 'bg-warning'
   },
   low: { 
-    bg: 'bg-[#34c759]/10 dark:bg-[#30d158]/20', 
-    text: 'text-[#34c759] dark:text-[#30d158]', 
+    bg: 'bg-positive/10 dark:bg-positive/20', 
+    text: 'text-positive dark:text-positive', 
     label: 'Low',
-    dot: 'bg-[#34c759]'
+    dot: 'bg-positive'
   }
 };
 
@@ -75,22 +75,22 @@ const statusConfig = {
     color: '#8e8e93'
   },
   in_progress: { 
-    bg: 'bg-[#007aff]/10 dark:bg-[#0a84ff]/20', 
-    text: 'text-[#007aff] dark:text-[#0a84ff]', 
+    bg: 'bg-brand/10 dark:bg-[#0a84ff]/20', 
+    text: 'text-brand dark:text-[#0a84ff]', 
     label: 'In Progress', 
     icon: Loader2,
     color: '#007aff'
   },
   pending: { 
-    bg: 'bg-[#ff9500]/10 dark:bg-[#ff9f0a]/20', 
-    text: 'text-[#ff9500] dark:text-[#ff9f0a]', 
+    bg: 'bg-warning/10 dark:bg-[#ff9f0a]/20', 
+    text: 'text-warning dark:text-[#ff9f0a]', 
     label: 'Pending', 
     icon: Clock,
     color: '#ff9500'
   },
   completed: { 
-    bg: 'bg-[#34c759]/10 dark:bg-[#30d158]/20', 
-    text: 'text-[#34c759] dark:text-[#30d158]', 
+    bg: 'bg-positive/10 dark:bg-positive/20', 
+    text: 'text-positive dark:text-positive', 
     label: 'Completed', 
     icon: CheckCircle2,
     color: '#34c759'
@@ -747,20 +747,20 @@ const GraphicProjectTracker = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] dark:bg-[#1d1d1f]">
+    <div className="min-h-screen bg-surface-2 dark:bg-ink">
       {/* Header with backdrop blur */}
-      <div className="sticky top-0 z-10 bg-[#f5f5f7]/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
+      <div className="sticky top-0 z-10 bg-surface-2 dark:bg-ink/80 backdrop-blur-xl border-b border-hairline">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#af52de] to-[#5856d6] flex items-center justify-center shadow-lg shadow-[#af52de]/25">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center shadow-lg shadow-brand/25">
                 <Palette className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-[22px] sm:text-[28px] font-bold text-[#1d1d1f] dark:text-white tracking-tight">
+                <h1 className="text-[22px] sm:text-[28px] font-bold text-ink tracking-tight">
                   Team Projects
                 </h1>
-                <p className="text-[13px] text-[#86868b]">
+                <p className="text-[13px] text-ink-muted">
                   Design Team • {stats.total} projects
                 </p>
               </div>
@@ -768,7 +768,7 @@ const GraphicProjectTracker = () => {
             <div className="flex items-center gap-2">
               {/* Show pending requests count for designers */}
               {currentTeamMember && projectRequests.length > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#ff9500]/10 text-[#ff9500]">
+                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-warning/10 text-warning">
                   <AlertCircle className="w-4 h-4" />
                   <span className="text-[13px] font-medium">{projectRequests.length} pending</span>
                 </div>
@@ -781,7 +781,7 @@ const GraphicProjectTracker = () => {
                     resetForm();
                     setShowAddModal(true);
                   }}
-                  className="h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2"
+                  className="h-10 px-4 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Project</span>
@@ -802,8 +802,8 @@ const GraphicProjectTracker = () => {
               onClick={() => setSelectedYear(year)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] font-medium transition-all whitespace-nowrap ${
                 selectedYear === year
-                  ? 'bg-[#0071e3] text-white'
-                  : 'bg-white dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 border border-black/5 dark:border-white/10'
+                  ? 'bg-brand text-white'
+                  : 'bg-white dark:bg-white/10 text-ink hover:bg-black/5 dark:hover:bg-white/15 border border-hairline'
               }`}
             >
               {year === currentYear ? (
@@ -823,96 +823,96 @@ const GraphicProjectTracker = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+          <div className="bg-surface backdrop-blur-xl rounded-xl p-4 border border-hairline">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-[#1d1d1f]/10 dark:bg-white/10 flex items-center justify-center">
-                <Palette className="w-3.5 h-3.5 text-[#1d1d1f] dark:text-white" />
+              <div className="w-6 h-6 rounded-lg bg-ink/10 dark:bg-white/10 flex items-center justify-center">
+                <Palette className="w-3.5 h-3.5 text-ink" />
               </div>
-              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Total</p>
+              <p className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">Total</p>
             </div>
-            <p className="text-[28px] font-bold text-[#1d1d1f] dark:text-white">{stats.total}</p>
+            <p className="text-[28px] font-bold text-ink">{stats.total}</p>
           </div>
-          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+          <div className="bg-surface backdrop-blur-xl rounded-xl p-4 border border-hairline">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-[#34c759]/10 flex items-center justify-center">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#34c759]" />
+              <div className="w-6 h-6 rounded-lg bg-positive/10 flex items-center justify-center">
+                <CheckCircle2 className="w-3.5 h-3.5 text-positive" />
               </div>
-              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Done</p>
+              <p className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">Done</p>
             </div>
-            <p className="text-[28px] font-bold text-[#34c759]">{stats.completed}</p>
+            <p className="text-[28px] font-bold text-positive">{stats.completed}</p>
           </div>
-          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+          <div className="bg-surface backdrop-blur-xl rounded-xl p-4 border border-hairline">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-[#007aff]/10 flex items-center justify-center">
-                <Loader2 className="w-3.5 h-3.5 text-[#007aff]" />
+              <div className="w-6 h-6 rounded-lg bg-brand/10 flex items-center justify-center">
+                <Loader2 className="w-3.5 h-3.5 text-brand" />
               </div>
-              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Active</p>
+              <p className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">Active</p>
             </div>
-            <p className="text-[28px] font-bold text-[#007aff]">{stats.inProgress}</p>
+            <p className="text-[28px] font-bold text-brand">{stats.inProgress}</p>
           </div>
-          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+          <div className="bg-surface backdrop-blur-xl rounded-xl p-4 border border-hairline">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-[#ff9500]/10 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 text-[#ff9500]" />
+              <div className="w-6 h-6 rounded-lg bg-warning/10 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-warning" />
               </div>
-              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Pending</p>
+              <p className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">Pending</p>
             </div>
-            <p className="text-[28px] font-bold text-[#ff9500]">{stats.pending}</p>
+            <p className="text-[28px] font-bold text-warning">{stats.pending}</p>
           </div>
-          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+          <div className="bg-surface backdrop-blur-xl rounded-xl p-4 border border-hairline">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-lg bg-[#af52de]/10 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 text-[#af52de]" />
+              <div className="w-6 h-6 rounded-lg bg-brand/10 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-brand" />
               </div>
-              <p className="text-[11px] uppercase tracking-wider text-[#86868b] font-medium">Hours</p>
+              <p className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">Hours</p>
             </div>
-            <p className="text-[28px] font-bold text-[#af52de]">{stats.totalHours.toFixed(0)}</p>
+            <p className="text-[28px] font-bold text-brand">{stats.totalHours.toFixed(0)}</p>
           </div>
         </div>
 
         {/* Pending Project Requests - Only show to designers */}
         {currentTeamMember && projectRequests.length > 0 && (
-          <div className="bg-gradient-to-r from-[#ff9500]/10 to-[#ff3b30]/10 backdrop-blur-xl rounded-2xl p-5 border border-[#ff9500]/20">
+          <div className="bg-gradient-to-r from-warning/10 to-danger/10 backdrop-blur-xl rounded-xl p-5 border border-warning/20">
             <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 text-[#ff9500]" />
-              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+              <AlertCircle className="w-5 h-5 text-warning" />
+              <h3 className="text-[15px] font-semibold text-ink">
                 Pending Project Requests ({projectRequests.length})
               </h3>
             </div>
             <div className="space-y-3">
               {projectRequests.map(request => (
-                <div key={request.id} className="bg-white/80 dark:bg-white/10 rounded-xl p-4 border border-black/5 dark:border-white/10">
+                <div key={request.id} className="bg-white/80 dark:bg-white/10 rounded-xl p-4 border border-hairline">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">{request.task}</h4>
+                        <h4 className="text-[14px] font-semibold text-ink">{request.task}</h4>
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${
-                          request.priority === 'high' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
-                          request.priority === 'medium' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                          'bg-[#34c759]/10 text-[#34c759]'
+                          request.priority === 'high' ? 'bg-danger/10 text-danger' :
+                          request.priority === 'medium' ? 'bg-warning/10 text-warning' :
+                          'bg-positive/10 text-positive'
                         }`}>
                           {request.priority}
                         </span>
                       </div>
-                      <p className="text-[12px] text-[#86868b] mb-1">
-                        <span className="font-medium text-[#1d1d1f] dark:text-white">{request.client}</span>
+                      <p className="text-[12px] text-ink-muted mb-1">
+                        <span className="font-medium text-ink">{request.client}</span>
                         {' • '}Requested by {request.fromUserName}
                       </p>
-                      <div className="flex items-center gap-3 text-[11px] text-[#86868b]">
+                      <div className="flex items-center gap-3 text-[11px] text-ink-muted">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           Deadline: {request.deadline ? format(parseISO(request.deadline), 'MMM d, yyyy') : 'Not set'}
                         </span>
                       </div>
                       {request.notes && (
-                        <p className="text-[12px] text-[#86868b] mt-2 italic">"{request.notes}"</p>
+                        <p className="text-[12px] text-ink-muted mt-2 italic">"{request.notes}"</p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleAcceptRequest(request)}
                         disabled={processingRequestId === request.id}
-                        className="h-9 px-4 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-all disabled:opacity-50 flex items-center gap-1.5"
+                        className="h-9 px-4 rounded-lg bg-positive text-white text-[12px] font-medium hover:bg-positive transition-all disabled:opacity-50 flex items-center gap-1.5"
                       >
                         {processingRequestId === request.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -924,7 +924,7 @@ const GraphicProjectTracker = () => {
                       <button
                         onClick={() => setDeclineRequestModal({ open: true, request, reason: '' })}
                         disabled={processingRequestId === request.id}
-                        className="h-9 px-4 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                        className="h-9 px-4 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-all disabled:opacity-50 flex items-center gap-1.5"
                       >
                         <X className="w-3.5 h-3.5" />
                         Decline
@@ -940,24 +940,24 @@ const GraphicProjectTracker = () => {
         {/* Decline project request reason modal */}
         {declineRequestModal.open && declineRequestModal.request && createPortal(
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-            <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl p-6">
+            <div className="bg-surface rounded-xl max-w-md w-full border border-hairline-strong shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Decline request</h3>
-                <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <h3 className="text-[17px] font-semibold text-ink">Decline request</h3>
+                <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="p-2 rounded-lg hover:bg-surface-3">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
-              <p className="text-[13px] text-[#86868b] dark:text-gray-400 mb-3">Why are you declining this request? (Optional)</p>
+              <p className="text-[13px] text-ink-muted dark:text-gray-400 mb-3">Why are you declining this request? (Optional)</p>
               <textarea
                 value={declineRequestModal.reason}
                 onChange={(e) => setDeclineRequestModal(prev => ({ ...prev, reason: e.target.value }))}
                 placeholder="Reason for declining..."
-                className="w-full px-3 py-2 border border-black/10 dark:border-white/10 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full px-3 py-2 border border-hairline-strong rounded-xl bg-surface-3 text-ink placeholder-ink-muted min-h-[80px] focus:outline-none focus:ring-2 focus:ring-brand"
                 autoFocus
               />
               <div className="flex gap-2 mt-4">
-                <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15">Cancel</button>
-                <button type="button" onClick={() => handleRejectRequest(declineRequestModal.request, declineRequestModal.reason)} className="flex-1 px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e5342b]">Decline</button>
+                <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="flex-1 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">Cancel</button>
+                <button type="button" onClick={() => handleRejectRequest(declineRequestModal.request, declineRequestModal.reason)} className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e5342b]">Decline</button>
               </div>
             </div>
           </div>,
@@ -965,17 +965,17 @@ const GraphicProjectTracker = () => {
         )}
 
         {/* Filters Bar */}
-        <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-black/5 dark:border-white/10">
+        <div className="bg-surface backdrop-blur-xl rounded-xl p-4 border border-hairline">
           <div className="flex flex-col lg:flex-row gap-3">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
               <input
                 type="text"
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="w-full h-10 pl-10 pr-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             
@@ -987,8 +987,8 @@ const GraphicProjectTracker = () => {
                   onClick={() => setUserFilter('mine')}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
                     userFilter === 'mine'
-                      ? 'bg-[#0071e3] text-white'
-                      : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                      ? 'bg-brand text-white'
+                      : 'bg-surface-3 text-ink hover:bg-hairline-strong'
                   }`}
                 >
                   <User className="w-3.5 h-3.5" />
@@ -1004,8 +1004,8 @@ const GraphicProjectTracker = () => {
                     onClick={() => setUserFilter(member.email)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
                       userFilter === member.email
-                        ? 'bg-[#0071e3] text-white'
-                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                        ? 'bg-brand text-white'
+                        : 'bg-surface-3 text-ink hover:bg-hairline-strong'
                     }`}
                   >
                     {member.name}'s
@@ -1019,8 +1019,8 @@ const GraphicProjectTracker = () => {
                     onClick={() => setUserFilter(member.email)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
                       userFilter === member.email
-                        ? 'bg-[#0071e3] text-white'
-                        : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                        ? 'bg-brand text-white'
+                        : 'bg-surface-3 text-ink hover:bg-hairline-strong'
                     }`}
                   >
                     {member.name}'s
@@ -1031,8 +1031,8 @@ const GraphicProjectTracker = () => {
                 onClick={() => setUserFilter('all')}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
                   userFilter === 'all'
-                    ? 'bg-[#0071e3] text-white'
-                    : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                    ? 'bg-brand text-white'
+                    : 'bg-surface-3 text-ink hover:bg-hairline-strong'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
@@ -1044,7 +1044,7 @@ const GraphicProjectTracker = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] cursor-pointer"
+              className="h-10 px-4 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
             >
               <option value="all">All Status</option>
               <option value="not_started">Not Started</option>
@@ -1056,7 +1056,7 @@ const GraphicProjectTracker = () => {
             {/* Sort Toggle */}
             <button
               onClick={() => setSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest')}
-              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-black/5 dark:bg-white/10 text-[13px] text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-all whitespace-nowrap"
+              className="flex items-center gap-2 h-10 px-4 rounded-xl bg-surface-3 text-[13px] text-ink hover:bg-hairline-strong transition-all whitespace-nowrap"
             >
               {sortOrder === 'newest' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
               {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
@@ -1066,17 +1066,17 @@ const GraphicProjectTracker = () => {
 
         {/* Projects List */}
         {loading ? (
-          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-12 text-center">
-            <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-[#0071e3]" />
-            <p className="text-[14px] text-[#86868b]">Loading projects...</p>
+          <div className="bg-surface backdrop-blur-xl rounded-xl border border-hairline p-12 text-center">
+            <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-brand" />
+            <p className="text-[14px] text-ink-muted">Loading projects...</p>
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#86868b]/10 flex items-center justify-center">
-              <Palette className="w-8 h-8 text-[#86868b]" />
+          <div className="bg-surface backdrop-blur-xl rounded-xl border border-hairline p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-ink-muted/10 flex items-center justify-center">
+              <Palette className="w-8 h-8 text-ink-muted" />
             </div>
-            <p className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">No projects found</p>
-            <p className="text-[14px] text-[#86868b] mb-4">
+            <p className="text-[17px] font-semibold text-ink mb-1">No projects found</p>
+            <p className="text-[14px] text-ink-muted mb-4">
               {searchQuery ? 'Try adjusting your search' : 'Add a new project to get started'}
             </p>
             {!searchQuery && (
@@ -1085,7 +1085,7 @@ const GraphicProjectTracker = () => {
                   resetForm();
                   setShowAddModal(true);
                 }}
-                className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-all"
+                className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-all"
               >
                 <Plus className="w-4 h-4" />
                 Add Project
@@ -1103,7 +1103,7 @@ const GraphicProjectTracker = () => {
               return (
                 <div 
                   key={project.id}
-                  className="bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-white/5 transition-all"
+                  className="bg-surface backdrop-blur-xl rounded-xl border border-hairline overflow-hidden hover:shadow-md hover:shadow-black/5 dark:hover:shadow-white/5 transition-all"
                 >
                   <div className="p-4 sm:p-5">
                     <div className="flex items-start gap-4">
@@ -1119,7 +1119,7 @@ const GraphicProjectTracker = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">
+                              <h3 className="text-[15px] font-semibold text-ink truncate">
                                 {project.client || 'No Client'}
                               </h3>
                               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium ${priority.bg} ${priority.text}`}>
@@ -1127,7 +1127,7 @@ const GraphicProjectTracker = () => {
                                 {priority.label}
                               </span>
                             </div>
-                            <p className="text-[14px] text-[#1d1d1f] dark:text-white/90 line-clamp-1">
+                            <p className="text-[14px] text-ink/90 line-clamp-1">
                               {project.task || 'No task description'}
                             </p>
                           </div>
@@ -1136,15 +1136,15 @@ const GraphicProjectTracker = () => {
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <button
                               onClick={() => openEditModal(project)}
-                              className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                              className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
                             >
-                              <Pencil className="w-4 h-4 text-[#86868b]" />
+                              <Pencil className="w-4 h-4 text-ink-muted" />
                             </button>
                             <button
                               onClick={() => handleDeleteProject(project)}
-                              className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              className="p-2 rounded-lg hover:bg-danger-soft dark:hover:bg-red-900/20 transition-colors"
                             >
-                              <Trash2 className="w-4 h-4 text-[#ff3b30]" />
+                              <Trash2 className="w-4 h-4 text-danger" />
                             </button>
                           </div>
                         </div>
@@ -1155,7 +1155,7 @@ const GraphicProjectTracker = () => {
                           <select
                             value={project.status}
                             onChange={(e) => handleStatusChange(project, e.target.value)}
-                            className={`appearance-none cursor-pointer px-2.5 py-1 pr-7 rounded-lg text-[12px] font-medium border-0 focus:outline-none focus:ring-2 focus:ring-[#0071e3] ${status.bg} ${status.text}`}
+                            className={`appearance-none cursor-pointer px-2.5 py-1 pr-7 rounded-lg text-[12px] font-medium border-0 focus:outline-none focus:ring-2 focus:ring-brand ${status.bg} ${status.text}`}
                             style={{ 
                               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2386868b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, 
                               backgroundRepeat: 'no-repeat', 
@@ -1170,7 +1170,7 @@ const GraphicProjectTracker = () => {
                           </select>
                           
                           {formatDate(project.startDate) && (
-                            <div className="flex items-center gap-1.5 text-[12px] text-[#86868b]">
+                            <div className="flex items-center gap-1.5 text-[12px] text-ink-muted">
                               <Calendar className="w-3.5 h-3.5" />
                               <span>{formatDate(project.startDate)}</span>
                               {formatDate(project.endDate) && (
@@ -1180,7 +1180,7 @@ const GraphicProjectTracker = () => {
                           )}
                           
                           {project.hours > 0 && (
-                            <div className="flex items-center gap-1.5 text-[12px] text-[#86868b]">
+                            <div className="flex items-center gap-1.5 text-[12px] text-ink-muted">
                               <Clock className="w-3.5 h-3.5" />
                               <span>{project.hours}h</span>
                             </div>
@@ -1189,7 +1189,7 @@ const GraphicProjectTracker = () => {
                           {project.notes && (
                             <button
                               onClick={() => setExpandedProject(isExpanded ? null : project.id)}
-                              className="flex items-center gap-1 text-[12px] text-[#0071e3] hover:underline"
+                              className="flex items-center gap-1 text-[12px] text-brand hover:underline"
                             >
                               {isExpanded ? 'Hide notes' : 'Show notes'}
                             </button>
@@ -1198,8 +1198,8 @@ const GraphicProjectTracker = () => {
                         
                         {/* Expanded Notes */}
                         {isExpanded && project.notes && (
-                          <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/10">
-                            <p className="text-[13px] text-[#86868b]">{project.notes}</p>
+                          <div className="mt-3 pt-3 border-t border-hairline">
+                            <p className="text-[13px] text-ink-muted">{project.notes}</p>
                           </div>
                         )}
                       </div>
@@ -1215,9 +1215,9 @@ const GraphicProjectTracker = () => {
       {/* Add/Edit Modal */}
       {(showAddModal || showEditModal) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl w-full max-w-lg overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+          <div className="bg-surface rounded-xl w-full max-w-lg overflow-hidden border border-hairline-strong shadow-lg">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-hairline">
+              <h3 className="text-[17px] font-semibold text-ink">
                 {showEditModal ? 'Edit Project' : 'Add New Project'}
               </h3>
               <button
@@ -1227,16 +1227,16 @@ const GraphicProjectTracker = () => {
                   setEditingProject(null);
                   resetForm();
                 }}
-                className="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                className="w-8 h-8 rounded-full hover:bg-surface-3 flex items-center justify-center"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
             
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               {/* Client */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Client *
                 </label>
                 <input
@@ -1244,13 +1244,13 @@ const GraphicProjectTracker = () => {
                   value={form.client}
                   onChange={(e) => setForm(prev => ({ ...prev, client: e.target.value }))}
                   placeholder="Client name"
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               
               {/* Task */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Task *
                 </label>
                 <textarea
@@ -1258,20 +1258,20 @@ const GraphicProjectTracker = () => {
                   onChange={(e) => setForm(prev => ({ ...prev, task: e.target.value }))}
                   placeholder="Task description"
                   rows={2}
-                  className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
               
               {/* Priority, Status & Assigned To */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Priority
                   </label>
                   <select
                     value={form.priority}
                     onChange={(e) => setForm(prev => ({ ...prev, priority: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -1279,13 +1279,13 @@ const GraphicProjectTracker = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Status
                   </label>
                   <select
                     value={form.status}
                     onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="not_started">Not Started</option>
                     <option value="in_progress">In Progress</option>
@@ -1294,13 +1294,13 @@ const GraphicProjectTracker = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Assigned To
                   </label>
                   <select
                     value={form.assignedTo}
                     onChange={(e) => setForm(prev => ({ ...prev, assignedTo: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     {GRAPHIC_TEAM.map(member => (
                       <option key={member.email} value={member.email}>
@@ -1314,32 +1314,32 @@ const GraphicProjectTracker = () => {
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Start Date
                   </label>
                   <input
                     type="date"
                     value={form.startDate}
                     onChange={(e) => setForm(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     End Date
                   </label>
                   <input
                     type="date"
                     value={form.endDate}
                     onChange={(e) => setForm(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
               
               {/* Hours */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Hours
                 </label>
                 <input
@@ -1349,13 +1349,13 @@ const GraphicProjectTracker = () => {
                   value={form.hours}
                   onChange={(e) => setForm(prev => ({ ...prev, hours: e.target.value }))}
                   placeholder="0"
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               
               {/* Notes */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Notes
                 </label>
                 <textarea
@@ -1363,12 +1363,12 @@ const GraphicProjectTracker = () => {
                   onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Additional notes..."
                   rows={2}
-                  className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
             </div>
             
-            <div className="flex gap-3 px-6 py-4 border-t border-black/5 dark:border-white/10">
+            <div className="flex gap-3 px-6 py-4 border-t border-hairline">
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -1376,14 +1376,14 @@ const GraphicProjectTracker = () => {
                   setEditingProject(null);
                   resetForm();
                 }}
-                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={showEditModal ? handleEditProject : handleAddProject}
                 disabled={saving}
-                className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {showEditModal ? 'Save Changes' : 'Add Project'}
@@ -1396,30 +1396,30 @@ const GraphicProjectTracker = () => {
       {/* Request Project Modal */}
       {showRequestModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl w-full max-w-lg overflow-hidden border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+          <div className="bg-surface rounded-xl w-full max-w-lg overflow-hidden border border-hairline-strong shadow-lg">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-hairline">
+              <h3 className="text-[17px] font-semibold text-ink">
                 Request a Project
               </h3>
               <button
                 onClick={() => setShowRequestModal(false)}
-                className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg hover:bg-surface-3 flex items-center justify-center transition-colors"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
             
             <form onSubmit={handleSubmitRequest} className="p-6 space-y-4">
               {/* Designer Selection */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                  Request From <span className="text-[#ff3b30]">*</span>
+                <label className="block text-[13px] font-medium text-ink mb-2">
+                  Request From <span className="text-danger">*</span>
                 </label>
                 <select
                   value={requestForm.toUserEmail}
                   onChange={(e) => setRequestForm(prev => ({ ...prev, toUserEmail: e.target.value }))}
                   required
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="">Select a designer...</option>
                   {GRAPHIC_TEAM.map(member => (
@@ -1432,8 +1432,8 @@ const GraphicProjectTracker = () => {
               
               {/* Client */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                  Client <span className="text-[#ff3b30]">*</span>
+                <label className="block text-[13px] font-medium text-ink mb-2">
+                  Client <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -1441,14 +1441,14 @@ const GraphicProjectTracker = () => {
                   onChange={(e) => setRequestForm(prev => ({ ...prev, client: e.target.value }))}
                   placeholder="e.g., Agency Cayman Island"
                   required
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               
               {/* Task Description */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                  Project Description <span className="text-[#ff3b30]">*</span>
+                <label className="block text-[13px] font-medium text-ink mb-2">
+                  Project Description <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -1456,20 +1456,20 @@ const GraphicProjectTracker = () => {
                   onChange={(e) => setRequestForm(prev => ({ ...prev, task: e.target.value }))}
                   placeholder="e.g., Social Media Graphics Package"
                   required
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               
               {/* Priority & Deadline */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Priority
                   </label>
                   <select
                     value={requestForm.priority}
                     onChange={(e) => setRequestForm(prev => ({ ...prev, priority: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -1477,8 +1477,8 @@ const GraphicProjectTracker = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Deadline <span className="text-[#ff3b30]">*</span>
+                  <label className="block text-[13px] font-medium text-ink mb-2">
+                    Deadline <span className="text-danger">*</span>
                   </label>
                   <input
                     type="date"
@@ -1486,14 +1486,14 @@ const GraphicProjectTracker = () => {
                     onChange={(e) => setRequestForm(prev => ({ ...prev, deadline: e.target.value }))}
                     required
                     min={format(new Date(), 'yyyy-MM-dd')}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
               
               {/* Notes */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Additional Notes
                 </label>
                 <textarea
@@ -1501,7 +1501,7 @@ const GraphicProjectTracker = () => {
                   onChange={(e) => setRequestForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Any additional details or requirements..."
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
               
@@ -1509,14 +1509,14 @@ const GraphicProjectTracker = () => {
                 <button
                   type="button"
                   onClick={() => setShowRequestModal(false)}
-                  className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingRequest}
-                  className="flex-1 h-11 rounded-xl bg-[#5856d6] text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submittingRequest && <Loader2 className="w-4 h-4 animate-spin" />}
                   Send Request

@@ -22,32 +22,32 @@ const V3Resources = () => {
   ];
 
   const categoryColors = {
-    'Basics': 'from-[#0071e3] to-[#5856d6]',
-    'Content': 'from-[#af52de] to-[#ff2d55]',
-    'Clients': 'from-[#34c759] to-[#30d158]',
-    'Analytics': 'from-[#ff9500] to-[#ff3b30]',
-    'Planning': 'from-[#5856d6] to-[#0071e3]',
+    'Basics': 'from-brand to-brand',
+    'Content': 'from-brand to-[#ff2d55]',
+    'Clients': 'from-positive to-positive',
+    'Analytics': 'from-warning to-danger',
+    'Planning': 'from-brand to-brand',
   };
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">Resources</h1>
-        <p className="text-[17px] text-[#86868b]">Tutorials, guides, and helpful documents.</p>
+        <h1 className="text-[34px] font-semibold text-ink tracking-[-0.02em] mb-1">Resources</h1>
+        <p className="text-[17px] text-ink-muted">Tutorials, guides, and helpful documents.</p>
       </div>
 
       {/* Tutorials Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white">Tutorials</h2>
-          <button className="text-[13px] text-[#0071e3] font-medium hover:underline">View All</button>
+          <h2 className="text-[22px] font-semibold text-ink">Tutorials</h2>
+          <button className="text-[13px] text-brand font-medium hover:underline">View All</button>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {tutorials.map((tutorial) => (
             <div
               key={tutorial.id}
-              className="p-5 rounded-2xl bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-xl border border-black/5 dark:border-white/5 hover:shadow-lg transition-all cursor-pointer group"
+              className="p-5 rounded-xl bg-white/80 dark:bg-surface backdrop-blur-xl border border-black/5 dark:border-white/5 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${categoryColors[tutorial.category]} flex items-center justify-center shadow-lg`}>
@@ -58,18 +58,18 @@ const V3Resources = () => {
                   )}
                 </div>
                 {tutorial.starred && (
-                  <Star className="w-5 h-5 text-[#ff9500] fill-current" strokeWidth={1.5} />
+                  <Star className="w-5 h-5 text-warning fill-current" strokeWidth={1.5} />
                 )}
               </div>
-              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white mb-1 group-hover:text-[#0071e3] transition-colors">
+              <h3 className="text-[15px] font-semibold text-ink mb-1 group-hover:text-brand transition-colors">
                 {tutorial.title}
               </h3>
-              <p className="text-[13px] text-[#86868b] mb-3 line-clamp-2">{tutorial.description}</p>
+              <p className="text-[13px] text-ink-muted mb-3 line-clamp-2">{tutorial.description}</p>
               <div className="flex items-center gap-3">
                 <span className={`px-2.5 py-1 rounded-md text-[11px] font-semibold text-white bg-gradient-to-r ${categoryColors[tutorial.category]}`}>
                   {tutorial.category}
                 </span>
-                <span className="flex items-center gap-1 text-[12px] text-[#86868b]">
+                <span className="flex items-center gap-1 text-[12px] text-ink-muted">
                   <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
                   {tutorial.duration}
                 </span>
@@ -82,28 +82,28 @@ const V3Resources = () => {
       {/* Documents Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white">Documents & Templates</h2>
+          <h2 className="text-[22px] font-semibold text-ink">Documents & Templates</h2>
         </div>
-        <div className="rounded-2xl bg-white/80 dark:bg-[#2d2d2d]/80 backdrop-blur-xl border border-black/5 dark:border-white/5 overflow-hidden">
+        <div className="rounded-xl bg-white/80 dark:bg-surface backdrop-blur-xl border border-black/5 dark:border-white/5 overflow-hidden">
           <div className="divide-y divide-black/5 dark:divide-white/5">
             {documents.map((doc) => (
               <div
                 key={doc.id}
                 className="flex items-center gap-4 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer group"
               >
-                <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5 text-[#86868b]" strokeWidth={1.5} />
+                <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-ink-muted" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[15px] font-medium text-[#1d1d1f] dark:text-white group-hover:text-[#0071e3] transition-colors">
+                  <h3 className="text-[15px] font-medium text-ink group-hover:text-brand transition-colors">
                     {doc.title}
                   </h3>
-                  <p className="text-[13px] text-[#86868b]">{doc.description}</p>
+                  <p className="text-[13px] text-ink-muted">{doc.description}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-[#86868b] uppercase">{doc.type}</span>
-                  <span className="text-[12px] text-[#86868b]">{doc.size}</span>
-                  <ExternalLink className="w-4 h-4 text-[#86868b] opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
+                  <span className="text-[12px] text-ink-muted uppercase">{doc.type}</span>
+                  <span className="text-[12px] text-ink-muted">{doc.size}</span>
+                  <ExternalLink className="w-4 h-4 text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
                 </div>
               </div>
             ))}
@@ -112,9 +112,9 @@ const V3Resources = () => {
       </div>
 
       {/* Help Section */}
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] text-white">
+      <div className="p-6 rounded-xl bg-gradient-to-br from-brand to-brand text-white">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
             <BookOpen className="w-6 h-6" strokeWidth={1.5} />
           </div>
           <div className="flex-1">
@@ -122,7 +122,7 @@ const V3Resources = () => {
             <p className="text-[15px] text-white/80 mb-4">
               Can't find what you're looking for? Our support team is here to help.
             </p>
-            <button className="h-9 px-4 rounded-lg bg-white text-[#0071e3] text-[13px] font-medium hover:bg-white/90 transition-colors">
+            <button className="h-9 px-4 rounded-lg bg-white text-brand text-[13px] font-medium hover:bg-white/90 transition-colors">
               Contact Support
             </button>
           </div>

@@ -98,7 +98,7 @@ const OnboardingTestPage = () => {
         <Card className="max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <AlertCircle className="h-12 w-12 text-danger mx-auto mb-4" />
               <h2 className="text-xl font-bold mb-2">Access Denied</h2>
               <p className="text-gray-600 dark:text-gray-400">
                 This page is only accessible to administrators.
@@ -111,12 +111,12 @@ const OnboardingTestPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-soft via-white to-brand-soft dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        <Card className="shadow-xl">
+        <Card className="shadow-lg">
           <CardHeader>
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand to-brand flex items-center justify-center">
                 <RefreshCw className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -127,8 +127,8 @@ const OnboardingTestPage = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <p className="text-sm text-yellow-900 dark:text-yellow-100">
+            <div className="bg-warning-soft dark:bg-yellow-900/20 border border-yellow-200 dark:border-warning rounded-lg p-4">
+              <p className="text-sm text-yellow-900 dark:text-warning-soft">
                 <strong>⚠️ Testing Tool:</strong> This will reset the onboarding status for {currentUser?.email},
                 allowing you to test the complete onboarding flow.
               </p>
@@ -143,7 +143,7 @@ const OnboardingTestPage = () => {
               <div className="space-y-3">
                 {isCalendarConnected ? (
                   <>
-                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <div className="flex items-center gap-2 text-positive dark:text-green-400">
                       <CheckCircle2 className="h-5 w-5" />
                       <span className="font-medium">Calendar Connected</span>
                     </div>
@@ -175,7 +175,7 @@ const OnboardingTestPage = () => {
                       <AlertCircle className="h-5 w-5" />
                       <span className="font-medium">Calendar Not Connected</span>
                     </div>
-                    <p className="text-sm text-green-600 dark:text-green-400">
+                    <p className="text-sm text-positive dark:text-green-400">
                       ✅ Ready to test calendar authorization in onboarding!
                     </p>
                   </>
@@ -188,31 +188,31 @@ const OnboardingTestPage = () => {
                 <h3 className="font-semibold mb-2">Reset Onboarding:</h3>
                 <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-positive mt-0.5 flex-shrink-0" />
                     <span>Sets <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">onboardingCompleted</code> to <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">false</code></span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-positive mt-0.5 flex-shrink-0" />
                     <span>Clears the completion date</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-positive mt-0.5 flex-shrink-0" />
                     <span>Redirects you to the onboarding page</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-positive mt-0.5 flex-shrink-0" />
                     <span>Creates employee document if needed</span>
                   </li>
                 </ul>
               </div>
 
               {status === 'success' && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="bg-positive-soft dark:bg-green-900/20 border border-green-200 dark:border-positive rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <CheckCircle2 className="h-5 w-5 text-positive dark:text-green-400" />
                     <div>
-                      <p className="font-semibold text-green-900 dark:text-green-100">Success!</p>
-                      <p className="text-sm text-green-700 dark:text-green-300">
+                      <p className="font-semibold text-green-900 dark:text-positive-soft">Success!</p>
+                      <p className="text-sm text-positive dark:text-green-300">
                         Onboarding status has been reset. Redirecting...
                       </p>
                     </div>
@@ -221,12 +221,12 @@ const OnboardingTestPage = () => {
               )}
 
               {status === 'error' && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="bg-danger-soft dark:bg-red-900/20 border border-red-200 dark:border-danger rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    <AlertCircle className="h-5 w-5 text-danger dark:text-red-400" />
                     <div>
-                      <p className="font-semibold text-red-900 dark:text-red-100">Error</p>
-                      <p className="text-sm text-red-700 dark:text-red-300">
+                      <p className="font-semibold text-red-900 dark:text-danger-soft">Error</p>
+                      <p className="text-sm text-danger dark:text-red-300">
                         Failed to reset onboarding status. Check console for details.
                       </p>
                     </div>

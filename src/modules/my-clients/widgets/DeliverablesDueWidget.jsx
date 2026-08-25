@@ -60,39 +60,39 @@ const DeliverablesDueWidget = () => {
 
   const getStatusStyle = (status) => {
     if (status === 'urgent') {
-      return 'text-[#ff3b30] bg-[#ff3b30]/10';
+      return 'text-danger bg-danger/10';
     }
-    return 'text-[#34c759] bg-[#34c759]/10';
+    return 'text-positive bg-positive/10';
   };
 
   if (loadingWidget) {
     return (
-      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10 animate-pulse">
+      <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline animate-pulse">
         <div className="h-5 w-32 bg-black/10 dark:bg-white/10 rounded mb-4" />
         <div className="space-y-3">
-          <div className="h-10 w-full bg-black/5 dark:bg-white/5 rounded" />
-          <div className="h-10 w-full bg-black/5 dark:bg-white/5 rounded" />
+          <div className="h-10 w-full bg-surface-3 rounded" />
+          <div className="h-10 w-full bg-surface-3 rounded" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-white/60 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-black/5 dark:border-white/10">
+    <div className="min-h-[280px] sm:h-[327px] sm:min-h-[327px] widget-scroll overflow-auto bg-surface backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-hairline">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff9500] to-[#ff3b30] flex items-center justify-center shadow-lg shadow-[#ff9500]/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-warning to-danger flex items-center justify-center shadow-lg shadow-warning/20">
             <FileText className="w-4 h-4 text-white" strokeWidth={1.5} />
           </div>
-          <h3 className="font-semibold text-[15px] text-[#1d1d1f] dark:text-white">Deliverables Due</h3>
+          <h3 className="font-semibold text-[15px] text-ink">Deliverables Due</h3>
         </div>
       </div>
 
       {/* Deliverables List */}
       {deliverables.length === 0 ? (
         <div className="text-center py-4">
-          <p className="text-[13px] text-[#86868b]">No pending deliverables</p>
+          <p className="text-[13px] text-ink-muted">No pending deliverables</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -108,13 +108,13 @@ const DeliverablesDueWidget = () => {
                   onClick={() => fullClient && openClientCard(fullClient)}
                 >
                   {item.status === 'urgent' && (
-                    <AlertCircle className="w-4 h-4 text-[#ff3b30] shrink-0" strokeWidth={1.5} />
+                    <AlertCircle className="w-4 h-4 text-danger shrink-0" strokeWidth={1.5} />
                   )}
                   <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                    <p className="text-[13px] font-medium text-ink truncate">
                       {item.clientName}
                     </p>
-                    <p className="text-[11px] text-[#86868b]">
+                    <p className="text-[11px] text-ink-muted">
                       {item.remaining} {item.type.toLowerCase()} remaining
                     </p>
                   </div>
@@ -126,7 +126,7 @@ const DeliverablesDueWidget = () => {
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); if (fullClient) setEditClient(fullClient); }}
-                    className="p-2 rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                    className="p-2 rounded-lg bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                     title="Edit posts logged"
                   >
                     <Pencil className="w-3.5 h-3.5" />

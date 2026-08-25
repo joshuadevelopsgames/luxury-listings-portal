@@ -35,10 +35,10 @@ const DroppableDay = ({ dateKey, isCurrentMonth, isToday: isTodayProp, onDoubleC
       className={[
         'min-h-[120px] p-2 rounded-lg border cursor-pointer transition-all',
         !isCurrentMonth
-          ? 'bg-black/[0.02] dark:bg-white/5 text-[#86868b] border-transparent'
-          : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-[#1d1d1f] dark:text-white',
-        isTodayProp ? 'bg-[#0071e3]/10 dark:bg-[#0071e3]/20 border-[#0071e3]/30' : '',
-        isOver && activeDragId ? 'ring-2 ring-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/15 border-[#0071e3]/40' : ''
+          ? 'bg-surface-2 text-ink-muted border-transparent'
+          : 'border-hairline hover:bg-surface-3 text-ink',
+        isTodayProp ? 'bg-brand/10 dark:bg-brand/20 border-brand/30' : '',
+        isOver && activeDragId ? 'ring-2 ring-brand bg-brand/10 dark:bg-brand/15 border-brand/40' : ''
       ].join(' ')}
     >
       {children}
@@ -57,8 +57,8 @@ const LibraryAssetTile = ({ asset, isActive, onRemove }) => {
       {...listeners}
       {...attributes}
       className={[
-        'relative group aspect-square rounded-xl overflow-hidden bg-black/5 dark:bg-white/10 cursor-grab active:cursor-grabbing transition-all',
-        isDragging ? 'opacity-40 scale-95' : 'hover:ring-2 hover:ring-[#0071e3]/60'
+        'relative group aspect-square rounded-xl overflow-hidden bg-surface-3 cursor-grab active:cursor-grabbing transition-all',
+        isDragging ? 'opacity-40 scale-95' : 'hover:ring-2 hover:ring-brand/60'
       ].join(' ')}
       title={asset.name}
     >
@@ -356,10 +356,10 @@ const ContentCalendar = () => {
   const mediaFileInputRef = useRef(null);
 
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-blue-600' },
-    { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'bg-blue-700' },
-    { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'bg-red-600' },
+    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-r from-brand to-pink-500' },
+    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-brand' },
+    { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'bg-brand' },
+    { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'bg-danger' },
     { id: 'twitter', name: 'Twitter', icon: function XIcon(props) { 
       const isSelected = props?.isSelected;
       return (
@@ -379,13 +379,13 @@ const ContentCalendar = () => {
   ];
 
   const statuses = [
-    { id: 'draft', name: 'Draft', color: 'bg-[#86868b]' },
+    { id: 'draft', name: 'Draft', color: 'bg-ink-muted' },
     { id: 'pending_approval', name: 'Pending Approval', color: 'bg-[#ffcc00]' },
-    { id: 'needs_revision', name: 'Needs Revision', color: 'bg-[#ff3b30]' },
-    { id: 'approved', name: 'Approved', color: 'bg-[#30d158]' },
-    { id: 'scheduled', name: 'Scheduled', color: 'bg-[#0071e3]' },
-    { id: 'published', name: 'Published', color: 'bg-[#34c759]' },
-    { id: 'paused', name: 'Paused', color: 'bg-[#ff9500]' }
+    { id: 'needs_revision', name: 'Needs Revision', color: 'bg-danger' },
+    { id: 'approved', name: 'Approved', color: 'bg-positive' },
+    { id: 'scheduled', name: 'Scheduled', color: 'bg-brand' },
+    { id: 'published', name: 'Published', color: 'bg-positive' },
+    { id: 'paused', name: 'Paused', color: 'bg-warning' }
   ];
 
   const getPlatformIcon = (platformId) => {
@@ -1435,10 +1435,10 @@ const ContentCalendar = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
+          <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em] mb-1">
             Content Calendar
           </h1>
-          <p className="text-[15px] sm:text-[17px] text-[#86868b]">
+          <p className="text-[15px] sm:text-[17px] text-ink-muted">
             Plan and schedule your social media content
           </p>
         </div>
@@ -1447,7 +1447,7 @@ const ContentCalendar = () => {
             onClick={handleStartImport}
             disabled={!canCreateContent}
             title={!canCreateContent ? 'You need CREATE_CONTENT permission' : 'Import from Google Sheets'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-[#f5f5f7] dark:hover:bg-[#3d3d3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px] font-medium hover:bg-surface-2 dark:hover:bg-[#3d3d3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileSpreadsheet className="w-4 h-4" />
             Import from Sheets
@@ -1456,7 +1456,7 @@ const ContentCalendar = () => {
             onClick={() => canCreateContent ? setShowAddModal(true) : toast.error('You need CREATE_CONTENT permission')} 
             disabled={!canCreateContent}
             title={!canCreateContent ? 'You need CREATE_CONTENT permission' : ''}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
             Add Content
@@ -1472,7 +1472,7 @@ const ContentCalendar = () => {
           <button
             onClick={() => { setShowCalendarsDropdown(v => !v); setShowFiltersDropdown(false); }}
             className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors border ${
-              showCalendarsDropdown ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]' : 'bg-white dark:bg-[#2d2d2d] border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white hover:bg-[#f5f5f7] dark:hover:bg-[#3d3d3d]'
+              showCalendarsDropdown ? 'bg-brand/10 border-brand/30 text-brand' : 'bg-surface border-hairline-strong text-ink hover:bg-surface-2 dark:hover:bg-[#3d3d3d]'
             }`}
           >
             <Folder className="w-4 h-4" />
@@ -1480,9 +1480,9 @@ const ContentCalendar = () => {
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showCalendarsDropdown ? 'rotate-180' : ''}`} />
           </button>
           {showCalendarsDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-xl z-50 overflow-hidden">
-              <div className="px-4 py-3 border-b border-black/5 dark:border-white/10">
-                <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">Calendars</h4>
+            <div className="absolute top-full left-0 mt-2 w-72 bg-surface rounded-xl border border-hairline-strong shadow-lg z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-hairline">
+                <h4 className="text-[13px] font-semibold text-ink">Calendars</h4>
               </div>
               <div className="p-3 space-y-1.5 max-h-72 overflow-y-auto">
                 {calendars.map((cal) => {
@@ -1492,36 +1492,36 @@ const ContentCalendar = () => {
                   const isLinking = linkingCalendarId === cal.id;
                   const isDefault = false; // all calendars are user-created with real UUIDs
                   return (
-                    <div key={cal.id} className={`px-3 py-2.5 rounded-xl border transition-all ${isActive ? 'border-[#0071e3] bg-[#0071e3]/10 dark:bg-[#0071e3]/20' : 'border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <div key={cal.id} className={`px-3 py-2.5 rounded-xl border transition-all ${isActive ? 'border-brand bg-brand/10 dark:bg-brand/20' : 'border-hairline hover:bg-surface-3'}`}>
                       {isEditing ? (
                         <div className="flex items-center gap-2">
-                          <input value={editingCalendarName} onChange={(e) => setEditingCalendarName(e.target.value)} className="flex-1 h-8 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCalendarName(); if (e.key === 'Escape') handleCancelEditCalendar(); }} />
-                          <button onClick={handleSaveCalendarName} className="p-1.5 hover:bg-[#34c759]/20 rounded-lg"><Check className="w-4 h-4 text-[#34c759]" /></button>
-                          <button onClick={handleCancelEditCalendar} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><X className="w-4 h-4 text-[#ff3b30]" /></button>
+                          <input value={editingCalendarName} onChange={(e) => setEditingCalendarName(e.target.value)} className="flex-1 h-8 px-3 text-[13px] rounded-lg bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCalendarName(); if (e.key === 'Escape') handleCancelEditCalendar(); }} />
+                          <button onClick={handleSaveCalendarName} className="p-1.5 hover:bg-positive/20 rounded-lg"><Check className="w-4 h-4 text-positive" /></button>
+                          <button onClick={handleCancelEditCalendar} className="p-1.5 hover:bg-danger/20 rounded-lg"><X className="w-4 h-4 text-danger" /></button>
                         </div>
                       ) : isLinking ? (
                         <div className="space-y-2">
-                          <input value={linkSheetUrl} onChange={(e) => setLinkSheetUrl(e.target.value)} className="w-full h-8 px-3 text-[12px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" placeholder="Paste Google Sheets URL..." autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLinkSheet(); if (e.key === 'Escape') handleCancelLinkSheet(); }} />
+                          <input value={linkSheetUrl} onChange={(e) => setLinkSheetUrl(e.target.value)} className="w-full h-8 px-3 text-[12px] rounded-lg bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" placeholder="Paste Google Sheets URL..." autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveLinkSheet(); if (e.key === 'Escape') handleCancelLinkSheet(); }} />
                           <div className="flex gap-2">
-                            <button onClick={handleSaveLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-[#0071e3] text-white hover:bg-[#0077ed]">Link</button>
-                            <button onClick={handleCancelLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
+                            <button onClick={handleSaveLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-brand text-white hover:bg-brand-hover">Link</button>
+                            <button onClick={handleCancelLinkSheet} className="px-3 py-1.5 text-[12px] font-medium rounded-lg bg-surface-3 text-ink">Cancel</button>
                           </div>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
                           <button onClick={() => { setSelectedCalendarId(cal.id); setShowCalendarsDropdown(false); }} className="flex-1 flex items-center justify-between text-left min-w-0">
-                            <span className={`truncate text-[13px] ${isActive ? 'text-[#0071e3] font-medium' : 'text-[#1d1d1f] dark:text-white'}`}>{cal.name}</span>
-                            <span className={`ml-2 text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${isActive ? 'bg-[#0071e3] text-white' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>{count}</span>
+                            <span className={`truncate text-[13px] ${isActive ? 'text-brand font-medium' : 'text-ink'}`}>{cal.name}</span>
+                            <span className={`ml-2 text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${isActive ? 'bg-brand text-white' : 'bg-surface-3 text-ink-muted'}`}>{count}</span>
                           </button>
                           {!isDefault && (
                             <div className="flex gap-0.5 flex-shrink-0">
                               {cal.sheetUrl ? (
-                                <button onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl, cal.sheetTitle)} disabled={refreshingCalendarId === cal.id} className={`p-1.5 hover:bg-[#34c759]/20 rounded-lg ${refreshingCalendarId === cal.id ? 'animate-spin' : ''}`}><RefreshCw className="w-3.5 h-3.5 text-[#34c759]" /></button>
+                                <button onClick={() => handleRefreshCalendar(cal.id, cal.name, cal.sheetUrl, cal.sheetTitle)} disabled={refreshingCalendarId === cal.id} className={`p-1.5 hover:bg-positive/20 rounded-lg ${refreshingCalendarId === cal.id ? 'animate-spin' : ''}`}><RefreshCw className="w-3.5 h-3.5 text-positive" /></button>
                               ) : (
-                                <button onClick={() => handleLinkSheet(cal.id)} className="p-1.5 hover:bg-[#af52de]/20 rounded-lg"><LinkIcon className="w-3.5 h-3.5 text-[#af52de]" /></button>
+                                <button onClick={() => handleLinkSheet(cal.id)} className="p-1.5 hover:bg-brand/20 rounded-lg"><LinkIcon className="w-3.5 h-3.5 text-brand" /></button>
                               )}
-                              <button onClick={() => handleEditCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#0071e3]/20 rounded-lg"><Edit className="w-3.5 h-3.5 text-[#0071e3]" /></button>
-                              <button onClick={() => handleDeleteCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-[#ff3b30]/20 rounded-lg"><Trash2 className="w-3.5 h-3.5 text-[#ff3b30]" /></button>
+                              <button onClick={() => handleEditCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-brand/20 rounded-lg"><Edit className="w-3.5 h-3.5 text-brand" /></button>
+                              <button onClick={() => handleDeleteCalendar(cal.id, cal.name)} className="p-1.5 hover:bg-danger/20 rounded-lg"><Trash2 className="w-3.5 h-3.5 text-danger" /></button>
                             </div>
                           )}
                         </div>
@@ -1531,22 +1531,22 @@ const ContentCalendar = () => {
                 })}
               </div>
               {selectedCalendarId && (
-                <div className="px-4 py-3 border-t border-black/5 dark:border-white/10">
-                  <label className="text-[11px] font-medium text-[#86868b] mb-1.5 flex items-center gap-1.5">
+                <div className="px-4 py-3 border-t border-hairline">
+                  <label className="text-[11px] font-medium text-ink-muted mb-1.5 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5" /> Client portal
                   </label>
                   <select
                     value={linkedClientForCalendar(selectedCalendarId)?.id || ''}
                     onChange={(e) => handleAssignCalendarToClient(selectedCalendarId, e.target.value || null)}
                     disabled={assigningClient}
-                    className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none disabled:opacity-50"
+                    className="w-full h-9 px-3 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink focus:ring-2 focus:ring-brand focus:outline-none disabled:opacity-50"
                   >
                     <option value="">Not shared with a client</option>
                     {clients.map((c) => (
                       <option key={c.id} value={c.id}>{c.clientName || c.name || c.email || 'Unnamed client'}</option>
                     ))}
                   </select>
-                  <p className="text-[11px] text-[#86868b] mt-1.5 leading-snug">
+                  <p className="text-[11px] text-ink-muted mt-1.5 leading-snug">
                     This client sees the calendar's posts in their portal and can approve or request changes.
                   </p>
                 </div>
@@ -1554,7 +1554,7 @@ const ContentCalendar = () => {
               <div className="px-3 pb-3">
                 {showAddCalendar ? (
                   <div className="space-y-2">
-                    <input value={newCalendarName} onChange={(e) => setNewCalendarName(e.target.value)} placeholder="Calendar name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]" />
+                    <input value={newCalendarName} onChange={(e) => setNewCalendarName(e.target.value)} placeholder="Calendar name" className="w-full h-10 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand" />
                     <div className="flex gap-2">
                       <button onClick={async () => {
                         const name = newCalendarName.trim();
@@ -1575,12 +1575,12 @@ const ContentCalendar = () => {
                         } catch (e) {
                           toast.error(e?.message || 'Failed to create calendar');
                         }
-                      }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed]">Create</button>
-                      <button onClick={() => { setShowAddCalendar(false); setNewCalendarName(''); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white">Cancel</button>
+                      }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover">Create</button>
+                      <button onClick={() => { setShowAddCalendar(false); setNewCalendarName(''); }} className="px-4 py-2 text-[13px] font-medium rounded-xl bg-surface-3 text-ink">Cancel</button>
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => setShowAddCalendar(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
+                  <button onClick={() => setShowAddCalendar(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong transition-colors">
                     <FolderPlus className="w-4 h-4" /> New Calendar
                   </button>
                 )}
@@ -1595,8 +1595,8 @@ const ContentCalendar = () => {
             onClick={() => { setShowFiltersDropdown(v => !v); setShowCalendarsDropdown(false); }}
             className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors border ${
               (filterPlatform !== 'all' || filterStatus !== 'all')
-                ? 'bg-[#0071e3]/10 border-[#0071e3]/30 text-[#0071e3]'
-                : 'bg-white dark:bg-[#2d2d2d] border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white hover:bg-[#f5f5f7] dark:hover:bg-[#3d3d3d]'
+                ? 'bg-brand/10 border-brand/30 text-brand'
+                : 'bg-surface border-hairline-strong text-ink hover:bg-surface-2 dark:hover:bg-[#3d3d3d]'
             }`}
           >
             <Filter className="w-4 h-4" />
@@ -1604,24 +1604,24 @@ const ContentCalendar = () => {
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showFiltersDropdown ? 'rotate-180' : ''}`} />
           </button>
           {showFiltersDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-black/10 dark:border-white/10 shadow-xl z-50 overflow-hidden">
-              <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-                <h4 className="text-[13px] font-semibold text-[#1d1d1f] dark:text-white">Filters</h4>
+            <div className="absolute top-full left-0 mt-2 w-64 bg-surface rounded-xl border border-hairline-strong shadow-lg z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-hairline flex items-center justify-between">
+                <h4 className="text-[13px] font-semibold text-ink">Filters</h4>
                 {(filterPlatform !== 'all' || filterStatus !== 'all') && (
-                  <button onClick={() => { setFilterPlatform('all'); setFilterStatus('all'); }} className="text-[11px] text-[#0071e3] hover:underline">Clear all</button>
+                  <button onClick={() => { setFilterPlatform('all'); setFilterStatus('all'); }} className="text-[11px] text-brand hover:underline">Clear all</button>
                 )}
               </div>
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Platform</label>
-                  <select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
+                  <label className="block text-[11px] font-medium text-ink-muted mb-1.5">Platform</label>
+                  <select value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink focus:ring-2 focus:ring-brand focus:outline-none">
                     <option value="all">All Platforms</option>
                     {platforms.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-[#86868b] mb-1.5">Status</label>
-                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[13px] text-[#1d1d1f] dark:text-white focus:ring-2 focus:ring-[#0071e3] focus:outline-none">
+                  <label className="block text-[11px] font-medium text-ink-muted mb-1.5">Status</label>
+                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full h-9 px-3 rounded-xl bg-surface border border-hairline-strong text-[13px] text-ink focus:ring-2 focus:ring-brand focus:outline-none">
                     <option value="all">All Status</option>
                     {statuses.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -1637,24 +1637,24 @@ const ContentCalendar = () => {
         {/* ── DND CONTEXT wraps calendar + library ── */}
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
       {/* Calendar View */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10 flex justify-between items-center">
-          <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-[#0071e3]" />
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline flex justify-between items-center">
+          <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-brand" />
             {format(currentMonth, 'MMMM yyyy')}
           </h3>
           <div className="flex gap-2">
             <button 
               onClick={prevMonth} 
-              className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+              className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center hover:bg-hairline-strong transition-colors"
             >
-              <ChevronLeft className="w-4 h-4 text-[#1d1d1f] dark:text-white" />
+              <ChevronLeft className="w-4 h-4 text-ink" />
             </button>
             <button 
               onClick={nextMonth} 
-              className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+              className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center hover:bg-hairline-strong transition-colors"
             >
-              <ChevronRight className="w-4 h-4 text-[#1d1d1f] dark:text-white" />
+              <ChevronRight className="w-4 h-4 text-ink" />
             </button>
           </div>
         </div>
@@ -1662,7 +1662,7 @@ const ContentCalendar = () => {
           <div className="grid grid-cols-7 gap-1">
             {/* Day headers */}
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="p-2 text-center text-[12px] font-medium text-[#86868b] bg-black/[0.02] dark:bg-white/5 rounded-lg">
+              <div key={day} className="p-2 text-center text-[12px] font-medium text-ink-muted bg-surface-2 rounded-lg">
                 {day}
               </div>
             ))}
@@ -1682,7 +1682,7 @@ const ContentCalendar = () => {
                   onDoubleClick={() => isCurrentMonth && handleDateDoubleClick(date)}
                   activeDragId={activeDragId}
                 >
-                  <div className={`text-[12px] font-medium mb-1 ${isToday(date) ? 'text-[#0071e3]' : ''}`}>
+                  <div className={`text-[12px] font-medium mb-1 ${isToday(date) ? 'text-brand' : ''}`}>
                     {format(date, 'd')}
                   </div>
                   <div className="space-y-1">
@@ -1699,13 +1699,13 @@ const ContentCalendar = () => {
                                   onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling?.classList.remove('hidden'); }}
                                 />
                               ) : null}
-                              <div className={`w-full h-full flex items-center justify-center text-[10px] font-medium text-[#86868b] ${getContentThumbUrl(content) ? 'hidden' : ''}`}>
+                              <div className={`w-full h-full flex items-center justify-center text-[10px] font-medium text-ink-muted ${getContentThumbUrl(content) ? 'hidden' : ''}`}>
                                 <Image className="w-4 h-4 opacity-60" />
                               </div>
                             </div>
                           ))}
                         </div>
-                        <div className="text-[10px] text-[#86868b] font-medium">{dayContent.length} posts</div>
+                        <div className="text-[10px] text-ink-muted font-medium">{dayContent.length} posts</div>
                       </>
                     ) : (
                       <>
@@ -1724,13 +1724,13 @@ const ContentCalendar = () => {
                               />
                             ) : null}
                             <div className={`w-full h-10 rounded mb-1 flex items-center justify-center bg-black/10 dark:bg-white/10 ${getContentThumbUrl(content) ? 'hidden' : ''}`}>
-                              <Image className="w-5 h-5 text-[#86868b]" />
+                              <Image className="w-5 h-5 text-ink-muted" />
                             </div>
                             <div className="text-white truncate font-medium">{content.title}</div>
                           </div>
                         ))}
                         {dayContent.length > 2 && (
-                          <div className="text-[10px] text-[#86868b] font-medium">+{dayContent.length - 2} more</div>
+                          <div className="text-[10px] text-ink-muted font-medium">+{dayContent.length - 2} more</div>
                         )}
                       </>
                     )}
@@ -1744,20 +1744,20 @@ const ContentCalendar = () => {
 
 
       {/* ── CONTENT LIBRARY ──────────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
-            <Library className="w-4 h-4 text-[#0071e3]" />
+      <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+        <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
+          <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+            <Library className="w-4 h-4 text-brand" />
             Content Library
             {libraryAssets.length > 0 && (
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#0071e3]/10 text-[#0071e3] font-medium">{libraryAssets.length}</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand/10 text-brand font-medium">{libraryAssets.length}</span>
             )}
           </h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => libraryFileInputRef.current?.click()}
               disabled={uploadingLibrary}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand text-white text-[12px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
             >
               <Upload className="w-3.5 h-3.5" />
               {uploadingLibrary ? 'Uploading...' : 'Add Photos'}
@@ -1775,17 +1775,17 @@ const ContentCalendar = () => {
 
         {/* Drop zone + asset grid */}
         <div
-          className={`p-4 min-h-[160px] transition-colors ${libraryDragOver ? 'bg-[#0071e3]/5 border-2 border-dashed border-[#0071e3]/40' : ''}`}
+          className={`p-4 min-h-[160px] transition-colors ${libraryDragOver ? 'bg-brand/5 border-2 border-dashed border-brand/40' : ''}`}
           onDragOver={(e) => { e.preventDefault(); setLibraryDragOver(true); }}
           onDragLeave={() => setLibraryDragOver(false)}
           onDrop={handleLibraryFileDrop}
         >
           {libraryAssets.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-center">
-              <Upload className="w-8 h-8 text-[#86868b] mb-2" />
-              <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Drop photos &amp; videos here</p>
-              <p className="text-[12px] text-[#86868b] mt-1">or click <span className="text-[#0071e3] cursor-pointer" onClick={() => libraryFileInputRef.current?.click()}>Add Photos</span> to upload</p>
-              <p className="text-[11px] text-[#86868b] mt-2">Drag any asset onto a calendar date to create or append to a post</p>
+              <Upload className="w-8 h-8 text-ink-muted mb-2" />
+              <p className="text-[14px] font-medium text-ink">Drop photos &amp; videos here</p>
+              <p className="text-[12px] text-ink-muted mt-1">or click <span className="text-brand cursor-pointer" onClick={() => libraryFileInputRef.current?.click()}>Add Photos</span> to upload</p>
+              <p className="text-[11px] text-ink-muted mt-2">Drag any asset onto a calendar date to create or append to a post</p>
             </div>
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
@@ -1800,15 +1800,15 @@ const ContentCalendar = () => {
               {/* Add more button */}
               <button
                 onClick={() => libraryFileInputRef.current?.click()}
-                className="aspect-square rounded-xl border-2 border-dashed border-black/10 dark:border-white/10 flex items-center justify-center hover:border-[#0071e3]/40 hover:bg-[#0071e3]/5 transition-colors group"
+                className="aspect-square rounded-xl border-2 border-dashed border-hairline-strong flex items-center justify-center hover:border-brand/40 hover:bg-brand/5 transition-colors group"
               >
-                <Plus className="w-5 h-5 text-[#86868b] group-hover:text-[#0071e3]" />
+                <Plus className="w-5 h-5 text-ink-muted group-hover:text-brand" />
               </button>
             </div>
           )}
         </div>
         <div className="px-5 pb-3">
-          <p className="text-[11px] text-[#86868b]">Drag any asset onto a calendar date to schedule it. Dropping on a date that already has a post will append the photo to that post.</p>
+          <p className="text-[11px] text-ink-muted">Drag any asset onto a calendar date to schedule it. Dropping on a date that already has a post will append the photo to that post.</p>
         </div>
       </div>
 
@@ -1818,7 +1818,7 @@ const ContentCalendar = () => {
           const asset = libraryAssets.find(a => a.id === activeDragId);
           if (!asset) return null;
           return (
-            <div className="w-16 h-16 rounded-xl overflow-hidden shadow-2xl ring-2 ring-[#0071e3] opacity-90">
+            <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg ring-2 ring-brand opacity-90">
               {asset.type?.startsWith('video/') ? (
                 <div className="w-full h-full bg-black/20 flex items-center justify-center">
                   <Video className="w-6 h-6 text-white" />
@@ -1837,9 +1837,9 @@ const ContentCalendar = () => {
       {/* Add/Edit Content Modal */}
       {showAddModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] px-6 py-4 border-b border-black/5 dark:border-white/10 flex justify-between items-center">
-              <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+          <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
+            <div className="sticky top-0 bg-surface px-6 py-4 border-b border-hairline flex justify-between items-center">
+              <h2 className="text-[17px] font-semibold text-ink">
                 {editingContent ? 'Edit Content' : 'Create New Content'}
               </h2>
               <button 
@@ -1859,30 +1859,30 @@ const ContentCalendar = () => {
                   if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
                   setMediaDropActive(false);
                 }}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Title</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Title</label>
                   <input
                     value={postForm.title}
                     onChange={(e) => setPostForm({...postForm, title: e.target.value})}
                     placeholder="Enter content title"
                     required
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Platform</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Platform</label>
                   <select
                     value={postForm.platform}
                     onChange={(e) => setPostForm({...postForm, platform: e.target.value})}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     {platforms.map(platform => (
                       <option key={platform.id} value={platform.id}>{platform.name}</option>
@@ -1893,11 +1893,11 @@ const ContentCalendar = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Description</label>
+                  <label className="text-[13px] font-medium text-ink">Description</label>
                   <button
                     type="button"
                     onClick={() => setShowAICaptionModal(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-lg bg-gradient-to-r from-brand to-pink-500 text-white hover:from-brand hover:to-pink-600 transition-all shadow-sm"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -1910,17 +1910,17 @@ const ContentCalendar = () => {
                   onChange={(e) => setPostForm({...postForm, description: e.target.value})}
                   placeholder="Enter content description or use AI Generate"
                   rows={3}
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Content Type</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Content Type</label>
                   <select
                     value={postForm.contentType}
                     onChange={(e) => setPostForm({...postForm, contentType: e.target.value})}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     {contentTypes.map(type => (
                       <option key={type.id} value={type.id}>{type.name}</option>
@@ -1928,11 +1928,11 @@ const ContentCalendar = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Status</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Status</label>
                   <select
                     value={postForm.status}
                     onChange={(e) => setPostForm({...postForm, status: e.target.value})}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     {statuses.map(status => (
                       <option key={status.id} value={status.id}>{status.name}</option>
@@ -1943,27 +1943,27 @@ const ContentCalendar = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Scheduled Date</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Scheduled Date</label>
                   <input
                     type="datetime-local"
                     value={format(postForm.scheduledDate, "yyyy-MM-dd'T'HH:mm")}
                     onChange={(e) => setPostForm({...postForm, scheduledDate: new Date(e.target.value)})}
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Tags (comma-separated)</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Tags (comma-separated)</label>
                   <input
                     value={postForm.tags}
                     onChange={(e) => setPostForm({...postForm, tags: e.target.value})}
                     placeholder="luxury, realestate, hometour"
-                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Photos / videos (up to {MAX_MEDIA_PER_POST})</label>
+                <label className="block text-[13px] font-medium text-ink mb-2">Photos / videos (up to {MAX_MEDIA_PER_POST})</label>
                 <input
                   ref={mediaFileInputRef}
                   type="file"
@@ -1975,7 +1975,7 @@ const ContentCalendar = () => {
                 {(postForm.media?.length || 0) > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {(postForm.media || []).map((m, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-black/10 dark:border-white/10 bg-black/5">
+                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-hairline-strong bg-black/5">
                         {m.type === 'video' ? (
                           <video src={m.url} className="w-full h-full object-cover" muted playsInline />
                         ) : (
@@ -1999,19 +1999,19 @@ const ContentCalendar = () => {
                     onDrop={handleMediaDrop}
                     onClick={() => mediaFileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                      mediaDropActive ? 'border-[#0071e3] bg-[#0071e3]/10' : 'border-black/20 dark:border-white/20 hover:border-[#0071e3]/50 hover:bg-black/5 dark:hover:bg-white/5'
+                      mediaDropActive ? 'border-brand bg-brand/10' : 'border-black/20 dark:border-white/20 hover:border-brand/50 hover:bg-surface-3'
                     } ${uploadingMedia ? 'pointer-events-none opacity-70' : ''}`}
                   >
                     {uploadingMedia ? (
                       <div className="flex flex-col items-center gap-2">
-                        <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
-                        <p className="text-[13px] text-[#86868b]">Uploading…</p>
+                        <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                        <p className="text-[13px] text-ink-muted">Uploading…</p>
                       </div>
                     ) : (
                       <>
-                        <Upload className="w-10 h-10 text-[#86868b] mx-auto mb-2" />
-                        <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Click or drag to add photos/videos</p>
-                        <p className="text-[11px] text-[#86868b] mt-1">Up to {MAX_MEDIA_PER_POST} files</p>
+                        <Upload className="w-10 h-10 text-ink-muted mx-auto mb-2" />
+                        <p className="text-[13px] font-medium text-ink">Click or drag to add photos/videos</p>
+                        <p className="text-[11px] text-ink-muted mt-1">Up to {MAX_MEDIA_PER_POST} files</p>
                       </>
                     )}
                   </div>
@@ -2020,7 +2020,7 @@ const ContentCalendar = () => {
 
               {(postForm.media?.length > 0 || postForm.description) && (
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Preview</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Preview</label>
                   <div className="flex justify-center">
                     <PostPreviewCard
                       item={{
@@ -2033,7 +2033,7 @@ const ContentCalendar = () => {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-hairline">
                 <button
                   type="button"
                   onClick={() => {
@@ -2042,13 +2042,13 @@ const ContentCalendar = () => {
                     if (mediaFileInputRef.current) mediaFileInputRef.current.value = '';
                     setMediaDropActive(false);
                   }}
-                  className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors"
+                  className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors"
                 >
                   {editingContent ? 'Update Content' : 'Create Content'}
                 </button>
@@ -2062,25 +2062,25 @@ const ContentCalendar = () => {
       {/* AI Caption Generation Modal */}
       {showAICaptionModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-lg border border-black/10 dark:border-white/10 shadow-2xl">
+          <div className="bg-surface rounded-xl w-full max-w-lg border border-hairline-strong shadow-lg">
             {/* Modal Header */}
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4 flex justify-between items-center">
+            <div className="border-b border-hairline px-6 py-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-brand to-pink-500 flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">AI Caption Generator</h2>
-                  <p className="text-[12px] text-[#86868b]">Generate captions for {platforms.find(p => p.id === postForm.platform)?.name || 'social media'}</p>
+                  <h2 className="text-[17px] font-semibold text-ink">AI Caption Generator</h2>
+                  <p className="text-[12px] text-ink-muted">Generate captions for {platforms.find(p => p.id === postForm.platform)?.name || 'social media'}</p>
                 </div>
               </div>
               <button
                 onClick={closeAICaptionModal}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
 
@@ -2090,17 +2090,17 @@ const ContentCalendar = () => {
                   {/* Caption format / template (per linked client) */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white">
+                      <label className="block text-[13px] font-medium text-ink">
                         Caption format
                         {aiLinkedClient && (
-                          <span className="text-[#86868b] font-normal"> · {aiLinkedClient.clientName || aiLinkedClient.name}</span>
+                          <span className="text-ink-muted font-normal"> · {aiLinkedClient.clientName || aiLinkedClient.name}</span>
                         )}
                       </label>
                       {aiLinkedClient && (
                         <button
                           type="button"
                           onClick={() => { setTemplateName(''); setTemplateExample(''); setShowTemplateForm(v => !v); }}
-                          className="text-[12px] font-medium text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                          className="text-[12px] font-medium text-brand dark:text-purple-400 hover:underline flex items-center gap-1"
                         >
                           <Plus className="w-3.5 h-3.5" /> New format
                         </button>
@@ -2113,7 +2113,7 @@ const ContentCalendar = () => {
                             value={selectedTemplateId}
                             onChange={(e) => setSelectedTemplateId(e.target.value)}
                             disabled={isGeneratingCaption}
-                            className="flex-1 px-4 py-2.5 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 px-4 py-2.5 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           >
                             <option value="">No format (free-form)</option>
                             {aiTemplates.map((t) => (
@@ -2125,45 +2125,45 @@ const ContentCalendar = () => {
                               type="button"
                               onClick={() => handleDeleteTemplate(selectedTemplateId)}
                               title="Delete this format"
-                              className="p-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] hover:text-red-500 transition-colors"
+                              className="p-2.5 rounded-xl bg-surface-3 text-ink-muted hover:text-danger transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
                         {selectedTemplateId && (
-                          <p className="text-[11px] text-[#86868b] mt-1.5">
+                          <p className="text-[11px] text-ink-muted mt-1.5">
                             The AI will mirror this format's style — facts come only from your description below.
                           </p>
                         )}
                       </>
                     ) : (
-                      <p className="text-[12px] text-[#86868b]">
+                      <p className="text-[12px] text-ink-muted">
                         Link this calendar to a client (in the Calendars menu) to save and reuse that client's caption formats.
                       </p>
                     )}
 
                     {showTemplateForm && aiLinkedClient && (
-                      <div className="mt-3 p-3 rounded-xl border border-purple-500/20 bg-purple-500/5 space-y-2">
+                      <div className="mt-3 p-3 rounded-xl border border-brand/20 bg-brand/5 space-y-2">
                         <input
                           type="text"
                           value={templateName}
                           onChange={(e) => setTemplateName(e.target.value)}
                           placeholder="Format name (e.g. Oceanfront Listing Style)"
-                          className="w-full px-3 py-2 text-[13px] rounded-lg bg-white dark:bg-white/10 border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-3 py-2 text-[13px] rounded-lg bg-white dark:bg-white/10 border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                         />
                         <textarea
                           value={templateExample}
                           onChange={(e) => setTemplateExample(e.target.value)}
                           placeholder="Paste a previous caption that shows the format you want to reuse…"
                           rows={4}
-                          className="w-full px-3 py-2 text-[13px] rounded-lg bg-white dark:bg-white/10 border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                          className="w-full px-3 py-2 text-[13px] rounded-lg bg-white dark:bg-white/10 border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                         />
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => setShowTemplateForm(false)}
-                            className="px-3 py-1.5 text-[13px] rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white"
+                            className="px-3 py-1.5 text-[13px] rounded-lg bg-surface-3 text-ink"
                           >
                             Cancel
                           </button>
@@ -2171,7 +2171,7 @@ const ContentCalendar = () => {
                             type="button"
                             onClick={handleSaveTemplate}
                             disabled={savingTemplate}
-                            className="px-3 py-1.5 text-[13px] rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                            className="px-3 py-1.5 text-[13px] rounded-lg bg-brand text-white hover:bg-brand-hover disabled:opacity-50"
                           >
                             {savingTemplate ? 'Saving…' : 'Save format'}
                           </button>
@@ -2181,7 +2181,7 @@ const ContentCalendar = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    <label className="block text-[13px] font-medium text-ink mb-2">
                       Describe your content
                     </label>
                     <textarea
@@ -2189,10 +2189,10 @@ const ContentCalendar = () => {
                       onChange={(e) => setAiCaptionPrompt(e.target.value)}
                       placeholder="e.g., Luxury oceanfront villa in Malibu with infinity pool, 5 bedrooms, panoramic ocean views"
                       rows={4}
-                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                      className="w-full px-4 py-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                       disabled={isGeneratingCaption}
                     />
-                    <p className="text-[11px] text-[#86868b] mt-2">
+                    <p className="text-[11px] text-ink-muted mt-2">
                       Include details like property type, location, features, and any key selling points.
                     </p>
                   </div>
@@ -2201,7 +2201,7 @@ const ContentCalendar = () => {
                     <button
                       type="button"
                       onClick={closeAICaptionModal}
-                      className="px-4 py-2 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                      className="px-4 py-2 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                       disabled={isGeneratingCaption}
                     >
                       Cancel
@@ -2232,7 +2232,7 @@ const ContentCalendar = () => {
                         }
                       }}
                       disabled={isGeneratingCaption || !aiCaptionPrompt.trim()}
-                      className="px-5 py-2 text-[14px] font-medium rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-5 py-2 text-[14px] font-medium rounded-xl bg-gradient-to-r from-brand to-pink-500 text-white hover:from-brand hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       {isGeneratingCaption ? (
                         <>
@@ -2253,24 +2253,24 @@ const ContentCalendar = () => {
               ) : (
                 <>
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                    <label className="block text-[13px] font-medium text-ink mb-2">
                       Generated Caption
                     </label>
-                    <div className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                    <div className="w-full px-4 py-3 text-[14px] rounded-xl bg-surface-3 text-ink whitespace-pre-wrap max-h-[200px] overflow-y-auto">
                       {generatedCaption.caption}
                     </div>
                   </div>
 
                   {generatedCaption.hashtags && generatedCaption.hashtags.length > 0 && (
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                      <label className="block text-[13px] font-medium text-ink mb-2">
                         Suggested Hashtags
                       </label>
                       <div className="flex flex-wrap gap-2">
                         {generatedCaption.hashtags.map((tag, i) => (
                           <span
                             key={i}
-                            className="px-2.5 py-1 text-[12px] rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                            className="px-2.5 py-1 text-[12px] rounded-full bg-brand/10 text-brand dark:text-purple-400"
                           >
                             #{tag}
                           </span>
@@ -2285,7 +2285,7 @@ const ContentCalendar = () => {
                       onClick={() => {
                         setGeneratedCaption(null);
                       }}
-                      className="px-4 py-2 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors flex items-center gap-2"
                     >
                       <RefreshCw className="w-4 h-4" />
                       Regenerate
@@ -2302,7 +2302,7 @@ const ContentCalendar = () => {
                           closeAICaptionModal();
                           toast.success('Caption added!');
                         }}
-                        className="px-4 py-2 text-[14px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors"
+                        className="px-4 py-2 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors"
                       >
                         Use Caption
                       </button>
@@ -2319,7 +2319,7 @@ const ContentCalendar = () => {
                           closeAICaptionModal();
                           toast.success('Caption and hashtags added!');
                         }}
-                        className="px-4 py-2 text-[14px] font-medium rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all"
+                        className="px-4 py-2 text-[14px] font-medium rounded-xl bg-gradient-to-r from-brand to-pink-500 text-white hover:from-brand hover:to-pink-600 transition-all"
                       >
                         Use Both
                       </button>
@@ -2336,12 +2336,12 @@ const ContentCalendar = () => {
       {/* Import from Google Sheets Modal */}
       {showImportModal && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
+          <div className="bg-surface rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white dark:bg-[#1d1d1f] border-b border-black/5 dark:border-white/10 px-6 py-4 flex justify-between items-center">
+            <div className="sticky top-0 bg-surface border-b border-hairline px-6 py-4 flex justify-between items-center">
               <div>
-                <h2 className="text-[20px] font-semibold text-[#1d1d1f] dark:text-white">Import from Google Sheets</h2>
-                <p className="text-[13px] text-[#86868b] mt-1">
+                <h2 className="text-[20px] font-semibold text-ink">Import from Google Sheets</h2>
+                <p className="text-[13px] text-ink-muted mt-1">
                   Step {importStep} of 4
                 </p>
               </div>
@@ -2350,9 +2350,9 @@ const ContentCalendar = () => {
                   setShowImportModal(false);
                   resetImportState();
                 }}
-                className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="p-2 rounded-lg hover:bg-surface-3 transition-colors"
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
 
@@ -2361,24 +2361,24 @@ const ContentCalendar = () => {
               {importStep === 1 && (
                 <div className="text-center space-y-6 py-8">
                   <div className="flex justify-center">
-                    <div className="w-20 h-20 bg-[#34c759]/10 rounded-full flex items-center justify-center">
-                      <FileSpreadsheet className="w-10 h-10 text-[#34c759]" />
+                    <div className="w-20 h-20 bg-positive/10 rounded-full flex items-center justify-center">
+                      <FileSpreadsheet className="w-10 h-10 text-positive" />
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Connect Google Sheets</h3>
-                    <p className="text-[14px] text-[#86868b] max-w-md mx-auto">
+                    <h3 className="text-[17px] font-semibold text-ink mb-2">Connect Google Sheets</h3>
+                    <p className="text-[14px] text-ink-muted max-w-md mx-auto">
                       To import content from your Google Sheets, we need permission to access your sheets.
                     </p>
                   </div>
-                  <div className="bg-[#0071e3]/10 rounded-xl p-4 max-w-md mx-auto">
-                    <p className="text-[13px] text-[#0071e3]">
+                  <div className="bg-brand/10 rounded-xl p-4 max-w-md mx-auto">
+                    <p className="text-[13px] text-brand">
                       <strong>We only read data from sheets you select.</strong> Your data is never stored on our servers.
                     </p>
                   </div>
                   <button 
                     onClick={handleAuthorizeSheets}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
                   >
                     <CheckCircle className="w-5 h-5" />
                     Authorize Google Sheets
@@ -2390,14 +2390,14 @@ const ContentCalendar = () => {
               {importStep === 2 && (
                 <div className="space-y-6 py-4">
                   <div>
-                    <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Enter Sheet URL</h3>
-                    <p className="text-[14px] text-[#86868b]">
+                    <h3 className="text-[17px] font-semibold text-ink mb-2">Enter Sheet URL</h3>
+                    <p className="text-[14px] text-ink-muted">
                       Paste the URL or ID of your Google Sheet content calendar.
                     </p>
                   </div>
                   
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Google Sheets URL or ID</label>
+                    <label className="block text-[13px] font-medium text-ink mb-2">Google Sheets URL or ID</label>
                     <input
                       value={sheetUrl}
                       onChange={(e) => {
@@ -2406,17 +2406,17 @@ const ContentCalendar = () => {
                         setSelectedTabTitle('');
                       }}
                       placeholder="https://docs.google.com/spreadsheets/d/..."
-                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                   </div>
 
                   {availableTabs.length > 1 && (
                     <div>
-                      <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Import from tab (e.g. month)</label>
+                      <label className="block text-[13px] font-medium text-ink mb-2">Import from tab (e.g. month)</label>
                       <select
                         value={selectedTabTitle}
                         onChange={(e) => setSelectedTabTitle(e.target.value)}
-                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                        className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                       >
                         {availableTabs.map((tab) => (
                           <option key={tab.sheetId} value={tab.title}>
@@ -2424,16 +2424,16 @@ const ContentCalendar = () => {
                           </option>
                         ))}
                       </select>
-                      <p className="text-[12px] text-[#86868b] mt-1">Select the tab you want to import (e.g. March 2026).</p>
+                      <p className="text-[12px] text-ink-muted mt-1">Select the tab you want to import (e.g. March 2026).</p>
                     </div>
                   )}
 
-                  <div className="bg-black/[0.02] dark:bg-white/5 rounded-xl p-4">
-                    <h4 className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-[#ff9500]" />
+                  <div className="bg-surface-2 rounded-xl p-4">
+                    <h4 className="text-[13px] font-medium text-ink mb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-warning" />
                       How to find your Sheet URL:
                     </h4>
-                    <ol className="text-[13px] text-[#86868b] space-y-1 ml-6 list-decimal">
+                    <ol className="text-[13px] text-ink-muted space-y-1 ml-6 list-decimal">
                       <li>Open your Google Sheet</li>
                       <li>Copy the URL from your browser's address bar</li>
                       <li>Paste it here</li>
@@ -2443,14 +2443,14 @@ const ContentCalendar = () => {
                   <div className="flex justify-end gap-3 pt-4">
                     <button
                       onClick={() => setImportStep(1)}
-                      className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                      className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                     >
                       Back
                     </button>
                     <button 
                       onClick={handleFetchSheet}
                       disabled={!sheetUrl.trim()}
-                      className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {availableTabs.length > 1 ? `Fetch "${selectedTabTitle || availableTabs[0]?.title}"` : 'Fetch Sheet Data'}
                     </button>
@@ -2462,20 +2462,20 @@ const ContentCalendar = () => {
               {importStep === 3 && sheetData && (
                 <div className="space-y-6 py-4">
                   <div>
-                    <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">Review Column Mapping</h3>
-                    <p className="text-[14px] text-[#86868b]">
+                    <h3 className="text-[17px] font-semibold text-ink mb-2">Review Column Mapping</h3>
+                    <p className="text-[14px] text-ink-muted">
                       ChatGPT has analyzed your sheet. Review mappings below, then optionally enrich rows with AI suggestions before importing.
                     </p>
                   </div>
 
-                  <div className="bg-[#34c759]/10 rounded-xl p-4">
-                    <p className="text-[13px] text-[#34c759] mb-2">
+                  <div className="bg-positive/10 rounded-xl p-4">
+                    <p className="text-[13px] text-positive mb-2">
                       ✅ Found <strong>{sheetData.headers.length}</strong> columns and <strong>{sheetData.rows.length}</strong> rows
                     </p>
-                    <p className="text-[12px] text-[#34c759]/80 mb-1">
+                    <p className="text-[12px] text-positive/80 mb-1">
                       💡 <strong>Tip:</strong> Post dates are optional. If you don't have dates, they'll be auto-generated starting from today.
                     </p>
-                    <p className="text-[12px] text-[#34c759]/80">
+                    <p className="text-[12px] text-positive/80">
                       🖼️ <strong>Images:</strong> Map photo columns to &quot;Image / Photo URL&quot;. If you map <strong>multiple</strong> columns to Image, each column becomes a <strong>separate post</strong> on the same day (one row = one day, one post per image column).
                     </p>
                   </div>
@@ -2488,17 +2488,17 @@ const ContentCalendar = () => {
                       const sampleData = sheetData.rows.slice(0, 2).map(row => row[index]).filter(v => v);
 
                       return (
-                        <div key={index} className="rounded-xl p-4 bg-black/[0.02] dark:bg-white/5 border border-black/5 dark:border-white/10">
+                        <div key={index} className="rounded-xl p-4 bg-surface-2 border border-hairline">
                           <div className="flex items-start gap-4">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">{header}</p>
+                                <p className="text-[13px] font-medium text-ink truncate">{header}</p>
                                 {confidence && (
                                   <span 
                                     className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                                      confidence === 'high' ? 'bg-[#34c759]/10 text-[#34c759]' :
-                                      confidence === 'medium' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                                      'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                                      confidence === 'high' ? 'bg-positive/10 text-positive' :
+                                      confidence === 'medium' ? 'bg-warning/10 text-warning' :
+                                      'bg-surface-3 text-ink-muted'
                                     }`}
                                   >
                                     {confidence} confidence
@@ -2506,12 +2506,12 @@ const ContentCalendar = () => {
                                 )}
                               </div>
                               {sampleData.length > 0 && (
-                                <p className="text-[11px] text-[#86868b] truncate">
+                                <p className="text-[11px] text-ink-muted truncate">
                                   Sample: {sampleData.join(', ')}
                                 </p>
                               )}
                               {suggestion && (
-                                <p className="text-[11px] text-[#0071e3] mt-1">
+                                <p className="text-[11px] text-brand mt-1">
                                   💡 {suggestion}
                                 </p>
                               )}
@@ -2520,7 +2520,7 @@ const ContentCalendar = () => {
                               <select
                                 value={mapping || 'unmapped'}
                                 onChange={(e) => handleMappingChange(index.toString(), e.target.value)}
-                                className="w-full h-9 px-3 text-[13px] rounded-lg bg-white dark:bg-[#2d2d2d] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                                className="w-full h-9 px-3 text-[13px] rounded-lg bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                               >
                                 {availableFields.map(field => (
                                   <option key={field.value} value={field.value}>
@@ -2535,10 +2535,10 @@ const ContentCalendar = () => {
                     })}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+                  <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-hairline">
                     <button
                       onClick={() => setImportStep(2)}
-                      className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                      className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                     >
                       Back
                     </button>
@@ -2546,7 +2546,7 @@ const ContentCalendar = () => {
                       type="button"
                       onClick={handleEnrichWithChatGPT}
                       disabled={isEnriching}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-[14px] font-medium rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-60"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors disabled:opacity-60"
                     >
                       {isEnriching ? (
                         <>
@@ -2559,7 +2559,7 @@ const ContentCalendar = () => {
                     </button>
                     <button 
                       onClick={handleImportContent}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-[14px] font-medium rounded-xl bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors"
                     >
                       <Upload className="w-4 h-4" />
                       Import {sheetData.rows.length} Posts
@@ -2573,18 +2573,18 @@ const ContentCalendar = () => {
                 <div className="text-center space-y-6 py-12">
                   <div className="flex justify-center">
                     {isImporting ? (
-                      <div className="w-20 h-20 border-4 border-[#0071e3] border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-20 h-20 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
                     ) : (
-                      <div className="w-20 h-20 bg-[#34c759]/10 rounded-full flex items-center justify-center">
-                        <CheckCircle className="w-10 h-10 text-[#34c759]" />
+                      <div className="w-20 h-20 bg-positive/10 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-10 h-10 text-positive" />
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+                    <h3 className="text-[17px] font-semibold text-ink mb-2">
                       {isImporting ? 'Importing Content...' : 'Import Complete!'}
                     </h3>
-                    <p className="text-[14px] text-[#86868b]">
+                    <p className="text-[14px] text-ink-muted">
                       {isImporting 
                         ? 'Please wait while we import your content...' 
                         : 'Your content has been successfully imported to your calendar.'

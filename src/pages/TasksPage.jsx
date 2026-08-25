@@ -108,12 +108,12 @@ const SortableTaskCard = ({ task, isSelected, onToggleSelect, bulkMode, ...props
             type="checkbox"
             checked={isSelected}
             onChange={() => onToggleSelect(task.id)}
-            className="h-5 w-5 rounded-full border-black/20 dark:border-white/20 text-[#0071e3] focus:ring-[#0071e3] cursor-pointer accent-[#0071e3]"
+            className="h-5 w-5 rounded-full border-black/20 dark:border-white/20 text-brand focus:ring-brand cursor-pointer accent-brand"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
-      <div ref={setActivatorNodeRef} {...attributes} {...listeners} className="absolute top-2 right-2 z-10 p-1 rounded cursor-grab active:cursor-grabbing touch-none text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10">
+      <div ref={setActivatorNodeRef} {...attributes} {...listeners} className="absolute top-2 right-2 z-10 p-1 rounded cursor-grab active:cursor-grabbing touch-none text-ink-muted hover:bg-surface-3">
         <GripVertical className="w-4 h-4" />
       </div>
       <TaskCard task={task} {...props} />
@@ -141,7 +141,7 @@ const SortableTaskListItem = ({ task, isSelected, onToggleSelect, bulkMode, ...p
 
   return (
     <div ref={setNodeRef} style={style} className="relative group">
-      <div ref={setActivatorNodeRef} {...attributes} {...listeners} className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-1 pr-0.5 cursor-grab active:cursor-grabbing touch-none text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10">
+      <div ref={setActivatorNodeRef} {...attributes} {...listeners} className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-1 pr-0.5 cursor-grab active:cursor-grabbing touch-none text-ink-muted hover:bg-surface-3">
         <GripVertical className="w-4 h-4" />
       </div>
       <div className="pl-6">
@@ -1190,10 +1190,10 @@ const TasksPage = () => {
   if (loading) {
     return (
       <div className="space-y-6 sm:space-y-8">
-        <div className="h-8 bg-black/5 dark:bg-white/10 rounded-xl animate-pulse"></div>
+        <div className="h-8 bg-surface-3 rounded-xl animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-48 bg-black/5 dark:bg-white/10 rounded-2xl animate-pulse"></div>
+            <div key={i} className="h-48 bg-surface-3 rounded-xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -1203,13 +1203,10 @@ const TasksPage = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">Daily Tasks</h1>
-          <p className="text-[15px] text-[#86868b] mt-1">
-            Stay on top of your onboarding activities
-            <span className="ml-3 text-[11px] text-[#86868b]">
-              Press <kbd className="px-1.5 py-0.5 bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 rounded text-[#1d1d1f] dark:text-white">⌘K</kbd> to quick add
-            </span>
+        <div className="min-w-0">
+          <h1 className="text-[20px] sm:text-[24px] font-semibold text-ink tracking-[-0.02em]">Tasks</h1>
+          <p className="text-[13px] text-ink-muted mt-0.5">
+            Press <kbd className="px-1.5 py-0.5 bg-surface-3 border border-hairline-strong rounded text-ink">⌘K</kbd> to quick add
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1219,21 +1216,21 @@ const TasksPage = () => {
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium transition-colors ${
                 activeSmartFilter 
-                  ? 'bg-[#0071e3]/10 text-[#0071e3]' 
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-brand/10 text-brand' 
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               <Filter className="w-4 h-4" />
               Filters
               {activeSmartFilter && (
-                <span className="flex items-center gap-1.5 ml-1 px-2 py-0.5 bg-[#0071e3] text-white text-[11px] rounded-md">
+                <span className="flex items-center gap-1.5 ml-1 px-2 py-0.5 bg-brand text-white text-[11px] rounded-md">
                   <span>{activeSmartFilter.name}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       applySmartFilter(null);
                     }}
-                    className="hover:bg-[#0077ed] rounded-sm p-0.5 transition-colors"
+                    className="hover:bg-brand-hover rounded-sm p-0.5 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1264,17 +1261,17 @@ const TasksPage = () => {
                     if (e.key === 'Escape') { setSavingPreset(false); setPresetNameInput(''); }
                   }}
                   autoFocus
-                  className="px-3 py-2 text-[13px] rounded-xl bg-black/5 dark:bg-white/10 border border-[#0071e3]/30 text-[#1d1d1f] dark:text-white outline-none focus:ring-2 focus:ring-[#0071e3] w-36"
+                  className="px-3 py-2 text-[13px] rounded-xl bg-surface-3 border border-brand/30 text-ink outline-none focus:ring-2 focus:ring-brand w-36"
                 />
                 <button
                   onClick={saveCurrentFilterAsPreset}
-                  className="px-3 py-2 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+                  className="px-3 py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors"
                 >
                   Save
                 </button>
                 <button
                   onClick={() => { setSavingPreset(false); setPresetNameInput(''); }}
-                  className="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                  className="px-3 py-2 rounded-xl bg-surface-3 text-ink-muted text-[13px] font-medium hover:bg-hairline-strong transition-colors"
                 >
                   Cancel
                 </button>
@@ -1282,7 +1279,7 @@ const TasksPage = () => {
             ) : (
               <button
                 onClick={() => setSavingPreset(true)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#86868b] text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink-muted text-[13px] font-medium hover:bg-hairline-strong transition-colors"
               >
                 <Bookmark className="w-4 h-4" />
                 Save Filter
@@ -1291,14 +1288,14 @@ const TasksPage = () => {
           )}
           <button
             onClick={() => setShowTemplateSelector(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759]/10 text-[#34c759] text-[13px] font-medium hover:bg-[#34c759]/20 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
           >
             <Sparkles className="w-4 h-4" />
             Templates
           </button>
           <button 
             onClick={() => setShowProductivityStats(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#af52de]/10 text-[#af52de] text-[13px] font-medium hover:bg-[#af52de]/20 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
           >
             <TrendingUp className="w-4 h-4" />
             Stats
@@ -1306,16 +1303,16 @@ const TasksPage = () => {
           {taskRequests.length > 0 && (
             <button 
               onClick={() => setShowRequestsPanel(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[13px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
             >
               <Users className="w-4 h-4" />
               Task Requests
-              <span className="px-1.5 py-0.5 bg-[#ff3b30] text-white text-[11px] rounded-md">{taskRequests.length}</span>
+              <span className="px-1.5 py-0.5 bg-danger text-white text-[11px] rounded-md">{taskRequests.length}</span>
             </button>
           )}
           <button 
             onClick={() => setShowRequestModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
           >
             <UserPlus className="w-4 h-4" />
             Request Task
@@ -1324,7 +1321,7 @@ const TasksPage = () => {
             onClick={() => canCreateTasks ? setShowForm(true) : toast.error('You need CREATE_TASKS permission')} 
             disabled={!canCreateTasks}
             title={!canCreateTasks ? 'You need CREATE_TASKS permission' : ''}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
             Add Task
@@ -1335,7 +1332,7 @@ const TasksPage = () => {
       {/* ── Saved Filter Presets Row */}
       {savedFilterPresets.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1.5">
             <Bookmark className="w-3 h-3" />
             Saved
           </span>
@@ -1345,8 +1342,8 @@ const TasksPage = () => {
               onClick={() => applySmartFilter(preset.filter)}
               className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
                 activeSmartFilter?.name === preset.filter?.name
-                  ? 'bg-[#0071e3] text-white'
-                  : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-[#f5f5f7] hover:bg-black/10 dark:hover:bg-white/15'
+                  ? 'bg-brand text-white'
+                  : 'bg-surface-3 text-ink hover:bg-hairline-strong'
               }`}
             >
               {preset.name}
@@ -1363,7 +1360,7 @@ const TasksPage = () => {
       )}
 
       {/* ── Section Tabs: My Tasks | Requests | Archive */}
-      <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl w-fit">
+      <div className="flex items-center gap-1 p-1 bg-surface-3 rounded-xl w-fit">
         {[
           { value: 'tasks', label: 'My Tasks', icon: CheckSquare },
           { value: 'requests', label: 'Requests', icon: Users, badge: taskRequests.length },
@@ -1374,14 +1371,14 @@ const TasksPage = () => {
             onClick={() => setTaskSection(s.value)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${
               taskSection === s.value
-                ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-surface text-ink shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <s.icon className="w-4 h-4" />
             <span>{s.label}</span>
             {s.badge > 0 && taskSection !== s.value && (
-              <span className="px-1.5 py-0.5 bg-[#ff3b30] text-white text-[10px] font-medium rounded-full leading-none">{s.badge}</span>
+              <span className="px-1.5 py-0.5 bg-danger text-white text-[10px] font-medium rounded-full leading-none">{s.badge}</span>
             )}
           </button>
         ))}
@@ -1389,41 +1386,41 @@ const TasksPage = () => {
 
       {/* ── Inline Requests Panel (shown when Requests section is active) */}
       {taskSection === 'requests' && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/5 dark:border-white/10">
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+          <div className="px-6 py-4 border-b border-hairline">
+            <h2 className="text-[17px] font-semibold text-ink">
               Incoming Requests
               {taskRequests.length > 0 && (
-                <span className="text-[14px] text-[#86868b] font-normal ml-2">({taskRequests.length} pending)</span>
+                <span className="text-[14px] text-ink-muted font-normal ml-2">({taskRequests.length} pending)</span>
               )}
             </h2>
-            <p className="text-[13px] text-[#86868b] mt-0.5">Tasks your teammates have asked you to take on.</p>
+            <p className="text-[13px] text-ink-muted mt-0.5">Tasks your teammates have asked you to take on.</p>
           </div>
           <div className="p-6">
             {taskRequests.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-30" />
-                <p className="text-[15px] text-[#86868b] font-medium">No pending requests</p>
-                <p className="text-[13px] text-[#86868b]/60 mt-1">When teammates send you tasks they'll appear here.</p>
+                <Users className="w-12 h-12 text-ink-muted mx-auto mb-3 opacity-30" />
+                <p className="text-[15px] text-ink-muted font-medium">No pending requests</p>
+                <p className="text-[13px] text-ink-muted/60 mt-1">When teammates send you tasks they'll appear here.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {taskRequests.map((request) => (
-                  <div key={request.id} id={`incoming-request-${request.id}`} className="rounded-xl border border-[#0071e3]/20 bg-[#0071e3]/5 p-5">
+                  <div key={request.id} id={`incoming-request-${request.id}`} className="rounded-xl border border-brand/20 bg-brand/5 p-5">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{request.taskTitle}</h3>
-                      <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${request.taskPriority === 'high' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' : request.taskPriority === 'medium' ? 'bg-[#ff9500]/10 text-[#ff9500]' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>{request.taskPriority}</span>
+                      <h3 className="text-[15px] font-semibold text-ink">{request.taskTitle}</h3>
+                      <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${request.taskPriority === 'high' ? 'bg-danger/10 text-danger' : request.taskPriority === 'medium' ? 'bg-warning/10 text-warning' : 'bg-surface-3 text-ink-muted'}`}>{request.taskPriority}</span>
                     </div>
                     <div className="space-y-2">
-                      <div><p className="text-[12px] font-medium text-[#86868b]">Requested by:</p><p className="text-[13px] text-[#1d1d1f] dark:text-white">{request.fromUserName}</p></div>
-                      {request.taskDescription && <div><p className="text-[12px] font-medium text-[#86868b]">Description:</p><p className="text-[13px] text-[#1d1d1f] dark:text-white">{request.taskDescription}</p></div>}
-                      {request.taskDueDate && <div><p className="text-[12px] font-medium text-[#86868b]">Due:</p><p className="text-[13px] text-[#1d1d1f] dark:text-white">{format(new Date(request.taskDueDate), 'MMMM dd, yyyy')}</p></div>}
-                      <p className="text-[11px] text-[#86868b]">Sent {request.createdAt?.toDate ? format(request.createdAt.toDate(), 'MMM dd, h:mm a') : 'recently'}</p>
-                      <div className="flex gap-3 pt-3 border-t border-[#0071e3]/20">
-                        <button onClick={() => handleAcceptRequest(request)} disabled={processingRequestId === request.id} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50">
+                      <div><p className="text-[12px] font-medium text-ink-muted">Requested by:</p><p className="text-[13px] text-ink">{request.fromUserName}</p></div>
+                      {request.taskDescription && <div><p className="text-[12px] font-medium text-ink-muted">Description:</p><p className="text-[13px] text-ink">{request.taskDescription}</p></div>}
+                      {request.taskDueDate && <div><p className="text-[12px] font-medium text-ink-muted">Due:</p><p className="text-[13px] text-ink">{format(new Date(request.taskDueDate), 'MMMM dd, yyyy')}</p></div>}
+                      <p className="text-[11px] text-ink-muted">Sent {request.createdAt?.toDate ? format(request.createdAt.toDate(), 'MMM dd, h:mm a') : 'recently'}</p>
+                      <div className="flex gap-3 pt-3 border-t border-brand/20">
+                        <button onClick={() => handleAcceptRequest(request)} disabled={processingRequestId === request.id} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-positive text-white text-[13px] font-medium hover:bg-positive transition-colors disabled:opacity-50">
                           {processingRequestId === request.id ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Accepting...</> : <><Check className="w-4 h-4" />Accept</>}
                         </button>
-                        <button onClick={() => setDeclineRequestModal({ open: true, request, reason: '' })} disabled={processingRequestId === request.id} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50">
+                        <button onClick={() => setDeclineRequestModal({ open: true, request, reason: '' })} disabled={processingRequestId === request.id} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 text-danger text-[13px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50">
                           <X className="w-4 h-4" />Decline
                         </button>
                       </div>
@@ -1439,7 +1436,7 @@ const TasksPage = () => {
       {/* ── My Tasks section (filter tabs + task list) */}
       {taskSection === 'tasks' && (<>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
+        <div className="flex flex-wrap gap-1 p-1 bg-surface-3 rounded-xl">
           {[
             { value: 'inbox', icon: Inbox, label: 'Inbox', count: counts.inbox },
             { value: 'today', icon: Calendar, label: 'Today', count: counts.today },
@@ -1452,14 +1449,14 @@ const TasksPage = () => {
               onClick={() => setActiveFilter(tab.value)}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
                 activeFilter === tab.value
-                  ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-                  : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                  ? 'bg-surface text-brand shadow-sm'
+                  : 'text-ink-muted hover:text-ink dark:hover:text-white'
               }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label} ({tab.count})
               {tab.badge > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 bg-[#ff3b30] text-white text-[10px] font-medium rounded-full">
+                <span className="ml-1 px-1.5 py-0.5 bg-danger text-white text-[10px] font-medium rounded-full">
                   {tab.badge}
                 </span>
               )}
@@ -1469,11 +1466,11 @@ const TasksPage = () => {
         
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center bg-black/5 dark:bg-white/10 rounded-xl overflow-hidden">
+          <div className="flex items-center bg-surface-3 rounded-xl overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 transition-colors ${
-                viewMode === 'grid' ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                viewMode === 'grid' ? 'bg-brand/10 text-brand' : 'text-ink-muted hover:text-ink dark:hover:text-white'
               }`}
             >
               <LayoutGrid className="w-4 h-4" />
@@ -1481,7 +1478,7 @@ const TasksPage = () => {
             <button
               onClick={() => setViewMode('list')}
               className={`p-2 transition-colors ${
-                viewMode === 'list' ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                viewMode === 'list' ? 'bg-brand/10 text-brand' : 'text-ink-muted hover:text-ink dark:hover:text-white'
               }`}
             >
               <List className="w-4 h-4" />
@@ -1490,7 +1487,7 @@ const TasksPage = () => {
           
           <button
             onClick={() => setShowCalendarView(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[13px] font-medium hover:bg-[#5856d6]/20 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand/10 text-brand text-[13px] font-medium hover:bg-brand/20 transition-colors"
           >
             <CalendarIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Calendar</span>
@@ -1499,8 +1496,8 @@ const TasksPage = () => {
             onClick={() => setBulkActionMode(!bulkActionMode)}
             className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
               bulkActionMode 
-                ? 'bg-[#0071e3]/10 text-[#0071e3]' 
-                : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'
+                ? 'bg-brand/10 text-brand' 
+                : 'bg-surface-3 text-ink hover:bg-hairline-strong'
             }`}
           >
             {bulkActionMode ? 'Cancel' : 'Select'}
@@ -1510,7 +1507,7 @@ const TasksPage = () => {
 
       {/* Bulk Actions Toolbar */}
       {bulkActionMode && (
-        <div className="sticky top-0 z-30 bg-[#0071e3] text-white p-4 rounded-2xl shadow-lg">
+        <div className="sticky top-0 z-30 bg-brand text-white p-4 rounded-xl shadow-lg">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="text-[14px] font-medium">
@@ -1540,7 +1537,7 @@ const TasksPage = () => {
               <button
                 onClick={bulkCompleteTasks}
                 disabled={selectedTasks.length === 0}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-positive text-white text-[12px] font-medium hover:bg-positive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Complete
@@ -1548,7 +1545,7 @@ const TasksPage = () => {
               <button
                 onClick={bulkDeleteTasks}
                 disabled={selectedTasks.length === 0}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#ff3b30] text-white text-[12px] font-medium hover:bg-[#e5342b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-danger text-white text-[12px] font-medium hover:bg-[#e5342b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete
@@ -1589,13 +1586,13 @@ const TasksPage = () => {
 
       {/* Outbox: tasks you requested others to do */}
       {activeFilter === 'outbox' ? (
-        <div className="bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-            <p className="text-[13px] text-[#86868b]">
+        <div className="bg-surface backdrop-blur-xl rounded-xl border border-hairline overflow-hidden">
+          <div className="p-4 border-b border-hairline flex items-center justify-between">
+            <p className="text-[13px] text-ink-muted">
               Tasks you requested from others. You’ll get a notification when someone accepts or completes them.
             </p>
             {outboxUnreadCount > 0 && (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-danger/10 text-danger text-[12px] font-medium">
                 <Bell className="w-3.5 h-3.5" />
                 {outboxUnreadCount} new
               </span>
@@ -1603,55 +1600,55 @@ const TasksPage = () => {
           </div>
           {outboxLoading ? (
             <div className="p-12 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-[#0071e3] animate-spin" />
+              <Loader2 className="w-8 h-8 text-brand animate-spin" />
             </div>
           ) : sentRequests.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="w-8 h-8 text-[#86868b]" />
+              <div className="w-16 h-16 bg-surface-3 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send className="w-8 h-8 text-ink-muted" />
               </div>
-              <p className="text-[15px] text-[#86868b] font-medium">No requested tasks yet</p>
-              <p className="text-[13px] text-[#86868b] mt-1">Use “Request Task” to ask someone else to do a task</p>
+              <p className="text-[15px] text-ink-muted font-medium">No requested tasks yet</p>
+              <p className="text-[13px] text-ink-muted mt-1">Use “Request Task” to ask someone else to do a task</p>
             </div>
           ) : displayedOutboxRequests.length === 0 ? (
             <div className="text-center py-12">
               {sentRequests.filter((r) => !archivedRequestIds.has(r.id)).length === 0 ? (
                 <>
-                  <p className="text-[15px] text-[#86868b] font-medium">All {sentRequests.length} outbox item{sentRequests.length !== 1 ? 's' : ''} {sentRequests.length !== 1 ? 'are' : 'is'} archived</p>
+                  <p className="text-[15px] text-ink-muted font-medium">All {sentRequests.length} outbox item{sentRequests.length !== 1 ? 's' : ''} {sentRequests.length !== 1 ? 'are' : 'is'} archived</p>
                   <button
                     type="button"
                     onClick={() => setShowArchivedOutbox(true)}
-                    className="mt-3 text-[14px] font-medium text-[#0071e3] hover:underline"
+                    className="mt-3 text-[14px] font-medium text-brand hover:underline"
                   >
                     Show archived
                   </button>
                 </>
               ) : (
                 <>
-                  <p className="text-[15px] text-[#86868b] font-medium">No outbox items match the current filter</p>
-                  <p className="text-[13px] text-[#86868b] mt-1">Clear the filter or add requests that match</p>
+                  <p className="text-[15px] text-ink-muted font-medium">No outbox items match the current filter</p>
+                  <p className="text-[13px] text-ink-muted mt-1">Clear the filter or add requests that match</p>
                 </>
               )}
             </div>
           ) : (
             <>
               {sentRequests.some((r) => archivedRequestIds.has(r.id)) && (
-                <div className="px-4 py-2 border-b border-black/5 dark:border-white/10 flex items-center justify-between">
-                  <span className="text-[12px] text-[#86868b]">Archived is local to you</span>
+                <div className="px-4 py-2 border-b border-hairline flex items-center justify-between">
+                  <span className="text-[12px] text-ink-muted">Archived is local to you</span>
                   <button
                     type="button"
                     onClick={() => setShowArchivedOutbox(!showArchivedOutbox)}
-                    className="text-[12px] font-medium text-[#0071e3] hover:underline"
+                    className="text-[12px] font-medium text-brand hover:underline"
                   >
                     {showArchivedOutbox ? 'Hide archived' : 'Show archived'}
                   </button>
                 </div>
               )}
-              <ul className="divide-y divide-black/5 dark:divide-white/10">
+              <ul className="divide-y divide-hairline">
               {displayedOutboxRequests.map((req) => {
                 const task = outboxTaskMap[req.id];
                 const statusLabel = req.status === 'pending' ? 'Pending' : req.status === 'accepted' ? (task?.status === 'completed' ? 'Completed' : 'In progress') : 'Declined';
-                const statusColor = req.status === 'pending' ? 'text-[#ff9500]' : req.status === 'accepted' ? (task?.status === 'completed' ? 'text-[#34c759]' : 'text-[#0071e3]') : 'text-[#ff3b30]';
+                const statusColor = req.status === 'pending' ? 'text-warning' : req.status === 'accepted' ? (task?.status === 'completed' ? 'text-positive' : 'text-brand') : 'text-danger';
                 const isArchived = archivedRequestIds.has(req.id);
                 const canOpenTask = task && (req.status === 'accepted');
                 const handleRowClick = () => {
@@ -1671,8 +1668,8 @@ const TasksPage = () => {
                     className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors ${canOpenTask ? '' : 'opacity-90'}`}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-[#1d1d1f] dark:text-white">{req.taskTitle}</p>
-                      <p className="text-[12px] text-[#86868b] mt-0.5">
+                      <p className="font-medium text-ink">{req.taskTitle}</p>
+                      <p className="text-[12px] text-ink-muted mt-0.5">
                         To: {req.toUserName || req.toUserEmail}
                         {req.taskDueDate && ` · Due ${format(new Date(req.taskDueDate), 'MMM d, yyyy')}`}
                       </p>
@@ -1682,7 +1679,7 @@ const TasksPage = () => {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); isArchived ? handleUnarchiveRequest(req.id) : handleArchiveRequest(req.id); }}
-                        className="p-1.5 rounded-lg text-[#86868b] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1d1d1f] dark:hover:text-white"
+                        className="p-1.5 rounded-lg text-ink-muted hover:bg-surface-3 hover:text-ink dark:hover:text-white"
                         title={isArchived ? 'Restore from archive' : 'Archive (only you)'}
                       >
                         {isArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
@@ -1702,7 +1699,7 @@ const TasksPage = () => {
                             toast.error('Failed to remove request');
                           }
                         }}
-                        className="p-1.5 rounded-lg text-[#86868b] hover:bg-[#ff3b30]/10 hover:text-[#ff3b30]"
+                        className="p-1.5 rounded-lg text-ink-muted hover:bg-danger/10 hover:text-danger"
                         title="Remove from outbox"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1727,14 +1724,14 @@ const TasksPage = () => {
         >
         {filteredTasks.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-surface-3 rounded-full flex items-center justify-center mx-auto mb-4">
                 {activeFilter === "completed" ? (
-                  <CheckCircle2 className="w-8 h-8 text-[#34c759]" />
+                  <CheckCircle2 className="w-8 h-8 text-positive" />
                 ) : (
-                  <Clock className="w-8 h-8 text-[#86868b]" />
+                  <Clock className="w-8 h-8 text-ink-muted" />
                 )}
               </div>
-              <p className="text-[15px] text-[#86868b] font-medium">
+              <p className="text-[15px] text-ink-muted font-medium">
                 {activeFilter === "inbox" && "No tasks in inbox"}
                 {activeFilter === "today" && "No tasks scheduled for today"}
                 {activeFilter === "upcoming" && "No upcoming tasks"}
@@ -1742,7 +1739,7 @@ const TasksPage = () => {
                 {activeFilter === "completed" && (showArchivedTasks ? "No archived tasks" : "No completed tasks yet")}
               </p>
               {activeFilter === "completed" && tasks.some((t) => t.status === 'completed' && archivedTaskIds.has(t.id)) && (
-                <button type="button" onClick={() => setShowArchivedTasks(!showArchivedTasks)} className="mt-2 text-[13px] font-medium text-[#0071e3] hover:underline">
+                <button type="button" onClick={() => setShowArchivedTasks(!showArchivedTasks)} className="mt-2 text-[13px] font-medium text-brand hover:underline">
                   {showArchivedTasks ? 'Hide archived' : 'Show archived'}
                 </button>
               )}
@@ -1750,16 +1747,16 @@ const TasksPage = () => {
           ) : (
             <>
               {overdueTasks.length > 0 && activeFilter !== 'outbox' && (
-                <div className="mb-2 text-[13px] text-[#86868b]">
-                  <button type="button" onClick={renewAllOverdue} className="text-[#0071e3] hover:underline">
+                <div className="mb-2 text-[13px] text-ink-muted">
+                  <button type="button" onClick={renewAllOverdue} className="text-brand hover:underline">
                     Renew all overdue?
                   </button>
                 </div>
               )}
               {activeFilter === 'completed' && tasks.some((t) => t.status === 'completed' && archivedTaskIds.has(t.id)) && (
-                <div className="mb-3 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-between">
-                  <span className="text-[12px] text-[#86868b]">Archived is local to you</span>
-                  <button type="button" onClick={() => setShowArchivedTasks(!showArchivedTasks)} className="text-[12px] font-medium text-[#0071e3] hover:underline">
+                <div className="mb-3 px-3 py-2 rounded-xl bg-surface-3 flex items-center justify-between">
+                  <span className="text-[12px] text-ink-muted">Archived is local to you</span>
+                  <button type="button" onClick={() => setShowArchivedTasks(!showArchivedTasks)} className="text-[12px] font-medium text-brand hover:underline">
                     {showArchivedTasks ? 'Hide archived' : 'Show archived'}
                   </button>
                 </div>
@@ -1786,7 +1783,7 @@ const TasksPage = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+            <div className="bg-surface backdrop-blur-xl rounded-xl border border-hairline overflow-hidden">
               {filteredTasks.map((task) => (
                 <SortableTaskListItem
                   key={task.id}
@@ -1817,12 +1814,12 @@ const TasksPage = () => {
       {/* Task Request Modal */}
       {showRequestModal && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl max-w-lg w-full border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Request Task from Team Member</h2>
-                <button onClick={() => setShowRequestModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <h2 className="text-[17px] font-semibold text-ink">Request Task from Team Member</h2>
+                <button onClick={() => setShowRequestModal(false)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
@@ -1830,20 +1827,20 @@ const TasksPage = () => {
             <form onSubmit={handleSubmitTaskRequest} className="p-6 space-y-4">
               {/* Debug info */}
               {availableUsers.length === 0 && (
-                <div className="bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-xl p-3 text-[13px] text-[#ff9500]">
+                <div className="bg-warning/10 border border-warning/20 rounded-xl p-3 text-[13px] text-warning">
                   ⚠️ No other team members found. Total employees: {availableUsers.length}
                 </div>
               )}
               
               {/* Select User */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Assign To * ({availableUsers.length} available)
                 </label>
                 <select
                   value={requestForm.toUserEmail}
                   onChange={(e) => setRequestForm({...requestForm, toUserEmail: e.target.value})}
-                  className="w-full h-11 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 >
                   <option value="">Select a team member...</option>
@@ -1857,7 +1854,7 @@ const TasksPage = () => {
 
               {/* Task Title */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Task Title *
                 </label>
                 <input
@@ -1865,14 +1862,14 @@ const TasksPage = () => {
                   value={requestForm.taskTitle}
                   onChange={(e) => setRequestForm({...requestForm, taskTitle: e.target.value})}
                   placeholder="What needs to be done?"
-                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-11 px-4 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Description
                 </label>
                 <textarea
@@ -1880,18 +1877,18 @@ const TasksPage = () => {
                   onChange={(e) => setRequestForm({...requestForm, taskDescription: e.target.value})}
                   placeholder="Add details about this task..."
                   rows={3}
-                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                  className="w-full px-4 py-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
 
               {/* Priority & Due Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Priority</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Priority</label>
                   <select
                     value={requestForm.taskPriority}
                     onChange={(e) => setRequestForm({...requestForm, taskPriority: e.target.value})}
-                    className="w-full h-11 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -1899,30 +1896,30 @@ const TasksPage = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Due Date</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Due Date</label>
                   <input
                     type="date"
                     value={requestForm.taskDueDate}
                     onChange={(e) => setRequestForm({...requestForm, taskDueDate: e.target.value})}
-                    className="w-full h-11 px-3 text-[14px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-11 px-3 text-[14px] rounded-xl bg-surface border border-hairline-strong text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-hairline">
                 <button
                   type="button"
                   onClick={() => setShowRequestModal(false)}
                   disabled={submittingRequest}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
                   disabled={submittingRequest}
-                  className="px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {submittingRequest ? 'Sending...' : 'Send Request'}
                 </button>
@@ -1936,12 +1933,12 @@ const TasksPage = () => {
       {/* Task Requests Panel */}
       {showRequestsPanel && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Task Requests ({taskRequests.length})</h2>
-                <button onClick={() => setShowRequestsPanel(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <h2 className="text-[17px] font-semibold text-ink">Task Requests ({taskRequests.length})</h2>
+                <button onClick={() => setShowRequestsPanel(false)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
@@ -1949,52 +1946,52 @@ const TasksPage = () => {
             <div className="p-6">
               {taskRequests.length === 0 ? (
                 <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-[#86868b] mx-auto mb-3 opacity-50" />
-                  <p className="text-[15px] text-[#86868b]">No pending task requests</p>
+                  <Users className="w-12 h-12 text-ink-muted mx-auto mb-3 opacity-50" />
+                  <p className="text-[15px] text-ink-muted">No pending task requests</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {taskRequests.map((request) => (
-                    <div key={request.id} id={`incoming-request-${request.id}`} className="rounded-xl border border-[#0071e3]/20 bg-[#0071e3]/5 p-5">
+                    <div key={request.id} id={`incoming-request-${request.id}`} className="rounded-xl border border-brand/20 bg-brand/5 p-5">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{request.taskTitle}</h3>
+                        <h3 className="text-[15px] font-semibold text-ink">{request.taskTitle}</h3>
                         <span className={`text-[11px] px-2 py-1 rounded-md font-medium ${
-                          request.taskPriority === 'high' ? 'bg-[#ff3b30]/10 text-[#ff3b30]' :
-                          request.taskPriority === 'medium' ? 'bg-[#ff9500]/10 text-[#ff9500]' :
-                          'bg-black/5 dark:bg-white/10 text-[#86868b]'
+                          request.taskPriority === 'high' ? 'bg-danger/10 text-danger' :
+                          request.taskPriority === 'medium' ? 'bg-warning/10 text-warning' :
+                          'bg-surface-3 text-ink-muted'
                         }`}>
                           {request.taskPriority}
                         </span>
                       </div>
                       <div className="space-y-2">
                         <div>
-                          <p className="text-[12px] font-medium text-[#86868b]">Requested by:</p>
-                          <p className="text-[13px] text-[#1d1d1f] dark:text-white">{request.fromUserName}</p>
+                          <p className="text-[12px] font-medium text-ink-muted">Requested by:</p>
+                          <p className="text-[13px] text-ink">{request.fromUserName}</p>
                         </div>
                         {request.taskDescription && (
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b]">Description:</p>
-                            <p className="text-[13px] text-[#1d1d1f] dark:text-white">{request.taskDescription}</p>
+                            <p className="text-[12px] font-medium text-ink-muted">Description:</p>
+                            <p className="text-[13px] text-ink">{request.taskDescription}</p>
                           </div>
                         )}
                         {request.taskDueDate && (
                           <div>
-                            <p className="text-[12px] font-medium text-[#86868b]">Due Date:</p>
-                            <p className="text-[13px] text-[#1d1d1f] dark:text-white">
+                            <p className="text-[12px] font-medium text-ink-muted">Due Date:</p>
+                            <p className="text-[13px] text-ink">
                               {format(new Date(request.taskDueDate), 'MMMM dd, yyyy')}
                             </p>
                           </div>
                         )}
-                        <p className="text-[11px] text-[#86868b]">
+                        <p className="text-[11px] text-ink-muted">
                           Sent {request.createdAt?.toDate ? format(request.createdAt.toDate(), 'MMM dd, h:mm a') : 'recently'}
                         </p>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3 pt-3 border-t border-[#0071e3]/20">
+                        <div className="flex gap-3 pt-3 border-t border-brand/20">
                           <button
                             onClick={() => handleAcceptRequest(request)}
                             disabled={processingRequestId === request.id}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#34c759] text-white text-[13px] font-medium hover:bg-[#2db14e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-positive text-white text-[13px] font-medium hover:bg-positive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {processingRequestId === request.id ? (
                               <>
@@ -2011,7 +2008,7 @@ const TasksPage = () => {
                           <button
                             onClick={() => setDeclineRequestModal({ open: true, request, reason: '' })}
                             disabled={processingRequestId === request.id}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[13px] font-medium hover:bg-[#ff3b30]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 text-danger text-[13px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <X className="w-4 h-4" />
                             Decline
@@ -2031,24 +2028,24 @@ const TasksPage = () => {
       {/* Decline task request reason modal */}
       {declineRequestModal.open && declineRequestModal.request && createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-md w-full border border-black/10 dark:border-white/10 shadow-2xl p-6">
+          <div className="bg-surface rounded-xl max-w-md w-full border border-hairline-strong shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Decline task request</h3>
-              <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-                <X className="w-5 h-5 text-[#86868b]" />
+              <h3 className="text-[17px] font-semibold text-ink">Decline task request</h3>
+              <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="p-2 rounded-lg hover:bg-surface-3">
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
-            <p className="text-[13px] text-[#86868b] dark:text-gray-400 mb-3">Why are you declining this task? (Optional)</p>
+            <p className="text-[13px] text-ink-muted dark:text-gray-400 mb-3">Why are you declining this task? (Optional)</p>
             <textarea
               value={declineRequestModal.reason}
               onChange={(e) => setDeclineRequestModal(prev => ({ ...prev, reason: e.target.value }))}
               placeholder="Reason for declining..."
-              className="w-full px-3 py-2 border border-black/10 dark:border-white/10 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white placeholder-[#86868b] min-h-[80px] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+              className="w-full px-3 py-2 border border-hairline-strong rounded-xl bg-surface-3 text-ink placeholder-ink-muted min-h-[80px] focus:outline-none focus:ring-2 focus:ring-brand"
               autoFocus
             />
             <div className="flex gap-2 mt-4">
-              <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="flex-1 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15">Cancel</button>
-              <button type="button" onClick={() => handleRejectRequest(declineRequestModal.request, declineRequestModal.reason)} className="flex-1 px-4 py-2.5 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#e5342b]">Decline</button>
+              <button type="button" onClick={() => setDeclineRequestModal({ open: false, request: null, reason: '' })} className="flex-1 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">Cancel</button>
+              <button type="button" onClick={() => handleRejectRequest(declineRequestModal.request, declineRequestModal.reason)} className="flex-1 px-4 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e5342b]">Decline</button>
             </div>
           </div>
         </div>,
@@ -2058,17 +2055,17 @@ const TasksPage = () => {
       {/* Project Request Modal */}
       {showProjectRequestModal && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#1d1d1f] rounded-2xl max-w-lg w-full border border-black/10 dark:border-white/10 shadow-2xl">
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4">
+          <div className="bg-surface rounded-xl max-w-lg w-full border border-hairline-strong shadow-lg">
+            <div className="border-b border-hairline px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#5856d6]/10 flex items-center justify-center">
-                    <Palette className="w-5 h-5 text-[#5856d6]" />
+                  <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center">
+                    <Palette className="w-5 h-5 text-brand" />
                   </div>
-                  <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Request a Project</h2>
+                  <h2 className="text-[17px] font-semibold text-ink">Request a Project</h2>
                 </div>
-                <button onClick={() => setShowProjectRequestModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <button onClick={() => setShowProjectRequestModal(false)} className="p-2 rounded-lg hover:bg-surface-3 transition-colors">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
             </div>
@@ -2076,14 +2073,14 @@ const TasksPage = () => {
             <form onSubmit={handleSubmitProjectRequest} className="p-6 space-y-4">
               {/* Designer Selection */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                  Request From <span className="text-[#ff3b30]">*</span>
+                <label className="block text-[13px] font-medium text-ink mb-2">
+                  Request From <span className="text-danger">*</span>
                 </label>
                 <select
                   value={projectRequestForm.toUserEmail}
                   onChange={(e) => setProjectRequestForm(prev => ({ ...prev, toUserEmail: e.target.value }))}
                   required
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="">Select a designer...</option>
                   {GRAPHIC_TEAM.map(member => (
@@ -2096,8 +2093,8 @@ const TasksPage = () => {
               
               {/* Client */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                  Client <span className="text-[#ff3b30]">*</span>
+                <label className="block text-[13px] font-medium text-ink mb-2">
+                  Client <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -2105,14 +2102,14 @@ const TasksPage = () => {
                   onChange={(e) => setProjectRequestForm(prev => ({ ...prev, client: e.target.value }))}
                   placeholder="e.g., Agency Cayman Island"
                   required
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               
               {/* Project Description */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                  Project Description <span className="text-[#ff3b30]">*</span>
+                <label className="block text-[13px] font-medium text-ink mb-2">
+                  Project Description <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -2120,20 +2117,20 @@ const TasksPage = () => {
                   onChange={(e) => setProjectRequestForm(prev => ({ ...prev, task: e.target.value }))}
                   placeholder="e.g., Social Media Graphics Package"
                   required
-                  className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                  className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               
               {/* Priority & Deadline */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                  <label className="block text-[13px] font-medium text-ink mb-2">
                     Priority
                   </label>
                   <select
                     value={projectRequestForm.priority}
                     onChange={(e) => setProjectRequestForm(prev => ({ ...prev, priority: e.target.value }))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -2141,8 +2138,8 @@ const TasksPage = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
-                    Deadline <span className="text-[#ff3b30]">*</span>
+                  <label className="block text-[13px] font-medium text-ink mb-2">
+                    Deadline <span className="text-danger">*</span>
                   </label>
                   <input
                     type="date"
@@ -2150,14 +2147,14 @@ const TasksPage = () => {
                     onChange={(e) => setProjectRequestForm(prev => ({ ...prev, deadline: e.target.value }))}
                     required
                     min={format(new Date(), 'yyyy-MM-dd')}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#5856d6]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
               
               {/* Notes */}
               <div>
-                <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+                <label className="block text-[13px] font-medium text-ink mb-2">
                   Additional Notes
                 </label>
                 <textarea
@@ -2165,24 +2162,24 @@ const TasksPage = () => {
                   onChange={(e) => setProjectRequestForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Any additional details or requirements..."
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#5856d6] resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
               
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/10">
+              <div className="flex justify-end gap-3 pt-4 border-t border-hairline">
                 <button
                   type="button"
                   onClick={() => setShowProjectRequestModal(false)}
                   disabled={submittingProjectRequest}
-                  className="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
                   disabled={submittingProjectRequest}
-                  className="px-4 py-2.5 rounded-xl bg-[#5856d6] text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {submittingProjectRequest && <Loader2 className="w-4 h-4 animate-spin" />}
                   Send Request
@@ -2246,11 +2243,11 @@ const TasksPage = () => {
       {/* Toast Notification - Bottom Left */}
       {completionToast && (
         <div className="fixed bottom-6 left-6 z-50 animate-in slide-in-from-bottom-5 duration-200">
-          <div className="bg-[#1d1d1f] text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-4 min-w-[280px] border border-white/10">
+          <div className="bg-ink text-white rounded-xl shadow-lg px-4 py-3 flex items-center gap-4 min-w-[280px] border border-white/10">
             <span className="text-[13px] font-medium">{completionToast.message}</span>
             <button
               onClick={undoTaskCompletion}
-              className="text-[#ff3b30] hover:text-[#ff453a] text-[13px] font-semibold transition-colors"
+              className="text-danger hover:text-[#ff453a] text-[13px] font-semibold transition-colors"
             >
               Undo
             </button>

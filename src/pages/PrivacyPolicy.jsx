@@ -6,15 +6,15 @@ const LAST_UPDATED = 'June 2, 2026';
 
 const PrivacyPolicy = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-8 sm:p-12">
+    <div className="min-h-screen bg-gradient-to-br from-brand-soft via-white to-brand-soft py-12 px-4">
+      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-8 sm:p-12">
         <Link to="/login" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8">
           <ArrowLeft className="w-4 h-4" /> Back to sign in
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <Shield className="w-6 h-6 text-blue-600" />
+          <div className="w-12 h-12 bg-brand-soft rounded-full flex items-center justify-center">
+            <Shield className="w-6 h-6 text-brand" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
         </div>
@@ -24,7 +24,7 @@ const PrivacyPolicy = () => {
           <p>
             This Privacy Policy explains how <strong>Luxury Listings Corp.</strong> ("we", "us", or "our")
             collects, uses, and protects your information when you use the SMM Luxury Listings portal at{' '}
-            <a href="https://smmluxurylistings.com" className="text-blue-600 hover:underline">smmluxurylistings.com</a>{' '}
+            <a href="https://smmluxurylistings.com" className="text-brand hover:underline">smmluxurylistings.com</a>{' '}
             (the "Service").
           </p>
 
@@ -81,7 +81,7 @@ const PrivacyPolicy = () => {
                 href="https://developers.google.com/terms/api-services-user-data-policy"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
+                className="text-brand hover:underline"
               >
                 Google API Services User Data Policy
               </a>
@@ -121,7 +121,7 @@ const PrivacyPolicy = () => {
             <p>
               Luxury Listings Corp.<br />
               Duncan, British Columbia, Canada<br />
-              <a href="mailto:jrsschroeder@gmail.com" className="text-blue-600 hover:underline">
+              <a href="mailto:jrsschroeder@gmail.com" className="text-brand hover:underline">
                 jrsschroeder@gmail.com
               </a>
             </p>
@@ -130,7 +130,7 @@ const PrivacyPolicy = () => {
 
         <div className="mt-10 pt-6 border-t border-gray-100 text-sm text-gray-500">
           See also our{' '}
-          <Link to="/terms-of-service" className="text-blue-600 hover:underline">Terms of Service</Link>.
+          <Link to="/terms-of-service" className="text-brand hover:underline">Terms of Service</Link>.
         </div>
       </div>
     </div>

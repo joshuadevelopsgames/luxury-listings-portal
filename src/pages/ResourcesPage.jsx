@@ -143,13 +143,13 @@ const typeIcons = {
 };
 
 const categoryColors = {
-  employee: "bg-[#0071e3]/10 text-[#0071e3]",
-  policy: "bg-black/5 dark:bg-white/10 text-[#86868b]",
-  support: "bg-[#34c759]/10 text-[#34c759]", 
-  contacts: "bg-[#af52de]/10 text-[#af52de]",
-  training: "bg-[#ff9500]/10 text-[#ff9500]",
-  benefits: "bg-[#ff9500]/10 text-[#ff9500]",
-  hr: "bg-[#5856d6]/10 text-[#5856d6]"
+  employee: "bg-brand/10 text-brand",
+  policy: "bg-surface-3 text-ink-muted",
+  support: "bg-positive/10 text-positive", 
+  contacts: "bg-brand/10 text-brand",
+  training: "bg-warning/10 text-warning",
+  benefits: "bg-warning/10 text-warning",
+  hr: "bg-brand/10 text-brand"
 };
 
 export default function ResourcesPage() {
@@ -182,13 +182,13 @@ export default function ResourcesPage() {
   return (
     <div className="w-full">
       <div className="px-6 pt-6 pb-4">
-        <div className="inline-flex p-1 rounded-xl bg-black/5 dark:bg-white/10">
+        <div className="inline-flex p-1 rounded-xl bg-surface-3">
           <button 
             onClick={() => setActiveTab("resources")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${
               activeTab === "resources"
-                ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-surface text-ink shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -198,8 +198,8 @@ export default function ResourcesPage() {
             onClick={() => setActiveTab("programs")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${
               activeTab === "programs"
-                ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm'
-                : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+                ? 'bg-surface text-ink shadow-sm'
+                : 'text-ink-muted hover:text-ink dark:hover:text-white'
             }`}
           >
             <Settings className="w-4 h-4" />
@@ -211,24 +211,24 @@ export default function ResourcesPage() {
       {activeTab === "resources" && (
         <div className="p-6 space-y-8 max-w-6xl mx-auto">
           <div>
-            <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">Resources & Support</h1>
-            <p className="text-[15px] text-[#86868b] mt-1">Everything you need to know, all in one place</p>
+            <h1 className="text-[28px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em]">Resources & Support</h1>
+            <p className="text-[15px] text-ink-muted mt-1">Everything you need to know, all in one place</p>
           </div>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-muted w-4 h-4" />
             <input
               placeholder="Search resources..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-11 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+              className="w-full h-11 pl-10 pr-4 text-[15px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
           {/* Featured Resource - My Time Off */}
           {featuredResource && (
             <section>
-              <div className="bg-gradient-to-br from-[#0071e3] to-[#5856d6] text-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="bg-gradient-to-br from-brand to-brand text-white rounded-xl shadow-lg overflow-hidden">
                 <div className="p-6">
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -246,7 +246,7 @@ export default function ResourcesPage() {
                   <div className="mt-5">
                     <button 
                       onClick={() => navigate(featuredResource.internalPath)}
-                      className="flex items-center gap-2 px-5 py-3 bg-white text-[#0071e3] rounded-xl text-[15px] font-semibold hover:bg-white/90 transition-colors"
+                      className="flex items-center gap-2 px-5 py-3 bg-white text-brand rounded-xl text-[15px] font-semibold hover:bg-white/90 transition-colors"
                     >
                       Go to My Time Off
                       <ArrowRight className="w-4 h-4" />
@@ -261,8 +261,8 @@ export default function ResourcesPage() {
           {importantResources.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">Essential Resources</h2>
-                <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#ff3b30]/10 text-[#ff3b30] font-medium">Must Read</span>
+                <h2 className="text-[17px] font-semibold text-ink">Essential Resources</h2>
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-danger/10 text-danger font-medium">Must Read</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {importantResources.map((resource) => (
@@ -274,15 +274,15 @@ export default function ResourcesPage() {
 
           {/* Other Resources */}
           <section>
-            <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-4">All Resources</h2>
+            <h2 className="text-[17px] font-semibold text-ink mb-4">All Resources</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {otherResources.length === 0 && importantResources.length === 0 ? (
                 <div className="col-span-full text-center py-12">
-                  <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Book className="w-8 h-8 text-[#86868b]" />
+                  <div className="w-16 h-16 bg-surface-3 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Book className="w-8 h-8 text-ink-muted" />
                   </div>
-                  <p className="text-[15px] font-medium text-[#1d1d1f] dark:text-white">No resources found</p>
-                  <p className="text-[13px] text-[#86868b]">Try a different search term</p>
+                  <p className="text-[15px] font-medium text-ink">No resources found</p>
+                  <p className="text-[13px] text-ink-muted">Try a different search term</p>
                 </div>
               ) : (
                 otherResources.map((resource) => (
@@ -293,7 +293,7 @@ export default function ResourcesPage() {
           </section>
 
           {/* Quick Contact Section */}
-          <div className="bg-gradient-to-r from-[#0071e3] to-[#5856d6] text-white rounded-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-brand to-brand text-white rounded-xl overflow-hidden">
             <div className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Phone className="w-5 h-5" />
@@ -356,16 +356,16 @@ function ResourceCard({ resource, navigate, currentRole, canManageResources }) {
   };
   
   return (
-    <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 p-5 hover:shadow-lg transition-all duration-300">
+    <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline p-5 hover:shadow-md transition-all duration-300">
       <div className="flex items-start gap-3 mb-4">
-        <div className="p-2.5 bg-black/5 dark:bg-white/10 rounded-xl">
-          <Icon className="w-5 h-5 text-[#1d1d1f] dark:text-white" />
+        <div className="p-2.5 bg-surface-3 rounded-xl">
+          <Icon className="w-5 h-5 text-ink" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+          <h3 className="text-[15px] font-semibold text-ink">
             {resource.title}
           </h3>
-          <p className="text-[13px] text-[#86868b] mt-0.5 line-clamp-2">
+          <p className="text-[13px] text-ink-muted mt-0.5 line-clamp-2">
             {resource.description}
           </p>
         </div>
@@ -380,7 +380,7 @@ function ResourceCard({ resource, navigate, currentRole, canManageResources }) {
           <button
             type="button"
             onClick={() => toast('Coming Soon!')}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors"
           >
             <ArrowRight className="w-4 h-4" />
             Open Resource
@@ -390,7 +390,7 @@ function ResourceCard({ resource, navigate, currentRole, canManageResources }) {
         {!resource.comingSoon && resource.internalPath && (
           <button 
             onClick={() => navigate(getInternalPath())}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors"
           >
             <ArrowRight className="w-4 h-4" />
             {resource.buttonLabel || `Open ${resource.title}`}
@@ -402,7 +402,7 @@ function ResourceCard({ resource, navigate, currentRole, canManageResources }) {
             href={resource.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium hover:bg-[#0077ed] transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             Open Resource
@@ -410,14 +410,14 @@ function ResourceCard({ resource, navigate, currentRole, canManageResources }) {
         )}
         
         {resource.contact && (
-          <div className="text-[12px] text-[#86868b] flex items-center gap-1.5">
+          <div className="text-[12px] text-ink-muted flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5" />
             {resource.contact}
           </div>
         )}
         
         {resource.phone && (
-          <div className="text-[12px] text-[#86868b] flex items-center gap-1.5">
+          <div className="text-[12px] text-ink-muted flex items-center gap-1.5">
             <Phone className="w-3.5 h-3.5" />
             {resource.phone}
           </div>

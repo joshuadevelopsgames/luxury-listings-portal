@@ -87,7 +87,7 @@ For questions or additional insights, please contact your media manager.
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
         <p className="text-gray-600 mt-4">Loading reports...</p>
       </div>
     );
@@ -107,10 +107,10 @@ For questions or additional insights, please contact your media manager.
       {/* Reports List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {reports.map((report) => (
-          <Card key={report.id} className="p-6 hover:shadow-lg transition-shadow">
+          <Card key={report.id} className="p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
+                <FileText className="w-5 h-5 text-brand" />
                 <div>
                   <h3 className="font-semibold text-gray-900">{report.month}</h3>
                   <p className="text-xs text-gray-500">
@@ -119,7 +119,7 @@ For questions or additional insights, please contact your media manager.
                 </div>
               </div>
               {report.status === 'pending' && (
-                <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                <Badge className="bg-warning-soft text-warning">Pending</Badge>
               )}
             </div>
 
@@ -223,7 +223,7 @@ For questions or additional insights, please contact your media manager.
                         handleDownloadReport(selectedReport.id);
                         setSelectedReport(null);
                       }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      className="flex-1 bg-brand hover:bg-brand-hover text-white"
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download Report

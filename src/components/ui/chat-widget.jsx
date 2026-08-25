@@ -130,7 +130,7 @@ const ChatWidget = () => {
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+          className="bg-brand hover:bg-brand-hover text-white rounded-full p-3 shadow-lg hover:shadow-md transition-all duration-200 transform hover:scale-105"
           title="Chat with AI Assistant"
         >
           <MessageCircle className="w-6 h-6" />
@@ -139,14 +139,14 @@ const ChatWidget = () => {
 
       {/* Chat Interface */}
       {isOpen && (
-        <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-80 h-96 flex flex-col">
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 w-80 h-96 flex flex-col">
           {/* Header */}
-          <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg flex items-center justify-between">
+          <div className="bg-brand text-white px-4 py-3 rounded-t-lg flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Bot className="w-5 h-5" />
               <div>
                 <span className="font-semibold">AI Assistant</span>
-                <div className="text-xs text-blue-100 opacity-80">
+                <div className="text-xs text-brand-soft opacity-80">
                   {currentRole === 'content_director' && 'Content Director'}
                   {currentRole === 'social_media_manager' && 'Social Media Manager'}
                           {currentRole === 'admin' && 'System Admin'}
@@ -183,24 +183,24 @@ const ChatWidget = () => {
                 <div
                   className={`max-w-[80%] rounded-lg px-3 py-2 ${
                     message.type === 'user'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-brand text-white'
                       : 'bg-gray-100 text-gray-800'
                   }`}
                 >
                   <div className="flex items-start space-x-2">
                     {message.type === 'ai' && (
-                      <Bot className="w-4 h-4 mt-0.5 text-blue-600 flex-shrink-0" />
+                      <Bot className="w-4 h-4 mt-0.5 text-brand flex-shrink-0" />
                     )}
                     <div className="flex-1">
                       <p className="text-sm whitespace-pre-line">{message.text}</p>
                       <p className={`text-xs mt-1 ${
-                        message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                        message.type === 'user' ? 'text-brand-soft' : 'text-gray-500'
                       }`}>
                         {formatTime(message.timestamp)}
                       </p>
                     </div>
                     {message.type === 'user' && (
-                      <User className="w-4 h-4 mt-0.5 text-blue-100 flex-shrink-0" />
+                      <User className="w-4 h-4 mt-0.5 text-brand-soft flex-shrink-0" />
                     )}
                   </div>
                 </div>
@@ -212,7 +212,7 @@ const ChatWidget = () => {
               <div className="flex justify-start">
                 <div className="bg-gray-100 text-gray-800 rounded-lg px-3 py-2">
                   <div className="flex items-center space-x-2">
-                    <Bot className="w-4 h-4 text-blue-600" />
+                    <Bot className="w-4 h-4 text-brand" />
                     <div className="flex items-center space-x-1">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       <span className="text-sm">AI is thinking...</span>
@@ -235,14 +235,14 @@ const ChatWidget = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me anything about the app..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
                 disabled={isLoading}
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isLoading}
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2"
+                className="bg-brand hover:bg-brand-hover text-white px-3 py-2"
               >
                 <Send className="w-4 h-4" />
               </Button>

@@ -17,11 +17,11 @@ const AppCard = ({ integration }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'active':
-        return <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />;
+        return <CheckCircle2 className="w-4 h-4 text-positive dark:text-green-400" />;
       case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />;
+        return <Clock className="w-4 h-4 text-warning dark:text-yellow-400" />;
       case 'error':
-        return <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />;
+        return <AlertTriangle className="w-4 h-4 text-danger dark:text-red-400" />;
       default:
         return <Info className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
@@ -183,8 +183,8 @@ const AppCard = ({ integration }) => {
   return (
     <Card className={`h-full transition-all duration-200 hover:shadow-md ${
       integration.isCritical 
-        ? 'border-red-200 bg-red-50/30 dark:border-red-800/50 dark:bg-red-900/10' 
-        : 'border-gray-200 dark:border-white/10 dark:bg-[#2d2d2d]/80 hover:border-blue-300 dark:hover:border-blue-700'
+        ? 'border-red-200 bg-danger-soft/30 dark:border-danger/50 dark:bg-red-900/10' 
+        : 'border-gray-200 dark:border-white/10 dark:bg-surface hover:border-blue-300 dark:hover:border-brand'
     }`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -276,8 +276,8 @@ const AppCard = ({ integration }) => {
         
         {/* Critical App Warning */}
         {integration.isCritical && (
-          <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800/50">
-            <p className="text-xs text-red-800 dark:text-red-300 font-medium">
+          <div className="p-2 bg-danger-soft dark:bg-red-900/20 rounded border border-red-200 dark:border-danger/50">
+            <p className="text-xs text-danger dark:text-red-300 font-medium">
               ⚠️ Critical tool for content workflow. Ensure this is properly configured.
             </p>
           </div>

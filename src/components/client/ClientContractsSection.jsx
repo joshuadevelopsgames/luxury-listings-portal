@@ -78,7 +78,7 @@ const ClientContractsSection = ({ client }) => {
   if (loading) {
     return (
       <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
         <p className="text-gray-600 mt-4">Loading contracts...</p>
       </div>
     );
@@ -98,7 +98,7 @@ const ClientContractsSection = ({ client }) => {
         </div>
         <Button
           onClick={() => setShowUploadModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-brand hover:bg-brand-hover text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
           Upload Contract
@@ -107,11 +107,11 @@ const ClientContractsSection = ({ client }) => {
 
       {/* Active Contract Highlight */}
       {activeContract && (
-        <Card className="p-6 bg-blue-50 border-blue-200">
+        <Card className="p-6 bg-brand-soft border-blue-200">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <FileText className="w-5 h-5 text-blue-600" />
+                <FileText className="w-5 h-5 text-brand" />
                 <h4 className="font-semibold text-gray-900">{activeContract.contractName}</h4>
                 <Badge className={`bg-${getContractStatus(activeContract).color}-100 text-${getContractStatus(activeContract).color}-800`}>
                   {getContractStatus(activeContract).label}
@@ -223,7 +223,7 @@ const ClientContractsSection = ({ client }) => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteContract(contract.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-danger hover:text-danger hover:bg-danger-soft"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

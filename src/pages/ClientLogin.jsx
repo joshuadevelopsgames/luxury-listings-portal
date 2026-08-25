@@ -126,7 +126,7 @@ const ClientLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-soft via-white to-brand-soft flex items-center justify-center p-4">
       <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         
         {/* Left Side - Welcome Content */}
@@ -134,7 +134,7 @@ const ClientLogin = () => {
           <div className="mb-8">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
               Client
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-brand">
                 {' '}Portal
               </span>
             </h1>
@@ -146,29 +146,29 @@ const ClientLogin = () => {
           {/* Feature Highlights */}
           <div className="space-y-4 mb-8">
             <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-blue-600" />
+              <div className="flex-shrink-0 w-10 h-10 bg-brand-soft rounded-full flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-brand" />
               </div>
               <span className="text-gray-700">Approve and review content calendars</span>
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-purple-600" />
+              <div className="flex-shrink-0 w-10 h-10 bg-brand-soft rounded-full flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-brand" />
               </div>
               <span className="text-gray-700">Message your media manager directly</span>
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-green-600" />
+              <div className="flex-shrink-0 w-10 h-10 bg-positive-soft rounded-full flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-positive" />
               </div>
               <span className="text-gray-700">View your analytics and performance reports</span>
             </div>
 
             <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                <FileText className="w-5 h-5 text-orange-600" />
+              <div className="flex-shrink-0 w-10 h-10 bg-warning-soft rounded-full flex items-center justify-center">
+                <FileText className="w-5 h-5 text-warning" />
               </div>
               <span className="text-gray-700">Download monthly analytics reports</span>
             </div>
@@ -176,15 +176,15 @@ const ClientLogin = () => {
         </div>
 
         {/* Right Side - Login Form */}
-        <div className="bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl rounded-2xl border border-black/5 dark:border-white/10 p-8 shadow-xl">
+        <div className="bg-surface backdrop-blur-xl rounded-xl border border-hairline p-8 shadow-lg">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-[#0071e3] to-[#5856d6] rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-brand to-brand rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-[22px] font-semibold text-[#1d1d1f] dark:text-white mb-2">
+            <h2 className="text-[22px] font-semibold text-ink mb-2">
               {isSignUp ? 'Create Your Account' : 'Sign In to Portal'}
             </h2>
-            <p className="text-[15px] text-[#86868b]">
+            <p className="text-[15px] text-ink-muted">
               {isSignUp 
                 ? 'Set up your client portal access' 
                 : 'Access your client dashboard'
@@ -193,35 +193,35 @@ const ClientLogin = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-[#ff3b30]/10 border border-[#ff3b30]/20 rounded-xl">
-              <p className="text-[#ff3b30] text-[13px]">{error}</p>
+            <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-xl">
+              <p className="text-danger text-[13px]">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+              <label className="block text-[13px] font-medium text-ink mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-ink-muted" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+              <label className="block text-[13px] font-medium text-ink mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#86868b]" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-ink-muted" />
                 <input
                   type="password"
                   value={password}
@@ -229,7 +229,7 @@ const ClientLogin = () => {
                   placeholder={isSignUp ? 'Create a password (min. 6 characters)' : 'Enter your password'}
                   required
                   minLength={6}
-                  className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-12 pl-10 pr-4 text-[15px] rounded-xl bg-surface border border-hairline-strong text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             </div>
@@ -237,7 +237,7 @@ const ClientLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-xl bg-[#0071e3] text-white text-[15px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading 
                 ? (isSignUp ? 'Creating Account...' : 'Signing In...') 
@@ -248,14 +248,14 @@ const ClientLogin = () => {
 
           {/* Password Reset Section */}
           {showPasswordReset && !isSignUp && (
-            <div className="mt-4 p-4 bg-[#0071e3]/5 border border-[#0071e3]/20 rounded-xl">
+            <div className="mt-4 p-4 bg-brand/5 border border-brand/20 rounded-xl">
               {resetSent ? (
                 <div className="text-center">
-                  <p className="text-[13px] text-[#0071e3] font-medium mb-2">✓ Password reset email sent!</p>
-                  <p className="text-[12px] text-[#0071e3]/80 mb-2">
+                  <p className="text-[13px] text-brand font-medium mb-2">✓ Password reset email sent!</p>
+                  <p className="text-[12px] text-brand/80 mb-2">
                     Check your inbox at <strong>{resetEmail || email}</strong> and click the reset link.
                   </p>
-                  <p className="text-[11px] text-[#ff9500] bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-lg px-2 py-1 mb-2">
+                  <p className="text-[11px] text-warning bg-warning/10 border border-warning/20 rounded-lg px-2 py-1 mb-2">
                     ⚠️ Don't see it? Please check your <strong>spam/junk folder</strong> - it may have been filtered there.
                   </p>
                   <button
@@ -264,21 +264,21 @@ const ClientLogin = () => {
                       setResetSent(false);
                       setResetEmail('');
                     }}
-                    className="text-[12px] text-[#0071e3] hover:text-[#0077ed] font-medium"
+                    className="text-[12px] text-brand hover:text-brand-hover font-medium"
                   >
                     Close
                   </button>
                 </div>
               ) : (
                 <div>
-                  <p className="text-[13px] font-medium text-[#0071e3] mb-2">Forgot Password?</p>
+                  <p className="text-[13px] font-medium text-brand mb-2">Forgot Password?</p>
                   <div className="flex gap-2">
                     <input
                       type="email"
                       value={resetEmail || email}
                       onChange={(e) => setResetEmail(e.target.value)}
                       placeholder="Enter your email"
-                      className="flex-1 h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="flex-1 h-10 px-3 text-[14px] rounded-xl bg-white dark:bg-black/20 border-0 text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                     <button
                       type="button"
@@ -309,7 +309,7 @@ const ClientLogin = () => {
                           }
                         }
                       }}
-                      className="px-4 py-2 rounded-xl bg-white dark:bg-black/20 text-[#0071e3] text-[13px] font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors whitespace-nowrap"
+                      className="px-4 py-2 rounded-xl bg-white dark:bg-black/20 text-brand text-[13px] font-medium hover:bg-surface-3 transition-colors whitespace-nowrap"
                     >
                       Send Reset
                     </button>
@@ -325,7 +325,7 @@ const ClientLogin = () => {
                 <button
                   type="button"
                   onClick={() => setShowPasswordReset(true)}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-sm text-brand hover:text-brand font-medium"
                 >
                   Forgot Password?
                 </button>
@@ -352,7 +352,7 @@ const ClientLogin = () => {
                 setShowPasswordReset(false);
                 setResetSent(false);
               }}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-brand hover:text-brand font-medium"
             >
               {isSignUp 
                 ? 'Already have an account? Sign in' 
@@ -361,12 +361,12 @@ const ClientLogin = () => {
             </button>
           </div>
 
-          <div className="mt-8 p-4 bg-[#0071e3]/5 rounded-xl border border-[#0071e3]/20">
+          <div className="mt-8 p-4 bg-brand/5 rounded-xl border border-brand/20">
             <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-[#0071e3] mt-0.5 flex-shrink-0" />
+              <Shield className="w-5 h-5 text-brand mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-[13px] text-[#0071e3] font-medium">Secure Access</p>
-                <p className="text-[11px] text-[#0071e3]/80 mt-1">
+                <p className="text-[13px] text-brand font-medium">Secure Access</p>
+                <p className="text-[11px] text-brand/80 mt-1">
                   Your account is protected with secure authentication. Only clients with registered emails can access the portal.
                 </p>
               </div>
@@ -374,16 +374,16 @@ const ClientLogin = () => {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-[13px] text-[#86868b]">
+            <p className="text-[13px] text-ink-muted">
               Need help?{' '}
-              <a href={getGmailComposeUrl('support@luxury-listings.com')} target="_blank" rel="noopener noreferrer" className="text-[#0071e3] hover:text-[#0077ed] font-medium">
+              <a href={getGmailComposeUrl('support@luxury-listings.com')} target="_blank" rel="noopener noreferrer" className="text-brand hover:text-brand-hover font-medium">
                 Contact Support
               </a>
             </p>
             {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-3 bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-xl">
-                <p className="text-[11px] text-[#ff9500] font-medium mb-2">Development Mode</p>
-                <p className="text-[11px] text-[#ff9500]/80 mb-2">
+              <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-xl">
+                <p className="text-[11px] text-warning font-medium mb-2">Development Mode</p>
+                <p className="text-[11px] text-warning/80 mb-2">
                   Test account: <strong>joshua@luxury-listings.com</strong>
                 </p>
                 <button
@@ -404,7 +404,7 @@ const ClientLogin = () => {
                       setLoading(false);
                     }
                   }}
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/20 text-[#ff9500] text-[12px] font-medium hover:bg-[#ff9500]/10 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/20 text-warning text-[12px] font-medium hover:bg-warning/10 transition-colors"
                   disabled={loading}
                 >
                   Create Test Client Account

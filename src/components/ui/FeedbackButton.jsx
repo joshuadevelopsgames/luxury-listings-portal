@@ -169,7 +169,7 @@ export default function FeedbackButton() {
       const element = e.target;
       if (element && element !== document.body && !element.closest('.feedback-panel')) {
         if (document.body.contains(element)) {
-          element.style.outline = '2px solid #0071e3';
+          element.style.outline = '2px solid var(--ds-accent)';
           element.style.outlineOffset = '2px';
         }
       }
@@ -607,24 +607,24 @@ export default function FeedbackButton() {
       icon: Bug,
       label: 'Report a Bug',
       description: 'Found something broken?',
-      color: '#ff3b30',
-      bgColor: 'bg-[#ff3b30]/10'
+      color: 'var(--ds-danger)',
+      bgColor: 'bg-danger/10'
     },
     {
       id: 'feature',
       icon: Lightbulb,
       label: 'Feature Request',
       description: 'Have an idea for improvement?',
-      color: '#ff9500',
-      bgColor: 'bg-[#ff9500]/10'
+      color: 'var(--ds-warning)',
+      bgColor: 'bg-warning/10'
     },
     {
       id: 'chat',
       icon: MessageSquare,
       label: 'Chat with Developer',
       description: 'Talk directly with Joshua',
-      color: '#0071e3',
-      bgColor: 'bg-[#0071e3]/10'
+      color: 'var(--ds-info)',
+      bgColor: 'bg-brand/10'
     }
   ];
 
@@ -632,38 +632,44 @@ export default function FeedbackButton() {
 
   return (
     <>
-      {/* Floating Button - Apple-style gradient + gloss (no overflow-hidden so badge can sit on top) */}
+      {/* Floating support button. Kept in the bottom-right corner, but styled as
+          a solid neutral control: no gradient, gloss layer, coloured glow or
+          hover scale — those are what made it read as a marketing widget. */}
       <button
         onClick={handleOpen}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full transition-all duration-200 flex items-center justify-center z-40 group ${
+        className={`fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center z-40 transition-colors shadow-md ${
           isMinimized && activeChat?.status === 'open'
-            ? 'bg-gradient-to-b from-[#34c759] to-[#28a745] shadow-[0_4px_20px_rgba(52,199,89,0.4),0_0_0_1px_rgba(255,255,255,0.15)_inset] hover:shadow-[0_8px_28px_rgba(52,199,89,0.45),0_0_0_1px_rgba(255,255,255,0.2)_inset] hover:scale-[1.04] active:scale-[0.98]'
-            : 'bg-gradient-to-b from-[#007aff] via-[#0066e6] to-[#5856d6] shadow-[0_4px_24px_rgba(0,122,255,0.38),0_0_0_1px_rgba(255,255,255,0.12)_inset] hover:shadow-[0_8px_32px_rgba(0,122,255,0.45),0_0_0_1px_rgba(255,255,255,0.18)_inset] hover:scale-[1.04] active:scale-[0.98]'
+            ? 'bg-positive hover:opacity-90'
+            : 'bg-ink hover:bg-ink-muted'
         }`}
         title={isMinimized ? 'Return to chat' : 'Feedback & Support'}
       >
-        {/* Top gloss highlight - clipped to circle */}
-        <span className="absolute inset-0 rounded-full overflow-hidden bg-gradient-to-b from-white/30 via-white/5 to-transparent pointer-events-none" aria-hidden />
-        <span className="relative z-10 text-white drop-shadow-sm">
+        {/* ink/canvas invert together, so the glyph stays legible in both
+            themes without a `dark:` variant. */}
+        <span
+          className={
+            isMinimized && activeChat?.status === 'open'
+              ? 'text-white'
+              : 'text-canvas'
+          }
+        >
           {isMinimized && activeChat?.status === 'open' ? (
-            <MessageSquare className="w-6 h-6" />
+            <MessageSquare className="w-5 h-5" strokeWidth={1.75} />
           ) : (
-            <MessageCircle className="w-6 h-6" />
+            <MessageCircle className="w-5 h-5" strokeWidth={1.75} />
           )}
         </span>
         {showUnreadBadge && (
-          <span className="absolute -top-1 -right-1 z-20 w-5 h-5 bg-[#ff3b30] rounded-full border-2 border-white dark:border-[#1c1c1e] shadow-md pointer-events-none" aria-label="New message" />
-        )}
-        {isMinimized && activeChat?.status === 'open' && !showUnreadBadge && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center z-20">
-            <span className="w-2 h-2 bg-[#34c759] rounded-full animate-ping" />
-          </span>
+          <span
+            className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-danger rounded-full ring-2 ring-canvas"
+            aria-label="New message"
+          />
         )}
       </button>
 
       {/* Inspection Mode Indicator */}
       {isInspecting && (
-        <div className="inspection-indicator fixed top-4 left-1/2 -translate-x-1/2 z-[9999] bg-[#0071e3] text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-4">
+        <div className="inspection-indicator fixed top-4 left-1/2 -translate-x-1/2 z-[9999] bg-brand text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-4">
           <div className="flex items-center gap-2">
             <MousePointer2 className="w-5 h-5" />
             <div>
@@ -682,12 +688,12 @@ export default function FeedbackButton() {
 
       {/* Panel */}
       {isOpen && (
-        <div className="feedback-panel fixed bottom-24 right-6 w-[360px] bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 z-50 overflow-hidden flex flex-col max-h-[600px]">
+        <div className="feedback-panel fixed bottom-24 right-6 w-[360px] bg-surface rounded-xl shadow-lg border border-hairline-strong z-50 overflow-hidden flex flex-col max-h-[min(600px,calc(100vh-8rem))]">
           {/* Header */}
-          <div className={`flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 flex-shrink-0 ${
+          <div className={`flex items-center justify-between px-5 py-4 border-b border-hairline flex-shrink-0 ${
             view === 'chat-detail' && selectedChat?.status === 'open'
-              ? 'bg-gradient-to-r from-[#34c759]/5 to-[#0071e3]/5'
-              : 'bg-gradient-to-r from-[#0071e3]/5 to-[#5856d6]/5'
+              ? 'bg-black/[0.02] dark:bg-white/[0.03]'
+              : 'bg-black/[0.02] dark:bg-white/[0.03]'
           }`}>
             <div className="flex items-center gap-3">
               {view !== 'menu' && view !== 'chat-list' && view !== 'chat' && view !== 'chat-detail' && (
@@ -702,9 +708,9 @@ export default function FeedbackButton() {
                     }
                     setSelectedElement(null);
                   }}
-                  className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                  className="w-8 h-8 rounded-lg hover:bg-surface-3 flex items-center justify-center"
                 >
-                  <ArrowLeft className="w-4 h-4 text-[#86868b]" />
+                  <ArrowLeft className="w-4 h-4 text-ink-muted" />
                 </button>
               )}
               {(view === 'chat-list' || view === 'chat') && (
@@ -712,12 +718,12 @@ export default function FeedbackButton() {
                   onClick={() => {
                     setView('menu');
                   }}
-                  className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                  className="w-8 h-8 rounded-lg hover:bg-surface-3 flex items-center justify-center"
                 >
-                  <ArrowLeft className="w-4 h-4 text-[#86868b]" />
+                  <ArrowLeft className="w-4 h-4 text-ink-muted" />
                 </button>
               )}
-              <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+              <h3 className="text-[15px] font-semibold text-ink">
                 {view === 'menu' && 'Feedback & Support'}
                 {view === 'bug' && 'Report a Bug'}
                 {view === 'feature' && 'Feature Request'}
@@ -727,7 +733,7 @@ export default function FeedbackButton() {
                   <div className="flex items-center gap-2">
                     <span>Chat with Joshua</span>
                     {selectedChat?.status === 'open' && (
-                      <span className="w-2 h-2 bg-[#34c759] rounded-full" />
+                      <span className="w-2 h-2 bg-positive rounded-full" />
                     )}
                   </div>
                 )}
@@ -739,34 +745,34 @@ export default function FeedbackButton() {
                 <>
                   <button
                     onClick={() => setView('bug')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#ff3b30]/10 flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-danger/10 flex items-center justify-center transition-colors"
                     title="Report a bug"
                   >
-                    <Bug className="w-4 h-4 text-[#ff3b30]" />
+                    <Bug className="w-4 h-4 text-danger" />
                   </button>
                   <button
                     onClick={() => setView('feature')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#ff9500]/10 flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-warning/10 flex items-center justify-center transition-colors"
                     title="Request a feature"
                   >
-                    <Lightbulb className="w-4 h-4 text-[#ff9500]" />
+                    <Lightbulb className="w-4 h-4 text-warning" />
                   </button>
                   <div className="w-px h-5 bg-black/10 dark:bg-white/10 mx-1" />
                   <button
                     onClick={handleClose}
-                    className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                    className="w-8 h-8 rounded-lg hover:bg-surface-3 flex items-center justify-center"
                     title="Minimize chat"
                   >
-                    <Minus className="w-5 h-5 text-[#86868b]" />
+                    <Minus className="w-5 h-5 text-ink-muted" />
                   </button>
                 </>
               )}
               <button
                 onClick={view === 'chat-detail' ? handleEndChat : handleClose}
-                className="w-8 h-8 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center"
+                className="w-8 h-8 rounded-lg hover:bg-surface-3 flex items-center justify-center"
                 title={view === 'chat-detail' ? 'End chat session' : 'Close'}
               >
-                <X className="w-5 h-5 text-[#86868b]" />
+                <X className="w-5 h-5 text-ink-muted" />
               </button>
             </div>
           </div>
@@ -778,7 +784,7 @@ export default function FeedbackButton() {
               <div className="space-y-2">
                 <a
                   href="/feedback-support"
-                  className="block mt-1 mb-3 text-center text-[12px] text-[#0071e3] hover:underline"
+                  className="block mt-1 mb-3 text-center text-[12px] text-brand hover:underline"
                 >
                   Open full Feedback & Support page →
                 </a>
@@ -794,20 +800,20 @@ export default function FeedbackButton() {
                           setView(option.id);
                         }
                       }}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left group"
+                      className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-surface-3 transition-colors text-left group"
                     >
                       <div className={`w-10 h-10 rounded-xl ${option.bgColor} flex items-center justify-center flex-shrink-0`}>
                         <Icon className="w-5 h-5" style={{ color: option.color }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">
+                        <p className="text-[14px] font-medium text-ink">
                           {option.label}
                         </p>
-                        <p className="text-[12px] text-[#86868b]">
+                        <p className="text-[12px] text-ink-muted">
                           {option.description}
                         </p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-[#86868b] group-hover:text-[#1d1d1f] dark:group-hover:text-white transition-colors" />
+                      <ChevronRight className="w-4 h-4 text-ink-muted group-hover:text-ink dark:group-hover:text-white transition-colors" />
                     </button>
                   );
                 })}
@@ -819,33 +825,33 @@ export default function FeedbackButton() {
               <div className="space-y-4">
                 {/* Element Selection */}
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Problem Area (Optional)</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Problem Area (Optional)</label>
                   {!selectedElement ? (
                     <button
                       onClick={handleStartInspection}
-                      className="w-full h-10 px-3 rounded-lg bg-[#0071e3]/10 border border-[#0071e3]/20 text-[14px] text-[#0071e3] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center justify-center gap-2"
+                      className="w-full h-10 px-3 rounded-lg bg-brand/10 border border-brand/20 text-[14px] text-brand font-medium hover:bg-brand/20 transition-colors flex items-center justify-center gap-2"
                     >
                       <MousePointer2 className="w-4 h-4" />
                       Click to Select Element
                     </button>
                   ) : (
-                    <div className="p-3 rounded-lg bg-[#34c759]/10 border border-[#34c759]/20">
+                    <div className="p-3 rounded-lg bg-positive/10 border border-positive/20">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[12px] font-medium text-[#34c759]">Element Selected</span>
+                        <span className="text-[12px] font-medium text-positive">Element Selected</span>
                         <button
                           onClick={() => setSelectedElement(null)}
-                          className="text-[#86868b] hover:text-[#1d1d1f]"
+                          className="text-ink-muted hover:text-ink"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="text-[12px] text-[#1d1d1f] dark:text-white">
+                      <p className="text-[12px] text-ink">
                         &lt;{selectedElement.tagName.toLowerCase()}&gt;
                         {selectedElement.id && ` #${selectedElement.id}`}
                         {selectedElement.className && ` .${selectedElement.className.split(' ')[0]}`}
                       </p>
                       {selectedElement.textContent && (
-                        <p className="text-[11px] text-[#86868b] mt-1 truncate">
+                        <p className="text-[11px] text-ink-muted mt-1 truncate">
                           "{selectedElement.textContent.substring(0, 50)}..."
                         </p>
                       )}
@@ -854,21 +860,21 @@ export default function FeedbackButton() {
                 </div>
 
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Title *</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Title *</label>
                   <input
                     type="text"
                     value={bugForm.title}
                     onChange={(e) => setBugForm(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Brief description of the bug"
-                    className="w-full h-10 px-3 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 rounded-lg bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Priority</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Priority</label>
                   <select
                     value={bugForm.priority}
                     onChange={(e) => setBugForm(prev => ({ ...prev, priority: e.target.value }))}
-                    className="w-full h-10 px-3 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 rounded-lg bg-surface border border-hairline-strong text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -877,16 +883,16 @@ export default function FeedbackButton() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Description *</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Description *</label>
                   <textarea
                     value={bugForm.description}
                     onChange={(e) => setBugForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="What happened? What did you expect to happen?"
                     rows={4}
-                    className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                    className="w-full px-3 py-2 rounded-lg bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                   />
                 </div>
-                <p className="text-[11px] text-[#86868b]">
+                <p className="text-[11px] text-ink-muted">
                   Console logs and browser info will be automatically included.
                 </p>
               </div>
@@ -896,23 +902,23 @@ export default function FeedbackButton() {
             {view === 'feature' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Feature Title</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Feature Title</label>
                   <input
                     type="text"
                     value={featureForm.title}
                     onChange={(e) => setFeatureForm(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="What feature would you like?"
-                    className="w-full h-10 px-3 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 rounded-lg bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Description</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Description</label>
                   <textarea
                     value={featureForm.description}
                     onChange={(e) => setFeatureForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Describe the feature and how it would help you..."
                     rows={5}
-                    className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                    className="w-full px-3 py-2 rounded-lg bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                   />
                 </div>
               </div>
@@ -924,30 +930,30 @@ export default function FeedbackButton() {
                 {/* New Chat Button */}
                 <button
                   onClick={() => setView('chat')}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-[#0071e3]/10 hover:bg-[#0071e3]/20 transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand/10 hover:bg-brand/20 transition-colors text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-[#0071e3] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center">
                     <MessageSquare className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-[14px] font-medium text-[#0071e3]">Start New Chat</p>
-                    <p className="text-[12px] text-[#86868b]">Message Joshua directly</p>
+                    <p className="text-[14px] font-medium text-brand">Start New Chat</p>
+                    <p className="text-[12px] text-ink-muted">Message Joshua directly</p>
                   </div>
                 </button>
 
                 {/* Existing Chats */}
                 {loadingChats ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-[#86868b]" />
+                    <Loader2 className="w-6 h-6 animate-spin text-ink-muted" />
                   </div>
                 ) : myChats.length === 0 ? (
                   <div className="text-center py-8">
-                    <MessageSquare className="w-10 h-10 text-[#86868b] mx-auto mb-2 opacity-50" />
-                    <p className="text-[13px] text-[#86868b]">No chats yet</p>
+                    <MessageSquare className="w-10 h-10 text-ink-muted mx-auto mb-2 opacity-50" />
+                    <p className="text-[13px] text-ink-muted">No chats yet</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-[11px] font-medium text-[#86868b] uppercase tracking-wide px-1">Recent Chats</p>
+                    <p className="text-[11px] font-medium text-ink-muted uppercase tracking-wide px-1">Recent Chats</p>
                     {myChats.map(chat => (
                       <button
                         key={chat.id}
@@ -956,29 +962,29 @@ export default function FeedbackButton() {
                           setView('chat-detail');
                           if (chat.status === 'open') startChatSubscription(chat.id);
                         }}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-3 transition-colors text-left"
                       >
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          chat.status === 'closed' ? 'bg-[#86868b]/10' : 'bg-[#34c759]/10'
+                          chat.status === 'closed' ? 'bg-ink-muted/10' : 'bg-positive/10'
                         }`}>
                           {chat.status === 'closed' ? (
-                            <CheckCircle2 className="w-5 h-5 text-[#86868b]" />
+                            <CheckCircle2 className="w-5 h-5 text-ink-muted" />
                           ) : (
-                            <Clock className="w-5 h-5 text-[#34c759]" />
+                            <Clock className="w-5 h-5 text-positive" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0 relative">
-                          <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white truncate">
+                          <p className="text-[13px] font-medium text-ink truncate">
                             {chat.lastMessage || 'Chat'}
                           </p>
-                          <p className="text-[11px] text-[#86868b]">
+                          <p className="text-[11px] text-ink-muted">
                             {chat.status === 'closed' ? 'Closed' : 'Open'} • {chat.messageCount || 0} messages
                           </p>
                           {chat.status === 'open' && hasUnread(chat, currentUser?.email) && (
-                            <span className="absolute top-0 right-0 w-2 h-2 bg-[#ff3b30] rounded-full" />
+                            <span className="absolute top-0 right-0 w-2 h-2 bg-danger rounded-full" />
                           )}
                         </div>
-                        <ChevronRight className="w-4 h-4 text-[#86868b]" />
+                        <ChevronRight className="w-4 h-4 text-ink-muted" />
                       </button>
                     ))}
                   </div>
@@ -989,29 +995,29 @@ export default function FeedbackButton() {
             {/* New Chat View */}
             {view === 'chat' && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#0071e3]/5">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0071e3] to-[#5856d6] flex items-center justify-center text-white font-semibold text-[14px]">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-brand/5">
+                  <div className="w-10 h-10 rounded-full bg-ink dark:bg-white/20 flex items-center justify-center text-white font-semibold text-[14px]">
                     J
                   </div>
                   <div>
-                    <p className="text-[14px] font-medium text-[#1d1d1f] dark:text-white">Joshua</p>
-                    <p className="text-[12px] text-[#86868b]">Developer • Usually responds within a day</p>
+                    <p className="text-[14px] font-medium text-ink">Joshua</p>
+                    <p className="text-[12px] text-ink-muted">Developer • Usually responds within a day</p>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Your Message</label>
+                  <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Your Message</label>
                   <textarea
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
                     placeholder="What would you like to discuss?"
                     rows={4}
-                    className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                    className="w-full px-3 py-2 rounded-lg bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                   />
                 </div>
                 <button
                   onClick={handleStartChat}
                   disabled={isSubmitting}
-                  className="w-full h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   {isSubmitting ? 'Starting...' : 'Start Chat'}
@@ -1022,8 +1028,8 @@ export default function FeedbackButton() {
             {/* Chat Detail View - Loading */}
             {view === 'chat-detail' && loadingChats && (
               <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-[#0071e3] mb-3" />
-                <p className="text-[13px] text-[#86868b]">Loading chat...</p>
+                <Loader2 className="w-8 h-8 animate-spin text-brand mb-3" />
+                <p className="text-[13px] text-ink-muted">Loading chat...</p>
               </div>
             )}
 
@@ -1034,8 +1040,8 @@ export default function FeedbackButton() {
                 <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] mb-4">
                   {selectedChat.messages?.length === 0 ? (
                     <div className="text-center py-8">
-                      <MessageSquare className="w-10 h-10 text-[#86868b] mx-auto mb-2 opacity-50" />
-                      <p className="text-[13px] text-[#86868b]">No messages yet</p>
+                      <MessageSquare className="w-10 h-10 text-ink-muted mx-auto mb-2 opacity-50" />
+                      <p className="text-[13px] text-ink-muted">No messages yet</p>
                     </div>
                   ) : (
                     selectedChat.messages?.map((msg, idx) => {
@@ -1044,11 +1050,11 @@ export default function FeedbackButton() {
                         <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[80%] px-3 py-2 rounded-xl ${
                             isMe 
-                              ? 'bg-[#0071e3] text-white' 
-                              : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white'
+                              ? 'bg-brand text-white' 
+                              : 'bg-surface-3 text-ink'
                           }`}>
                             <p className="text-[13px]">{msg.message}</p>
-                            <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-[#86868b]'}`}>
+                            <p className={`text-[10px] mt-1 ${isMe ? 'text-white/70' : 'text-ink-muted'}`}>
                               {msg.senderName}
                             </p>
                           </div>
@@ -1067,21 +1073,21 @@ export default function FeedbackButton() {
                       onChange={(e) => setChatMessage(e.target.value)}
                       placeholder="Type a message..."
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      className="flex-1 h-10 px-3 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                      className="flex-1 h-10 px-3 rounded-xl bg-surface border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                     />
                     <button
                       onClick={handleSendMessage}
                       disabled={isSubmitting || !chatMessage.trim()}
-                      className="w-10 h-10 rounded-xl bg-[#0071e3] text-white flex items-center justify-center hover:bg-[#0077ed] transition-colors disabled:opacity-50"
+                      className="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center hover:bg-brand-hover transition-colors disabled:opacity-50"
                     >
                       {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     </button>
                   </div>
                 ) : (
-                  <div className="text-center py-4 rounded-xl bg-[#86868b]/10">
-                    <CheckCircle2 className="w-6 h-6 text-[#86868b] mx-auto mb-2" />
-                    <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white">Chat ended</p>
-                    <p className="text-[12px] text-[#86868b] mt-1">This conversation was closed. Start a new chat to message again (you’ll be notified).</p>
+                  <div className="text-center py-4 rounded-xl bg-ink-muted/10">
+                    <CheckCircle2 className="w-6 h-6 text-ink-muted mx-auto mb-2" />
+                    <p className="text-[13px] font-medium text-ink">Chat ended</p>
+                    <p className="text-[12px] text-ink-muted mt-1">This conversation was closed. Start a new chat to message again (you’ll be notified).</p>
                     <button
                       onClick={() => {
                         setActiveChat(null);
@@ -1091,7 +1097,7 @@ export default function FeedbackButton() {
                         localStorage.removeItem('feedbackActiveChatId');
                         stopChatSubscription();
                       }}
-                      className="mt-3 px-4 py-2 rounded-lg bg-gradient-to-br from-[#0077ed] to-[#5856d6] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                      className="mt-3 px-4 py-2 rounded-lg bg-brand text-white text-[12px] font-medium hover:bg-brand-hover transition-colors"
                     >
                       Start new chat
                     </button>
@@ -1103,11 +1109,11 @@ export default function FeedbackButton() {
 
           {/* Sticky Footer for Submit Buttons */}
           {view === 'bug' && (
-            <div className="flex-shrink-0 p-4 border-t border-black/5 dark:border-white/10 bg-white dark:bg-[#1c1c1e]">
+            <div className="flex-shrink-0 p-4 border-t border-hairline bg-surface">
               <button
                 onClick={handleSubmitBug}
                 disabled={isSubmitting}
-                className="w-full h-11 rounded-xl bg-[#ff3b30] text-white text-[14px] font-medium hover:bg-[#ff3b30]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-danger/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bug className="w-4 h-4" />}
                 {isSubmitting ? 'Submitting...' : 'Submit Bug Report'}
@@ -1116,11 +1122,11 @@ export default function FeedbackButton() {
           )}
 
           {view === 'feature' && (
-            <div className="flex-shrink-0 p-4 border-t border-black/5 dark:border-white/10 bg-white dark:bg-[#1c1c1e]">
+            <div className="flex-shrink-0 p-4 border-t border-hairline bg-surface">
               <button
                 onClick={handleSubmitFeature}
                 disabled={isSubmitting}
-                className="w-full h-11 rounded-xl bg-[#ff9500] text-white text-[14px] font-medium hover:bg-[#ff9500]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-warning/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
                 {isSubmitting ? 'Submitting...' : 'Submit Feature Request'}

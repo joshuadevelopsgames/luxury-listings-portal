@@ -19,8 +19,13 @@ import {
   AlertCircle,
   Clock,
   RefreshCw,
-  Trash2
+  Trash2,
+  Wrench,
+  ExternalLink
 } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
+import StatCard from '../components/ui/StatCard';
+import { formatStat, formatCurrency } from '../utils/formatStat';
 import { useAuth } from '../contexts/AuthContext';
 import { useConfirm } from '../contexts/ConfirmContext';
 import { toast } from 'react-hot-toast';
@@ -765,34 +770,34 @@ export default function PostingPackages() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-[#34c759]/10 text-[#34c759]';
-      case 'completed': return 'bg-[#0071e3]/10 text-[#0071e3]';
-      case 'pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
-      case 'overdue': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
-      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
+      case 'active': return 'bg-positive/10 text-positive';
+      case 'completed': return 'bg-brand/10 text-brand';
+      case 'pending': return 'bg-warning/10 text-warning';
+      case 'overdue': return 'bg-danger/10 text-danger';
+      default: return 'bg-surface-3 text-ink-muted';
     }
   };
 
   const getPackageTypeColor = (type) => {
     switch (type) {
-      case 'Platinum': return 'bg-[#af52de]/10 text-[#af52de]';
-      case 'Gold': return 'bg-[#ff9500]/10 text-[#ff9500]';
+      case 'Platinum': return 'bg-brand/10 text-brand';
+      case 'Gold': return 'bg-warning/10 text-warning';
       case 'Silver': return 'bg-[#8e8e93]/10 text-[#8e8e93]';
-      case 'Standard': return 'bg-[#0071e3]/10 text-[#0071e3]';
-      case 'Seven': return 'bg-[#5856d6]/10 text-[#5856d6]';
+      case 'Standard': return 'bg-brand/10 text-brand';
+      case 'Seven': return 'bg-brand/10 text-brand';
       case 'Custom': return 'bg-[#ff2d55]/10 text-[#ff2d55]';
-      case 'Monthly': return 'bg-[#34c759]/10 text-[#34c759]';
-      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
+      case 'Monthly': return 'bg-positive/10 text-positive';
+      default: return 'bg-surface-3 text-ink-muted';
     }
   };
 
   const getPaymentStatusColor = (status) => {
     switch (status) {
-      case 'Paid': return 'bg-[#34c759]/10 text-[#34c759]';
-      case 'Pending': return 'bg-[#ff9500]/10 text-[#ff9500]';
-      case 'Partial': return 'bg-[#0071e3]/10 text-[#0071e3]';
-      case 'Overdue': return 'bg-[#ff3b30]/10 text-[#ff3b30]';
-      default: return 'bg-black/5 dark:bg-white/10 text-[#86868b]';
+      case 'Paid': return 'bg-positive/10 text-positive';
+      case 'Pending': return 'bg-warning/10 text-warning';
+      case 'Partial': return 'bg-brand/10 text-brand';
+      case 'Overdue': return 'bg-danger/10 text-danger';
+      default: return 'bg-surface-3 text-ink-muted';
     }
   };
 
@@ -1361,10 +1366,10 @@ export default function PostingPackages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f7] dark:bg-[#1d1d1f]">
+      <div className="min-h-screen flex items-center justify-center bg-surface-2 dark:bg-ink">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#86868b] text-sm">Loading client packages...</p>
+          <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-ink-muted text-sm">Loading client packages...</p>
         </div>
       </div>
     );
@@ -1373,137 +1378,118 @@ export default function PostingPackages() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] mb-1">
-            Posting Packages
-          </h1>
-          <p className="text-[15px] sm:text-[17px] text-[#86868b]">
-            Manage posting packages for @luxury_listings features
-          </p>
-        </div>
-        
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={testGoogleAppsScriptDetailed}
-            className="h-9 px-3 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[13px] font-medium hover:bg-[#ff9500]/20 transition-colors flex items-center gap-1.5"
-          >
-            🔧 Test Script
-          </button>
-          <button
-            onClick={() => window.open(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`, '_blank')}
-            className="h-9 px-3 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[13px] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5"
-          >
-            📊 Open Sheets
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Posting Packages"
+        description="@luxury_listings features"
+        actions={
+          <>
+            <button
+              onClick={testGoogleAppsScriptDetailed}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <Wrench className="w-4 h-4" />
+              Test Script
+            </button>
+            <button
+              onClick={() => window.open(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`, '_blank')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-hairline-strong bg-surface text-ink text-[13px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Open Sheets
+            </button>
+          </>
+        }
+      />
       
       {scriptTestResult && (
-        <div className={`p-3 rounded-xl text-[13px] ${scriptTestResult.success 
-          ? 'bg-[#34c759]/10 text-[#34c759] border border-[#34c759]/20' 
-          : 'bg-[#ff3b30]/10 text-[#ff3b30] border border-[#ff3b30]/20'}`}>
-          {scriptTestResult.success 
-            ? `✅ Script working: ${scriptTestResult.message || 'Connection successful'}`
-            : `❌ Script error: ${scriptTestResult.error || 'Unknown error'}`}
-          {scriptTestResult.details && <div className="mt-1 text-[11px] opacity-80">{scriptTestResult.details}</div>}
+        <div className={`flex items-start gap-2 p-3 rounded-lg text-[13px] ${scriptTestResult.success
+          ? 'bg-positive/10 text-[#248a3d] border border-positive/20'
+          : 'bg-danger/10 text-[#c1271d] border border-danger/20'}`}>
+          {scriptTestResult.success
+            ? <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+          <div>
+            {scriptTestResult.success
+              ? `Script working: ${scriptTestResult.message || 'Connection successful'}`
+              : `Script error: ${scriptTestResult.error || 'Unknown error'}`}
+            {scriptTestResult.details && <div className="mt-1 text-[11px] opacity-80">{scriptTestResult.details}</div>}
+          </div>
         </div>
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
-          <Users className="w-5 h-5 text-[#0071e3] mb-2" strokeWidth={1.5} />
-          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.total}</p>
-          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Total Clients</p>
-        </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
-          <CheckCircle className="w-5 h-5 text-[#34c759] mb-2" strokeWidth={1.5} />
-          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.active}</p>
-          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Active Packages</p>
-        </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
-          <Clock className="w-5 h-5 text-[#ff9500] mb-2" strokeWidth={1.5} />
-          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.pending}</p>
-          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Pending Approval</p>
-        </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 hover:shadow-lg transition-all">
-          <Package className="w-5 h-5 text-[#5856d6] mb-2" strokeWidth={1.5} />
-          <p className="text-[24px] sm:text-[28px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em]">{stats.completed}</p>
-          <p className="text-[12px] sm:text-[13px] text-[#86868b]">Completed</p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <StatCard label="Total Clients" value={formatStat(stats.total)} icon={Users} />
+        <StatCard label="Active Packages" value={formatStat(stats.active)} icon={CheckCircle} />
+        <StatCard label="Pending Approval" value={formatStat(stats.pending)} icon={Clock} />
+        <StatCard label="Completed" value={formatStat(stats.completed)} icon={Package} />
         {canViewFinancials && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#5856d6] col-span-2 sm:col-span-1 hover:shadow-lg transition-all">
-            <DollarSign className="w-5 h-5 text-white/80 mb-2" strokeWidth={1.5} />
-            <p className="text-[24px] sm:text-[28px] font-semibold text-white tracking-[-0.02em]">${stats.revenue.toLocaleString()}</p>
-            <p className="text-[12px] sm:text-[13px] text-white/70">Total Revenue</p>
-          </div>
+          <StatCard label="Total Revenue" value={formatCurrency(stats.revenue)} icon={DollarSign} />
         )}
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-xl overflow-x-auto">
+      <div className="flex gap-1 p-1 bg-surface-3 rounded-xl overflow-x-auto">
         <button
           onClick={() => handleTabChange('clients')}
           className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-2 ${
             activeTab === 'clients'
-              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+              ? 'bg-surface text-brand shadow-sm'
+              : 'text-ink-muted hover:text-ink dark:hover:text-white'
           }`}
         >
           <Package className="w-4 h-4" />
           <span className="hidden sm:inline">Single Packages</span>
           <span className="sm:hidden">Single</span>
-          <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px]">{clients.length}</span>
+          <span className="px-1.5 py-0.5 rounded-md bg-surface-3 text-[11px]">{clients.length}</span>
         </button>
         <button
           onClick={() => handleTabChange('monthly')}
           className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-2 ${
             activeTab === 'monthly'
-              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+              ? 'bg-surface text-brand shadow-sm'
+              : 'text-ink-muted hover:text-ink dark:hover:text-white'
           }`}
         >
           <RefreshCw className="w-4 h-4" />
           <span className="hidden sm:inline">Monthly Recurring</span>
           <span className="sm:hidden">Monthly</span>
-          <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px]">{monthlyClients.length}</span>
+          <span className="px-1.5 py-0.5 rounded-md bg-surface-3 text-[11px]">{monthlyClients.length}</span>
         </button>
         <button
           onClick={() => handleTabChange('archives')}
           className={`flex-1 min-w-fit py-2.5 px-4 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-2 ${
             activeTab === 'archives'
-              ? 'bg-white dark:bg-[#2c2c2e] text-[#0071e3] shadow-sm'
-              : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'
+              ? 'bg-surface text-brand shadow-sm'
+              : 'text-ink-muted hover:text-ink dark:hover:text-white'
           }`}
         >
           <Archive className="w-4 h-4" />
           <span>Archives</span>
-          <span className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px]">{archivedClients.length}</span>
+          <span className="px-1.5 py-0.5 rounded-md bg-surface-3 text-[11px]">{archivedClients.length}</span>
         </button>
       </div>
 
       {/* Filters and Search */}
       {activeTab === 'clients' && (
-        <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-5">
+        <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-4 sm:p-5">
           <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#86868b] w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-ink-muted w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search clients or packages..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                  className="w-full h-10 pl-10 pr-4 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-10 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>
@@ -1515,7 +1501,7 @@ export default function PostingPackages() {
               <select
                 value={packageTypeFilter}
                 onChange={(e) => setPackageTypeFilter(e.target.value)}
-                className="h-10 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                className="h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="all">All Packages</option>
                 <option value="Standard">Standard</option>
@@ -1532,7 +1518,7 @@ export default function PostingPackages() {
               <button 
                 onClick={() => fetchClients(false)}
                 disabled={refreshing}
-                className="h-10 px-4 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+                className="h-10 px-4 rounded-xl bg-surface-3 text-[13px] font-medium text-ink hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">{refreshing ? 'Syncing...' : 'Sync'}</span>
@@ -1541,7 +1527,7 @@ export default function PostingPackages() {
                 onClick={handleAddClient}
                 disabled={!canManagePackages}
                 title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
-                className="h-10 px-4 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-10 px-4 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Client</span>
@@ -1552,7 +1538,7 @@ export default function PostingPackages() {
           {/* Sync Status */}
           {lastSync && (
             <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5 text-center">
-              <p className="text-[12px] text-[#86868b]">
+              <p className="text-[12px] text-ink-muted">
                 Last synced: {lastSync.toLocaleString()}
               </p>
             </div>
@@ -1564,7 +1550,7 @@ export default function PostingPackages() {
       {activeTab === 'clients' && (
         <div className="space-y-4">
           {filteredClients.map(client => (
-          <div key={client.id} id={`client-${client.id}`} className={`rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-6 hover:shadow-lg transition-all ${selectedClient?.id === client.id ? 'ring-2 ring-[#0071e3]' : ''}`}>
+          <div key={client.id} id={`client-${client.id}`} className={`rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-4 sm:p-6 hover:shadow-md transition-all ${selectedClient?.id === client.id ? 'ring-2 ring-brand' : ''}`}>
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
               {/* Client Info */}
               <div className="flex-1 min-w-0">
@@ -1574,8 +1560,8 @@ export default function PostingPackages() {
                       <ClientLink client={client} showId />
                     </h3>
                     {client.clientEmail && (
-                      <p className="text-[13px] text-[#86868b] mb-2 truncate">
-                        📧 {client.clientEmail}
+                      <p className="text-[13px] text-ink-muted mb-2 truncate inline-flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5 shrink-0" />{client.clientEmail}
                       </p>
                     )}
                     <div className="flex items-center gap-2 flex-wrap">
@@ -1592,33 +1578,33 @@ export default function PostingPackages() {
                   </div>
                   
                   <div className="text-left sm:text-right flex-shrink-0">
-                    <div className="text-[12px] text-[#86868b] mb-1">Package Progress</div>
+                    <div className="text-[12px] text-ink-muted mb-1">Package Progress</div>
                     <div className="flex items-center gap-2 justify-end">
                       <button
                         type="button"
                         disabled={approvalLoading[client.id] || (client.postsUsed || 0) <= 0}
                         onClick={() => handleQuickPostsChange(client, -1)}
-                        className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                        className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center text-ink hover:bg-hairline-strong disabled:opacity-40 disabled:pointer-events-none"
                         aria-label="Decrease posts used"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="text-[24px] font-semibold text-[#0071e3] min-w-[4rem] text-center">
+                      <span className="text-[24px] font-semibold text-brand min-w-[4rem] text-center">
                         {client.postsUsed}/{client.packageSize}
                       </span>
                       <button
                         type="button"
                         disabled={approvalLoading[client.id] || (client.postsUsed || 0) >= client.packageSize}
                         onClick={() => handleQuickPostsChange(client, 1)}
-                        className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                        className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center text-ink hover:bg-hairline-strong disabled:opacity-40 disabled:pointer-events-none"
                         aria-label="Increase posts used"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden ml-auto">
+                    <div className="w-24 h-2 bg-surface-3 rounded-full mt-2 overflow-hidden ml-auto">
                       <div 
-                        className="h-full bg-[#0071e3] rounded-full transition-all"
+                        className="h-full bg-brand rounded-full transition-all"
                         style={{ width: `${Math.min(((client.postsUsed || 0) / client.packageSize) * 100, 100)}%` }}
                       />
                     </div>
@@ -1627,27 +1613,27 @@ export default function PostingPackages() {
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                    <div className="text-[11px] text-[#86868b] mb-0.5">Posts Remaining</div>
-                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.postsRemaining}</div>
+                    <div className="text-[11px] text-ink-muted mb-0.5">Posts Remaining</div>
+                    <div className="text-[15px] font-semibold text-ink">{client.postsRemaining}</div>
                   </div>
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                    <div className="text-[11px] text-[#86868b] mb-0.5">Posted On</div>
-                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{getPostsPerPageSummary(client)}</div>
+                    <div className="text-[11px] text-ink-muted mb-0.5">Posted On</div>
+                    <div className="text-[15px] font-semibold text-ink truncate">{getPostsPerPageSummary(client)}</div>
                   </div>
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                    <div className="text-[11px] text-[#86868b] mb-0.5">Start Date</div>
-                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{new Date(client.startDate).toLocaleDateString()}</div>
+                    <div className="text-[11px] text-ink-muted mb-0.5">Start Date</div>
+                    <div className="text-[15px] font-semibold text-ink">{new Date(client.startDate).toLocaleDateString()}</div>
                   </div>
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                    <div className="text-[11px] text-[#86868b] mb-0.5">Last Contact</div>
-                    <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{new Date(client.lastContact).toLocaleDateString()}</div>
+                    <div className="text-[11px] text-ink-muted mb-0.5">Last Contact</div>
+                    <div className="text-[15px] font-semibold text-ink">{new Date(client.lastContact).toLocaleDateString()}</div>
                   </div>
                 </div>
                 
                 {client.notes && (
                   <div className="p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
-                    <div className="text-[11px] text-[#86868b] mb-1">Notes:</div>
-                    <div className="text-[13px] text-[#1d1d1f] dark:text-white">{client.notes}</div>
+                    <div className="text-[11px] text-ink-muted mb-1">Notes:</div>
+                    <div className="text-[13px] text-ink">{client.notes}</div>
                   </div>
                 )}
               </div>
@@ -1659,7 +1645,7 @@ export default function PostingPackages() {
                     {client.approvalStatus === 'Pending' && (
                       <>
                         <button 
-                          className="h-9 px-3 rounded-xl bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#30d158] transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                          className="h-9 px-3 rounded-xl bg-positive text-white text-[12px] font-medium hover:bg-positive transition-colors flex items-center gap-1.5 disabled:opacity-50"
                           onClick={() => openApprovalModal(client, 'approve')}
                           disabled={approvalLoading[client.id]}
                         >
@@ -1667,7 +1653,7 @@ export default function PostingPackages() {
                           Approve
                         </button>
                         <button 
-                          className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                          className="h-9 px-3 rounded-xl bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                           onClick={() => openApprovalModal(client, 'reject')}
                           disabled={approvalLoading[client.id]}
                         >
@@ -1678,7 +1664,7 @@ export default function PostingPackages() {
                     )}
                     
                     <button 
-                      className="h-9 px-3 rounded-xl bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      className="h-9 px-3 rounded-xl bg-brand/10 text-brand text-[12px] font-medium hover:bg-brand/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                       onClick={() => openEditModal(client)}
                       disabled={approvalLoading[client.id]}
                     >
@@ -1688,14 +1674,14 @@ export default function PostingPackages() {
                     
                     <button 
                       onClick={() => openFollowUpEmail(client)}
-                      className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+                      className="h-9 px-3 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
                     >
                       <Mail className="w-3.5 h-3.5" />
                       Email
                     </button>
                     
                     <button 
-                      className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#86868b] text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      className="h-9 px-3 rounded-xl bg-surface-3 text-ink-muted text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                       onClick={() => archiveCompletedPackage(client)}
                       disabled={archiveLoading[client.id]}
                     >
@@ -1704,7 +1690,7 @@ export default function PostingPackages() {
                     </button>
                     
                     <button 
-                      className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      className="h-9 px-3 rounded-xl bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                       onClick={() => deleteClient(client)}
                       disabled={deleteLoading[client.id]}
                     >
@@ -1713,7 +1699,7 @@ export default function PostingPackages() {
                     </button>
                   </>
                 ) : (
-                  <div className="text-[13px] text-[#86868b] text-center py-4">
+                  <div className="text-[13px] text-ink-muted text-center py-4">
                     <p>View Only</p>
                     <p className="text-[11px] mt-1">Contact admin for edit access</p>
                   </div>
@@ -1724,12 +1710,12 @@ export default function PostingPackages() {
         ))}
         
         {filteredClients.length === 0 && (
-          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[#0071e3]/10 flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-[#0071e3]" />
+          <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
+            <div className="w-16 h-16 rounded-xl bg-brand/10 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-brand" />
             </div>
-            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">No clients found</h3>
-            <p className="text-[14px] text-[#86868b] mb-6 max-w-sm mx-auto">
+            <h3 className="text-[17px] font-semibold text-ink mb-2">No clients found</h3>
+            <p className="text-[14px] text-ink-muted mb-6 max-w-sm mx-auto">
               {searchTerm || statusFilter !== 'all' || packageTypeFilter !== 'all' 
                 ? 'Try adjusting your filters or search terms'
                 : 'Get started by adding your first client package'
@@ -1739,7 +1725,7 @@ export default function PostingPackages() {
               onClick={handleAddClient}
               disabled={!canManagePackages}
               title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
-              className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-10 px-5 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
               Add New Client
@@ -1753,15 +1739,15 @@ export default function PostingPackages() {
       {activeTab === 'monthly' && (
         <div className="space-y-4">
           {/* Monthly Header */}
-          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-5">
+          <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Monthly Recurring Packages</h2>
-                <p className="text-[13px] text-[#86868b]">Manage ongoing monthly subscription packages</p>
+                <h2 className="text-[17px] font-semibold text-ink mb-1">Monthly Recurring Packages</h2>
+                <p className="text-[13px] text-ink-muted">Manage ongoing monthly subscription packages</p>
                 {autoResetChecked && (
                   <div className="flex items-center gap-2 mt-2">
-                    <div className="w-2 h-2 bg-[#34c759] rounded-full"></div>
-                    <span className="text-[12px] text-[#34c759]">Auto-reset checked for today</span>
+                    <div className="w-2 h-2 bg-positive rounded-full"></div>
+                    <span className="text-[12px] text-positive">Auto-reset checked for today</span>
                   </div>
                 )}
               </div>
@@ -1769,7 +1755,7 @@ export default function PostingPackages() {
                 <button 
                   onClick={fetchMonthlyClients}
                   disabled={monthlyLoading}
-                  className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="h-9 px-3 rounded-xl bg-surface-3 text-[13px] font-medium text-ink hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   <RefreshCw className={`w-4 h-4 ${monthlyLoading ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">{monthlyLoading ? 'Refreshing...' : 'Refresh'}</span>
@@ -1778,7 +1764,7 @@ export default function PostingPackages() {
                   onClick={handleAddClient}
                   disabled={!canManagePackages}
                   title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
-                  className="h-9 px-3 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-9 px-3 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Monthly</span>
@@ -1790,24 +1776,24 @@ export default function PostingPackages() {
           {/* Monthly List */}
           <div className="space-y-4">
             {monthlyLoading ? (
-              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-12 text-center">
-                <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-[14px] text-[#86868b]">Loading monthly clients...</p>
+              <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-12 text-center">
+                <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-ink-muted">Loading monthly clients...</p>
               </div>
             ) : monthlyClients.length === 0 ? (
-              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#5856d6]/10 flex items-center justify-center mx-auto mb-4">
-                  <RefreshCw className="w-8 h-8 text-[#5856d6]" />
+              <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
+                <div className="w-16 h-16 rounded-xl bg-brand/10 flex items-center justify-center mx-auto mb-4">
+                  <RefreshCw className="w-8 h-8 text-brand" />
                 </div>
-                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">No monthly clients</h3>
-                <p className="text-[14px] text-[#86868b] mb-6 max-w-sm mx-auto">
+                <h3 className="text-[17px] font-semibold text-ink mb-2">No monthly clients</h3>
+                <p className="text-[14px] text-ink-muted mb-6 max-w-sm mx-auto">
                   Monthly recurring clients will appear here when you add them to the Monthly Recurring tab in Google Sheets.
                 </p>
                 <button 
                   onClick={handleAddClient}
                   disabled={!canManagePackages}
                   title={!canManagePackages ? 'You need MANAGE_POSTING_PACKAGES permission' : ''}
-                  className="h-10 px-5 rounded-xl bg-[#0071e3] text-white text-[13px] font-medium shadow-lg shadow-[#0071e3]/25 hover:bg-[#0077ed] transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-10 px-5 rounded-xl bg-brand text-white text-[13px] font-medium shadow-lg shadow-brand/25 hover:bg-brand-hover transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
                   Add Monthly Client
@@ -1815,7 +1801,7 @@ export default function PostingPackages() {
               </div>
             ) : (
               monthlyClients.map(client => (
-                <div key={client.id} className="rounded-2xl bg-gradient-to-r from-[#5856d6]/5 to-transparent dark:from-[#5856d6]/10 border border-[#5856d6]/20 dark:border-[#5856d6]/30 p-4 sm:p-6 hover:shadow-lg transition-all">
+                <div key={client.id} className="rounded-xl bg-gradient-to-r from-brand/5 to-transparent dark:from-brand/10 border border-brand/20 dark:border-brand/30 p-4 sm:p-6 hover:shadow-md transition-all">
                   <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                     {/* Client Info */}
                     <div className="flex-1 min-w-0">
@@ -1825,13 +1811,13 @@ export default function PostingPackages() {
                             <h3 className="text-[17px] sm:text-[19px] font-semibold truncate">
                               <ClientLink client={client} showId />
                             </h3>
-                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#5856d6]/10 text-[#5856d6]">
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-brand/10 text-brand">
                               Monthly
                             </span>
                           </div>
                           {client.clientEmail && (
-                            <p className="text-[13px] text-[#86868b] mb-2 truncate">
-                              📧 {client.clientEmail}
+                            <p className="text-[13px] text-ink-muted mb-2 truncate inline-flex items-center gap-1.5">
+                              <Mail className="w-3.5 h-3.5 shrink-0" />{client.clientEmail}
                             </p>
                           )}
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1844,40 +1830,40 @@ export default function PostingPackages() {
                             <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPaymentStatusColor(client.paymentStatus)}`}>
                               {client.paymentStatus}
                             </span>
-                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${client.autoRenew === 'TRUE' ? 'bg-[#34c759]/10 text-[#34c759]' : 'bg-black/5 dark:bg-white/10 text-[#86868b]'}`}>
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${client.autoRenew === 'TRUE' ? 'bg-positive/10 text-positive' : 'bg-surface-3 text-ink-muted'}`}>
                               {client.autoRenew === 'TRUE' ? 'Auto Renew' : 'Manual'}
                             </span>
                           </div>
                         </div>
                         
                         <div className="text-left sm:text-right flex-shrink-0">
-                          <div className="text-[12px] text-[#86868b] mb-1">Monthly Progress</div>
+                          <div className="text-[12px] text-ink-muted mb-1">Monthly Progress</div>
                           <div className="flex items-center gap-2 justify-end">
                             <button
                               type="button"
                               disabled={approvalLoading[client.id] || (client.postsUsed || 0) <= 0}
                               onClick={() => handleQuickPostsChange(client, -1)}
-                              className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                              className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center text-ink hover:bg-hairline-strong disabled:opacity-40 disabled:pointer-events-none"
                               aria-label="Decrease posts used"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
-                            <span className="text-[24px] font-semibold text-[#5856d6] min-w-[4rem] text-center">
+                            <span className="text-[24px] font-semibold text-brand min-w-[4rem] text-center">
                               {client.postsUsed}/{client.packageSize}
                             </span>
                             <button
                               type="button"
                               disabled={approvalLoading[client.id] || (client.postsUsed || 0) >= client.packageSize}
                               onClick={() => handleQuickPostsChange(client, 1)}
-                              className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 disabled:opacity-40 disabled:pointer-events-none"
+                              className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center text-ink hover:bg-hairline-strong disabled:opacity-40 disabled:pointer-events-none"
                               aria-label="Increase posts used"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                           </div>
-                          <div className="w-24 h-2 bg-black/5 dark:bg-white/10 rounded-full mt-2 overflow-hidden ml-auto">
+                          <div className="w-24 h-2 bg-surface-3 rounded-full mt-2 overflow-hidden ml-auto">
                             <div 
-                              className="h-full bg-[#5856d6] rounded-full transition-all"
+                              className="h-full bg-brand rounded-full transition-all"
                               style={{ width: `${Math.min(((client.postsUsed || 0) / client.packageSize) * 100, 100)}%` }}
                             />
                           </div>
@@ -1886,35 +1872,35 @@ export default function PostingPackages() {
                       
                       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Posts Left</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.postsRemaining}</div>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Posts Left</div>
+                          <div className="text-[15px] font-semibold text-ink">{client.postsRemaining}</div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Overdue</div>
-                          <div className={`text-[15px] font-semibold ${(client.overduePosts || 0) > 0 ? 'text-[#ff3b30]' : 'text-[#1d1d1f] dark:text-white'}`}>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Overdue</div>
+                          <div className={`text-[15px] font-semibold ${(client.overduePosts || 0) > 0 ? 'text-danger' : 'text-ink'}`}>
                             {client.overduePosts || 0}
                           </div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Price</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">${client.monthlyPrice || 'N/A'}</div>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Price</div>
+                          <div className="text-[15px] font-semibold text-ink">${client.monthlyPrice || 'N/A'}</div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Next Billing</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">
+                          <div className="text-[11px] text-ink-muted mb-0.5">Next Billing</div>
+                          <div className="text-[15px] font-semibold text-ink">
                             {client.nextBillingDate ? new Date(client.nextBillingDate).toLocaleDateString() : 'N/A'}
                           </div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Cycle</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.billingCycle || 'Monthly'}</div>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Cycle</div>
+                          <div className="text-[15px] font-semibold text-ink">{client.billingCycle || 'Monthly'}</div>
                         </div>
                       </div>
                       
                       {client.notes && (
-                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10 border border-[#5856d6]/10">
-                          <div className="text-[11px] text-[#86868b] mb-1">Notes:</div>
-                          <div className="text-[13px] text-[#1d1d1f] dark:text-white">{client.notes}</div>
+                        <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10 border border-brand/10">
+                          <div className="text-[11px] text-ink-muted mb-1">Notes:</div>
+                          <div className="text-[13px] text-ink">{client.notes}</div>
                         </div>
                       )}
                     </div>
@@ -1926,7 +1912,7 @@ export default function PostingPackages() {
                           {client.approvalStatus === 'Pending' && (
                             <>
                               <button 
-                                className="h-9 px-3 rounded-xl bg-[#34c759] text-white text-[12px] font-medium hover:bg-[#30d158] transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                className="h-9 px-3 rounded-xl bg-positive text-white text-[12px] font-medium hover:bg-positive transition-colors flex items-center gap-1.5 disabled:opacity-50"
                                 onClick={() => openApprovalModal(client, 'approve')}
                                 disabled={approvalLoading[client.id]}
                               >
@@ -1934,7 +1920,7 @@ export default function PostingPackages() {
                                 Approve
                               </button>
                               <button 
-                                className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                className="h-9 px-3 rounded-xl bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                                 onClick={() => openApprovalModal(client, 'reject')}
                                 disabled={approvalLoading[client.id]}
                               >
@@ -1945,7 +1931,7 @@ export default function PostingPackages() {
                           )}
                           
                           <button 
-                            className="h-9 px-3 rounded-xl bg-[#5856d6]/10 text-[#5856d6] text-[12px] font-medium hover:bg-[#5856d6]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                            className="h-9 px-3 rounded-xl bg-brand/10 text-brand text-[12px] font-medium hover:bg-brand/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                             onClick={() => openEditModal(client)}
                             disabled={approvalLoading[client.id]}
                           >
@@ -1955,14 +1941,14 @@ export default function PostingPackages() {
                           
                           <button 
                             onClick={() => openFollowUpEmail(client)}
-                            className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+                            className="h-9 px-3 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
                           >
                             <Mail className="w-3.5 h-3.5" />
                             Email
                           </button>
                           
                           <button 
-                            className="h-9 px-3 rounded-xl bg-[#ff9500]/10 text-[#ff9500] text-[12px] font-medium hover:bg-[#ff9500]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                            className="h-9 px-3 rounded-xl bg-warning/10 text-warning text-[12px] font-medium hover:bg-warning/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                             onClick={() => handleMonthlyReset(client.id)}
                             disabled={approvalLoading[client.id]}
                           >
@@ -1971,7 +1957,7 @@ export default function PostingPackages() {
                           </button>
                           
                           <button 
-                            className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#86868b] text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                            className="h-9 px-3 rounded-xl bg-surface-3 text-ink-muted text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                             onClick={() => archiveCompletedPackage(client)}
                             disabled={archiveLoading[client.id]}
                           >
@@ -1980,7 +1966,7 @@ export default function PostingPackages() {
                           </button>
                         </>
                       ) : (
-                        <div className="text-[13px] text-[#86868b] text-center py-4">
+                        <div className="text-[13px] text-ink-muted text-center py-4">
                           <p>View Only</p>
                           <p className="text-[11px] mt-1">Contact admin for edit access</p>
                         </div>
@@ -1998,16 +1984,16 @@ export default function PostingPackages() {
       {activeTab === 'archives' && (
         <div className="space-y-4">
           {/* Archives Header */}
-          <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-4 sm:p-5">
+          <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div>
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-1">Archived Posting Packages</h2>
-                <p className="text-[13px] text-[#86868b]">View and manage archived posting packages</p>
+                <h2 className="text-[17px] font-semibold text-ink mb-1">Archived Posting Packages</h2>
+                <p className="text-[13px] text-ink-muted">View and manage archived posting packages</p>
               </div>
               <button 
                 onClick={fetchArchivedClients}
                 disabled={archivesLoading}
-                className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[13px] font-medium text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
+                className="h-9 px-3 rounded-xl bg-surface-3 text-[13px] font-medium text-ink hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 <RefreshCw className={`w-4 h-4 ${archivesLoading ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">{archivesLoading ? 'Refreshing...' : 'Refresh'}</span>
@@ -2018,23 +2004,23 @@ export default function PostingPackages() {
           {/* Archives List */}
           <div className="space-y-4">
             {archivesLoading ? (
-              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-12 text-center">
-                <div className="w-8 h-8 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-[14px] text-[#86868b]">Loading archived clients...</p>
+              <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-12 text-center">
+                <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-[14px] text-ink-muted">Loading archived clients...</p>
               </div>
             ) : archivedClients.length === 0 ? (
-              <div className="rounded-2xl bg-[#ffffff] dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#86868b]/10 flex items-center justify-center mx-auto mb-4">
-                  <Archive className="w-8 h-8 text-[#86868b]" />
+              <div className="rounded-xl bg-surface border border-gray-200 dark:border-white/5 p-8 sm:p-12 text-center">
+                <div className="w-16 h-16 rounded-xl bg-ink-muted/10 flex items-center justify-center mx-auto mb-4">
+                  <Archive className="w-8 h-8 text-ink-muted" />
                 </div>
-                <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-2">No archived clients</h3>
-                <p className="text-[14px] text-[#86868b] max-w-sm mx-auto">
+                <h3 className="text-[17px] font-semibold text-ink mb-2">No archived clients</h3>
+                <p className="text-[14px] text-ink-muted max-w-sm mx-auto">
                   Archived clients will appear here when you archive them from the main client list.
                 </p>
               </div>
             ) : (
               archivedClients.map(client => (
-                <div key={client.id} className="rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-gray-200 dark:border-white/5 p-4 sm:p-6 hover:shadow-md transition-all">
+                <div key={client.id} className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-gray-200 dark:border-white/5 p-4 sm:p-6 hover:shadow-md transition-all">
                   <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
                     {/* Client Info */}
                     <div className="flex-1 min-w-0">
@@ -2044,13 +2030,13 @@ export default function PostingPackages() {
                             <h3 className="text-[17px] sm:text-[19px] font-semibold truncate">
                               <ClientLink client={client} showId />
                             </h3>
-                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#86868b]/10 text-[#86868b]">
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-ink-muted/10 text-ink-muted">
                               Archived
                             </span>
                           </div>
                           {client.clientEmail && (
-                            <p className="text-[13px] text-[#86868b] mb-2 truncate">
-                              📧 {client.clientEmail}
+                            <p className="text-[13px] text-ink-muted mb-2 truncate inline-flex items-center gap-1.5">
+                              <Mail className="w-3.5 h-3.5 shrink-0" />{client.clientEmail}
                             </p>
                           )}
                           <div className="flex items-center gap-2 flex-wrap">
@@ -2060,15 +2046,15 @@ export default function PostingPackages() {
                             <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${getPaymentStatusColor(client.paymentStatus)}`}>
                               {client.paymentStatus}
                             </span>
-                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#0071e3]/10 text-[#0071e3]">
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-brand/10 text-brand">
                               {client.postsUsed}/{client.packageSize} Posts
                             </span>
                           </div>
                         </div>
                         
                         <div className="text-left sm:text-right flex-shrink-0">
-                          <div className="text-[12px] text-[#86868b] mb-1">Archive Date</div>
-                          <div className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">
+                          <div className="text-[12px] text-ink-muted mb-1">Archive Date</div>
+                          <div className="text-[14px] font-semibold text-ink">
                             {client.statusChangeDate ? new Date(client.statusChangeDate).toLocaleDateString() : 'Unknown'}
                           </div>
                         </div>
@@ -2076,27 +2062,27 @@ export default function PostingPackages() {
                       
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Posts Left</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.postsRemaining}</div>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Posts Left</div>
+                          <div className="text-[15px] font-semibold text-ink">{client.postsRemaining}</div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Posted On</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white truncate">{getPostsPerPageSummary(client)}</div>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Posted On</div>
+                          <div className="text-[15px] font-semibold text-ink truncate">{getPostsPerPageSummary(client)}</div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Start Date</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{new Date(client.startDate).toLocaleDateString()}</div>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Start Date</div>
+                          <div className="text-[15px] font-semibold text-ink">{new Date(client.startDate).toLocaleDateString()}</div>
                         </div>
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10">
-                          <div className="text-[11px] text-[#86868b] mb-0.5">Last Contact</div>
-                          <div className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">{client.statusChangeDate ? new Date(client.statusChangeDate).toLocaleDateString() : 'Unknown'}</div>
+                          <div className="text-[11px] text-ink-muted mb-0.5">Last Contact</div>
+                          <div className="text-[15px] font-semibold text-ink">{client.statusChangeDate ? new Date(client.statusChangeDate).toLocaleDateString() : 'Unknown'}</div>
                         </div>
                       </div>
                       
                       {client.notes && (
                         <div className="p-3 rounded-xl bg-white/50 dark:bg-black/10 border border-black/5 dark:border-white/5">
-                          <div className="text-[11px] text-[#86868b] mb-1">Notes:</div>
-                          <div className="text-[13px] text-[#1d1d1f] dark:text-white">{client.notes}</div>
+                          <div className="text-[11px] text-ink-muted mb-1">Notes:</div>
+                          <div className="text-[13px] text-ink">{client.notes}</div>
                         </div>
                       )}
                     </div>
@@ -2104,7 +2090,7 @@ export default function PostingPackages() {
                     {/* Archive Actions */}
                     <div className="flex flex-row lg:flex-col gap-2 flex-wrap lg:flex-nowrap lg:min-w-[120px]">
                       <button 
-                        className="h-9 px-3 rounded-xl bg-[#0071e3] text-white text-[12px] font-medium hover:bg-[#0077ed] transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                        className="h-9 px-3 rounded-xl bg-brand text-white text-[12px] font-medium hover:bg-brand-hover transition-colors flex items-center gap-1.5 disabled:opacity-50"
                         onClick={() => restoreClient(client)}
                         disabled={restoreLoading[client.id]}
                       >
@@ -2113,7 +2099,7 @@ export default function PostingPackages() {
                       </button>
                       
                       <button 
-                        className="h-9 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
+                        className="h-9 px-3 rounded-xl bg-surface-3 text-ink text-[12px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5"
                         onClick={() => openFollowUpEmail(client)}
                       >
                         <Mail className="w-3.5 h-3.5" />
@@ -2121,7 +2107,7 @@ export default function PostingPackages() {
                       </button>
                       
                       <button 
-                        className="h-9 px-3 rounded-xl bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                        className="h-9 px-3 rounded-xl bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
                         onClick={() => deleteArchivedClient(client)}
                         disabled={deleteArchivedLoading[client.id]}
                       >
@@ -2151,11 +2137,11 @@ export default function PostingPackages() {
       {/* Approval Modal */}
       {showApprovalModal && selectedClient && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-6 max-w-md w-full shadow-2xl">
-            <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white mb-3">
+          <div className="bg-surface rounded-xl p-6 max-w-md w-full shadow-lg">
+            <h3 className="text-[17px] font-semibold text-ink mb-3">
               {selectedClient.approvalStatus === 'Pending' ? 'Approve' : 'Reject'} Package
             </h3>
-            <p className="text-[14px] text-[#86868b] mb-4">
+            <p className="text-[14px] text-ink-muted mb-4">
               {selectedClient.approvalStatus === 'Pending' 
                 ? `Approve the ${selectedClient.packageType} package for ${selectedClient.clientName}?`
                 : `Reject the ${selectedClient.packageType} package for ${selectedClient.clientName}?`
@@ -2163,13 +2149,13 @@ export default function PostingPackages() {
             </p>
             
             <div className="mb-5">
-              <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">
+              <label className="block text-[13px] font-medium text-ink mb-2">
                 Notes (optional)
               </label>
               <textarea
                 value={approvalNotes}
                 onChange={(e) => setApprovalNotes(e.target.value)}
-                className="w-full px-4 py-3 bg-black/5 dark:bg-white/5 border-0 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] resize-none"
+                className="w-full px-4 py-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 rows={3}
                 placeholder="Add any notes about this decision..."
               />
@@ -2181,8 +2167,8 @@ export default function PostingPackages() {
                 disabled={approvalLoading[selectedClient.id]}
                 className={`flex-1 h-11 rounded-xl text-[14px] font-medium transition-all disabled:opacity-50 ${
                   selectedClient.approvalStatus === 'Pending' 
-                    ? 'bg-[#34c759] hover:bg-[#30d158] text-white' 
-                    : 'bg-[#ff3b30] hover:bg-[#ff453a] text-white'
+                    ? 'bg-positive hover:bg-positive text-white' 
+                    : 'bg-danger hover:bg-[#ff453a] text-white'
                 }`}
               >
                 {approvalLoading[selectedClient.id] ? 'Processing...' : 
@@ -2191,7 +2177,7 @@ export default function PostingPackages() {
               </button>
               <button
                 onClick={() => setShowApprovalModal(false)}
-                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
@@ -2204,18 +2190,18 @@ export default function PostingPackages() {
       {/* Edit Package Modal */}
       {showEditModal && editingClient && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-lg flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-shrink-0">
               <div>
-                <h3 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white">
+                <h3 className="text-[19px] font-semibold text-ink">
                   Edit Package
                 </h3>
-                <p className="text-[13px] text-[#86868b] mt-0.5">{editingClient.clientName}</p>
+                <p className="text-[13px] text-ink-muted mt-0.5">{editingClient.clientName}</p>
               </div>
               <button
                 onClick={handleEditCancel}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-ink-muted hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 ✕
               </button>
@@ -2230,28 +2216,28 @@ export default function PostingPackages() {
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#0071e3]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Client Profile</h4>
+                    <Users className="w-4 h-4 text-brand" />
+                    <h4 className="text-[14px] font-semibold text-ink">Client Profile</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Contact information and details</p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">Contact information and details</p>
                 </div>
                 
                 <div className="p-4 space-y-4">
                   {/* Profile Photo */}
                   <div className="flex items-center gap-4">
-                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex-shrink-0">
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-surface-3 border border-hairline-strong flex-shrink-0">
                       {editForm.profilePhoto ? (
                         <img src={editForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[#86868b]">
+                        <div className="w-full h-full flex items-center justify-center text-ink-muted">
                           <Camera className="w-6 h-6" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2 truncate">{editingClient.clientName}</p>
+                      <p className="text-[13px] font-medium text-ink mb-2 truncate">{editingClient.clientName}</p>
                       <div className="flex items-center gap-2">
-                        <label className={`h-8 px-3 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium cursor-pointer hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <label className={`h-8 px-3 rounded-lg bg-brand/10 text-brand text-[12px] font-medium cursor-pointer hover:bg-brand/20 transition-colors flex items-center gap-1.5 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
                           <Camera className="w-3.5 h-3.5" />
                           {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
                           <input
@@ -2264,7 +2250,7 @@ export default function PostingPackages() {
                         {editForm.profilePhoto && (
                           <button
                             onClick={() => setEditForm({...editForm, profilePhoto: ''})}
-                            className="h-8 px-3 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                            className="h-8 px-3 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors"
                           >
                             Remove
                           </button>
@@ -2276,26 +2262,26 @@ export default function PostingPackages() {
                   {/* Email & Brokerage Row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Email Address
                       </label>
                       <input
                         type="email"
                         value={editForm.clientEmail}
                         onChange={(e) => setEditForm({...editForm, clientEmail: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                         placeholder="client@email.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Brokerage
                       </label>
                       <input
                         type="text"
                         value={editForm.brokerage || ''}
                         onChange={(e) => setEditForm({...editForm, brokerage: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                         placeholder="e.g. RE/MAX, Sotheby's"
                       />
                     </div>
@@ -2303,7 +2289,7 @@ export default function PostingPackages() {
 
                   {/* Platforms Managed */}
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Platforms We Manage
                     </label>
                     <PlatformIcons
@@ -2321,23 +2307,23 @@ export default function PostingPackages() {
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-[#5856d6]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Package Details</h4>
+                    <Package className="w-4 h-4 text-brand" />
+                    <h4 className="text-[14px] font-semibold text-ink">Package Details</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Package type, progress, and payment</p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">Package type, progress, and payment</p>
                 </div>
                 
                 <div className="p-4 space-y-4">
                   {/* Package Type & Size Row */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Package Type
                       </label>
                       <select
                         value={editForm.packageType}
                         onChange={(e) => setEditForm({...editForm, packageType: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       >
                         <option value="Standard">Standard</option>
                         <option value="Silver">Silver</option>
@@ -2349,7 +2335,7 @@ export default function PostingPackages() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Package Size
                       </label>
                       <select
@@ -2363,7 +2349,7 @@ export default function PostingPackages() {
                             postsRemaining: Math.max(0, newRemaining)
                           });
                         }}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       >
                         {[...Array(15)].map((_, i) => (
                           <option key={i + 1} value={i + 1}>{i + 1} post{i + 1 !== 1 ? 's' : ''}</option>
@@ -2373,20 +2359,20 @@ export default function PostingPackages() {
                   </div>
 
                   {/* Posts Progress */}
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/5">
+                  <div className="p-3 rounded-xl bg-surface border border-black/5 dark:border-white/5">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[12px] font-medium text-[#86868b]">Package Progress</span>
-                      <span className="text-[14px] font-semibold text-[#0071e3]">{editForm.postsUsed}/{editForm.packageSize} posts</span>
+                      <span className="text-[12px] font-medium text-ink-muted">Package Progress</span>
+                      <span className="text-[14px] font-semibold text-brand">{editForm.postsUsed}/{editForm.packageSize} posts</span>
                     </div>
-                    <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden mb-3">
+                    <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden mb-3">
                       <div 
-                        className="h-full bg-[#0071e3] rounded-full transition-all"
+                        className="h-full bg-brand rounded-full transition-all"
                         style={{ width: `${Math.min((editForm.postsUsed / editForm.packageSize) * 100, 100)}%` }}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Used</label>
+                        <label className="block text-[11px] text-ink-muted mb-1">Posts Used</label>
                         <select
                           value={editForm.postsUsed}
                           onChange={(e) => {
@@ -2398,7 +2384,7 @@ export default function PostingPackages() {
                               postsRemaining: Math.max(0, newRemaining)
                             });
                           }}
-                          className="w-full h-9 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-lg text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          className="w-full h-9 px-3 bg-surface border border-hairline-strong rounded-lg text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                         >
                           {[...Array(editForm.packageSize + 1)].map((_, i) => (
                             <option key={i} value={i}>{i}</option>
@@ -2406,9 +2392,9 @@ export default function PostingPackages() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Remaining</label>
-                        <div className="h-9 px-3 bg-black/5 dark:bg-white/5 rounded-lg flex items-center text-[13px] text-[#1d1d1f] dark:text-white">
-                          {editForm.postsRemaining} <span className="text-[#86868b] ml-1">(auto)</span>
+                        <label className="block text-[11px] text-ink-muted mb-1">Posts Remaining</label>
+                        <div className="h-9 px-3 bg-surface-3 rounded-lg flex items-center text-[13px] text-ink">
+                          {editForm.postsRemaining} <span className="text-ink-muted ml-1">(auto)</span>
                         </div>
                       </div>
                     </div>
@@ -2416,32 +2402,32 @@ export default function PostingPackages() {
 
                   {/* Posts per page */}
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Posts per page
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {POST_PAGES.map(({ key, label }) => (
                         <div key={key}>
-                          <label className="block text-[11px] text-[#86868b] mb-0.5">{label}</label>
+                          <label className="block text-[11px] text-ink-muted mb-0.5">{label}</label>
                           <input
                             type="number"
                             min={0}
                             value={editForm[key] ?? 0}
                             onChange={(e) => setEditForm({ ...editForm, [key]: parseInt(e.target.value, 10) || 0 })}
-                            className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Payment Status
                     </label>
                     <select
                       value={editForm.paymentStatus}
                       onChange={(e) => setEditForm({...editForm, paymentStatus: e.target.value})}
-                      className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     >
                       <option value="Pending">Pending</option>
                       <option value="Paid">Paid</option>
@@ -2454,16 +2440,16 @@ export default function PostingPackages() {
                   {(editForm.packageType === 'Custom' || editForm.packageType === 'Monthly') && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                        <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                           {editForm.packageType === 'Monthly' ? 'Monthly Price' : 'Custom Price'}
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b]">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">$</span>
                           <input
                             type="number"
                             value={editForm.customPrice}
                             onChange={(e) => setEditForm({...editForm, customPrice: parseFloat(e.target.value) || 0})}
-                            className="w-full h-10 pl-7 pr-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                            className="w-full h-10 pl-7 pr-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                             placeholder="0.00"
                             min="0"
                             step="0.01"
@@ -2472,14 +2458,14 @@ export default function PostingPackages() {
                       </div>
                       {editForm.packageType === 'Monthly' && (
                         <div>
-                          <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                          <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                             Overdue Posts
                           </label>
                           <input
                             type="number"
                             value={editForm.overduePosts || 0}
                             onChange={(e) => setEditForm({...editForm, overduePosts: parseInt(e.target.value) || 0})}
-                            className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                            className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                             placeholder="0"
                             min="0"
                           />
@@ -2490,13 +2476,13 @@ export default function PostingPackages() {
 
                   {/* Notes */}
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Package Notes
                     </label>
                     <textarea
                       value={editForm.notes}
                       onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
-                      className="w-full px-3 py-2.5 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent resize-none"
+                      className="w-full px-3 py-2.5 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
                       rows={3}
                       placeholder="Add notes about this package..."
                     />
@@ -2506,8 +2492,8 @@ export default function PostingPackages() {
 
               {/* Validation Message */}
               {editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize && (
-                <div className="p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20">
-                  <p className="text-[13px] text-[#ff3b30]">
+                <div className="p-3 rounded-xl bg-danger/10 border border-danger/20">
+                  <p className="text-[13px] text-danger">
                     ⚠️ Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
                   </p>
                 </div>
@@ -2518,14 +2504,14 @@ export default function PostingPackages() {
             <div className="flex items-center gap-3 p-5 border-t border-black/5 dark:border-white/5 flex-shrink-0">
               <button
                 onClick={handleEditCancel}
-                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleEditSubmit}
                 disabled={approvalLoading[editingClient.id] || editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize}
-                className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Edit3 className="w-4 h-4" />
                 {approvalLoading[editingClient.id] ? 'Saving...' : 'Save Changes'}
@@ -2539,18 +2525,18 @@ export default function PostingPackages() {
       {/* Add New Client Modal */}
       {showAddModal && createPortal(
         <div className="modal-overlay bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-[#2c2c2e] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+          <div className="bg-surface rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-lg flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-black/5 dark:border-white/5 flex-shrink-0">
               <div>
-                <h3 className="text-[19px] font-semibold text-[#1d1d1f] dark:text-white">
+                <h3 className="text-[19px] font-semibold text-ink">
                   Add New Client
                 </h3>
-                <p className="text-[13px] text-[#86868b] mt-0.5">Create a new client and package</p>
+                <p className="text-[13px] text-ink-muted mt-0.5">Create a new client and package</p>
               </div>
               <button
                 onClick={handleAddCancel}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center text-[#86868b] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-ink-muted hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 ✕
               </button>
@@ -2565,10 +2551,10 @@ export default function PostingPackages() {
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#0071e3]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Client</h4>
+                    <Users className="w-4 h-4 text-brand" />
+                    <h4 className="text-[14px] font-semibold text-ink">Client</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Select a client or lead from CRM, or add a new client</p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">Select a client or lead from CRM, or add a new client</p>
                 </div>
                 <div className="p-4 space-y-3">
                   <input
@@ -2576,13 +2562,13 @@ export default function PostingPackages() {
                     value={addForm.clientSearchFilter}
                     onChange={(e) => setAddForm({ ...addForm, clientSearchFilter: e.target.value })}
                     placeholder="Search by name or email..."
-                    className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                    className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand"
                   />
-                  <div className="max-h-44 overflow-y-auto rounded-lg border border-black/10 dark:border-white/10 divide-y divide-black/5 dark:divide-white/5">
+                  <div className="max-h-44 overflow-y-auto rounded-lg border border-hairline-strong divide-y divide-black/5 dark:divide-white/5">
                     <button
                       type="button"
                       onClick={() => setAddForm({ ...addForm, selectedCrmClientId: 'new', clientSearchFilter: '', clientName: '', clientEmail: '' })}
-                      className={`w-full text-left px-3 py-2.5 text-[13px] font-medium transition-colors ${addForm.selectedCrmClientId === 'new' ? 'bg-[#34c759]/10 text-[#34c759]' : 'text-[#0071e3] hover:bg-[#0071e3]/10'}`}
+                      className={`w-full text-left px-3 py-2.5 text-[13px] font-medium transition-colors ${addForm.selectedCrmClientId === 'new' ? 'bg-positive/10 text-positive' : 'text-brand hover:bg-brand/10'}`}
                     >
                       ＋ Add new client
                     </button>
@@ -2605,18 +2591,18 @@ export default function PostingPackages() {
                             clientEmail: c.clientEmail || c.email || '',
                             clientSearchFilter: ''
                           })}
-                          className={`w-full text-left px-3 py-2.5 text-[13px] transition-colors ${addForm.selectedCrmClientId === c.id ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'text-[#1d1d1f] dark:text-white hover:bg-black/5 dark:hover:bg-white/5'}`}
+                          className={`w-full text-left px-3 py-2.5 text-[13px] transition-colors ${addForm.selectedCrmClientId === c.id ? 'bg-brand/10 text-brand' : 'text-ink hover:bg-surface-3'}`}
                         >
                           <span className="font-medium">{c.clientName || c.name || '—'}</span>
-                          {(c.clientEmail || c.email) && <span className="text-[#86868b] ml-2">{c.clientEmail || c.email}</span>}
-                          {c.source === 'lead' && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400">Lead</span>}
+                          {(c.clientEmail || c.email) && <span className="text-ink-muted ml-2">{c.clientEmail || c.email}</span>}
+                          {c.source === 'lead' && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-warning/20 text-warning dark:text-amber-400">Lead</span>}
                         </button>
                       ))}
                   </div>
                   {addForm.selectedCrmClientId && addForm.selectedCrmClientId !== 'new' && (
-                    <p className="text-[12px] text-[#86868b]">
-                      Selected: <span className="font-medium text-[#1d1d1f] dark:text-white">{addForm.clientName}</span>
-                      <button type="button" onClick={() => setAddForm({ ...addForm, selectedCrmClientId: null, clientName: '', clientEmail: '' })} className="ml-2 text-[#0071e3] hover:underline">Change</button>
+                    <p className="text-[12px] text-ink-muted">
+                      Selected: <span className="font-medium text-ink">{addForm.clientName}</span>
+                      <button type="button" onClick={() => setAddForm({ ...addForm, selectedCrmClientId: null, clientName: '', clientEmail: '' })} className="ml-2 text-brand hover:underline">Change</button>
                     </p>
                   )}
                 </div>
@@ -2629,20 +2615,20 @@ export default function PostingPackages() {
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#0071e3]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">New Client Profile</h4>
+                    <Users className="w-4 h-4 text-brand" />
+                    <h4 className="text-[14px] font-semibold text-ink">New Client Profile</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Basic client information</p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">Basic client information</p>
                 </div>
                 
                 <div className="p-4 space-y-4">
                   {/* Profile Photo & Name Row */}
                   <div className="flex items-start gap-4">
-                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex-shrink-0">
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-surface-3 border border-hairline-strong flex-shrink-0">
                       {addForm.profilePhoto ? (
                         <img src={addForm.profilePhoto} alt="Client" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[#86868b]">
+                        <div className="w-full h-full flex items-center justify-center text-ink-muted">
                           <Camera className="w-6 h-6" />
                         </div>
                       )}
@@ -2652,11 +2638,11 @@ export default function PostingPackages() {
                         type="text"
                         value={addForm.clientName}
                         onChange={(e) => setAddForm({...addForm, clientName: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                         placeholder="Client name *"
                       />
                       <div className="flex items-center gap-2">
-                        <label className={`h-8 px-3 rounded-lg bg-[#0071e3]/10 text-[#0071e3] text-[12px] font-medium cursor-pointer hover:bg-[#0071e3]/20 transition-colors flex items-center gap-1.5 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <label className={`h-8 px-3 rounded-lg bg-brand/10 text-brand text-[12px] font-medium cursor-pointer hover:bg-brand/20 transition-colors flex items-center gap-1.5 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
                           <Camera className="w-3.5 h-3.5" />
                           {uploadingPhoto ? 'Uploading...' : 'Add Photo'}
                           <input
@@ -2669,7 +2655,7 @@ export default function PostingPackages() {
                         {addForm.profilePhoto && (
                           <button
                             onClick={() => setAddForm({...addForm, profilePhoto: ''})}
-                            className="h-8 px-3 rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] text-[12px] font-medium hover:bg-[#ff3b30]/20 transition-colors"
+                            className="h-8 px-3 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors"
                           >
                             Remove
                           </button>
@@ -2681,48 +2667,48 @@ export default function PostingPackages() {
                   {/* Email & Brokerage Row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Email Address
                       </label>
                       <input
                         type="email"
                         value={addForm.clientEmail}
                         onChange={(e) => setAddForm({...addForm, clientEmail: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                         placeholder="client@email.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Brokerage
                       </label>
                       <input
                         type="text"
                         value={addForm.brokerage}
                         onChange={(e) => setAddForm({...addForm, brokerage: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                         placeholder="e.g. RE/MAX, Sotheby's"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">Type *</label>
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">Type *</label>
                     <select
                       value={addForm.clientType || CLIENT_TYPE.NA}
                       onChange={(e) => setAddForm({...addForm, clientType: e.target.value})}
-                      className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     >
                       {CLIENT_TYPE_OPTIONS.map(({ value, label }) => (
                         <option key={value} value={value}>{label}</option>
                       ))}
                     </select>
-                    <p className="text-[11px] text-[#86868b] mt-1">This will add the client to your CRM and record today&apos;s date.</p>
+                    <p className="text-[11px] text-ink-muted mt-1">This will add the client to your CRM and record today&apos;s date.</p>
                   </div>
 
                   {/* Platforms Managed */}
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Platforms We Manage
                     </label>
                     <PlatformIcons
@@ -2741,23 +2727,23 @@ export default function PostingPackages() {
               <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 overflow-hidden">
                 <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-[#5856d6]" />
-                    <h4 className="text-[14px] font-semibold text-[#1d1d1f] dark:text-white">Package Details</h4>
+                    <Package className="w-4 h-4 text-brand" />
+                    <h4 className="text-[14px] font-semibold text-ink">Package Details</h4>
                   </div>
-                  <p className="text-[11px] text-[#86868b] mt-0.5">Package type and configuration</p>
+                  <p className="text-[11px] text-ink-muted mt-0.5">Package type and configuration</p>
                 </div>
                 
                 <div className="p-4 space-y-4">
                   {/* Package Type & Size Row */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Package Type
                       </label>
                       <select
                         value={addForm.packageType}
                         onChange={(e) => setAddForm({...addForm, packageType: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       >
                         <option value="Standard">Standard</option>
                         <option value="Silver">Silver</option>
@@ -2769,7 +2755,7 @@ export default function PostingPackages() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Package Size
                       </label>
                       <select
@@ -2782,7 +2768,7 @@ export default function PostingPackages() {
                             postsRemaining: newSize - addForm.postsUsed
                           });
                         }}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       >
                         {[...Array(15)].map((_, i) => (
                           <option key={i + 1} value={i + 1}>{i + 1} post{i + 1 !== 1 ? 's' : ''}</option>
@@ -2792,20 +2778,20 @@ export default function PostingPackages() {
                   </div>
 
                   {/* Posts Progress */}
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#1d1d1f] border border-black/5 dark:border-white/5">
+                  <div className="p-3 rounded-xl bg-surface border border-black/5 dark:border-white/5">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[12px] font-medium text-[#86868b]">Initial Progress</span>
-                      <span className="text-[14px] font-semibold text-[#0071e3]">{addForm.postsUsed}/{addForm.packageSize} posts</span>
+                      <span className="text-[12px] font-medium text-ink-muted">Initial Progress</span>
+                      <span className="text-[14px] font-semibold text-brand">{addForm.postsUsed}/{addForm.packageSize} posts</span>
                     </div>
-                    <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden mb-3">
+                    <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden mb-3">
                       <div 
-                        className="h-full bg-[#0071e3] rounded-full transition-all"
+                        className="h-full bg-brand rounded-full transition-all"
                         style={{ width: `${Math.min((addForm.postsUsed / addForm.packageSize) * 100, 100)}%` }}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Used</label>
+                        <label className="block text-[11px] text-ink-muted mb-1">Posts Used</label>
                         <select
                           value={addForm.postsUsed}
                           onChange={(e) => {
@@ -2816,7 +2802,7 @@ export default function PostingPackages() {
                               postsRemaining: addForm.packageSize - newUsed
                             });
                           }}
-                          className="w-full h-9 px-3 bg-black/5 dark:bg-white/5 border-0 rounded-lg text-[13px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                          className="w-full h-9 px-3 bg-surface border border-hairline-strong rounded-lg text-[13px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                         >
                           {[...Array(addForm.packageSize + 1)].map((_, i) => (
                             <option key={i} value={i}>{i}</option>
@@ -2824,9 +2810,9 @@ export default function PostingPackages() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[11px] text-[#86868b] mb-1">Posts Remaining</label>
-                        <div className="h-9 px-3 bg-black/5 dark:bg-white/5 rounded-lg flex items-center text-[13px] text-[#1d1d1f] dark:text-white">
-                          {addForm.postsRemaining} <span className="text-[#86868b] ml-1">(auto)</span>
+                        <label className="block text-[11px] text-ink-muted mb-1">Posts Remaining</label>
+                        <div className="h-9 px-3 bg-surface-3 rounded-lg flex items-center text-[13px] text-ink">
+                          {addForm.postsRemaining} <span className="text-ink-muted ml-1">(auto)</span>
                         </div>
                       </div>
                     </div>
@@ -2834,32 +2820,32 @@ export default function PostingPackages() {
 
                   {/* Posts per page (Luxury Listings, IG Mansions, IG Interiors, Luxury Homes) */}
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Posts per page
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {POST_PAGES.map(({ key, label }) => (
                         <div key={key}>
-                          <label className="block text-[11px] text-[#86868b] mb-0.5">{label}</label>
+                          <label className="block text-[11px] text-ink-muted mb-0.5">{label}</label>
                           <input
                             type="number"
                             min={0}
                             value={addForm[key] ?? 0}
                             onChange={(e) => setAddForm({ ...addForm, [key]: parseInt(e.target.value, 10) || 0 })}
-                            className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3]"
+                            className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand"
                           />
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Payment Status
                     </label>
                     <select
                       value={addForm.paymentStatus}
                       onChange={(e) => setAddForm({...addForm, paymentStatus: e.target.value})}
-                      className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                      className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     >
                       <option value="Pending">Pending</option>
                       <option value="Paid">Paid</option>
@@ -2871,13 +2857,13 @@ export default function PostingPackages() {
                   {/* Approval & Start Date Row */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Approval Status
                       </label>
                       <select
                         value={addForm.approvalStatus}
                         onChange={(e) => setAddForm({...addForm, approvalStatus: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       >
                         <option value="Pending">Pending</option>
                         <option value="Approved">Approved</option>
@@ -2885,14 +2871,14 @@ export default function PostingPackages() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         Start Date
                       </label>
                       <input
                         type="date"
                         value={addForm.startDate}
                         onChange={(e) => setAddForm({...addForm, startDate: e.target.value})}
-                        className="w-full h-10 px-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                        className="w-full h-10 px-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -2900,16 +2886,16 @@ export default function PostingPackages() {
                   {/* Custom/Monthly Price */}
                   {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (
                     <div>
-                      <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                      <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                         {addForm.packageType === 'Monthly' ? 'Monthly Price' : 'Custom Price'} *
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b]">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">$</span>
                         <input
                           type="number"
                           value={addForm.customPrice || ''}
                           onChange={(e) => setAddForm({...addForm, customPrice: parseFloat(e.target.value) || 0})}
-                          className="w-full h-10 pl-7 pr-3 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                          className="w-full h-10 pl-7 pr-3 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                           placeholder="0.00"
                           min="0"
                           step="0.01"
@@ -2920,13 +2906,13 @@ export default function PostingPackages() {
 
                   {/* Notes */}
                   <div>
-                    <label className="block text-[12px] font-medium text-[#86868b] mb-1.5">
+                    <label className="block text-[12px] font-medium text-ink-muted mb-1.5">
                       Notes
                     </label>
                     <textarea
                       value={addForm.notes}
                       onChange={(e) => setAddForm({...addForm, notes: e.target.value})}
-                      className="w-full px-3 py-2.5 bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-xl text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent resize-none"
+                      className="w-full px-3 py-2.5 bg-surface border border-hairline-strong rounded-xl text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
                       rows={3}
                       placeholder="Add notes about this client..."
                     />
@@ -2936,16 +2922,16 @@ export default function PostingPackages() {
 
               {/* Validation Messages */}
               {addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize && (
-                <div className="p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20">
-                  <p className="text-[13px] text-[#ff3b30]">
+                <div className="p-3 rounded-xl bg-danger/10 border border-danger/20">
+                  <p className="text-[13px] text-danger">
                     ⚠️ Posts Used ({addForm.postsUsed}) + Posts Remaining ({addForm.postsRemaining}) must equal Package Size ({addForm.packageSize})
                   </p>
                 </div>
               )}
               
               {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0) && (
-                <div className="p-3 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20">
-                  <p className="text-[13px] text-[#ff3b30]">
+                <div className="p-3 rounded-xl bg-danger/10 border border-danger/20">
+                  <p className="text-[13px] text-danger">
                     ⚠️ Please enter a valid {addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price
                   </p>
                 </div>
@@ -2956,7 +2942,7 @@ export default function PostingPackages() {
             <div className="flex items-center gap-3 p-5 border-t border-black/5 dark:border-white/5 flex-shrink-0">
               <button
                 onClick={handleAddCancel}
-                className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/5 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
@@ -2969,7 +2955,7 @@ export default function PostingPackages() {
                   addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize ||
                   ((addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0))
                 }
-                className="flex-1 h-11 rounded-xl bg-[#0071e3] text-white text-[14px] font-medium hover:bg-[#0077ed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 {approvalLoading['new'] ? 'Adding...' : 'Add Client'}
@@ -2982,12 +2968,12 @@ export default function PostingPackages() {
 
       {/* Toast Notification */}
       {toastState.show && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 backdrop-blur-xl ${
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg transition-all duration-300 backdrop-blur-xl ${
           toastState.type === 'success' 
-            ? 'bg-[#34c759] text-white' 
+            ? 'bg-positive text-white' 
             : toastState.type === 'error' 
-            ? 'bg-[#ff3b30] text-white' 
-            : 'bg-[#0071e3] text-white'
+            ? 'bg-danger text-white' 
+            : 'bg-brand text-white'
         }`}>
           <div className="flex items-center gap-2">
             <span className="text-base">{toastState.type === 'success' ? '✓' : toastState.type === 'error' ? '✕' : 'ℹ'}</span>

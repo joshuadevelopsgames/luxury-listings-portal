@@ -230,15 +230,15 @@ const Delta = ({ current, previous, label, prefix = '' }) => {
   const isZero = diff === 0;
   return (
     <div className="flex items-center justify-between py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
-      <span className="text-[12px] text-[#86868b]">{label}</span>
+      <span className="text-[12px] text-ink-muted">{label}</span>
       <div className="flex items-center gap-2">
-        <span className="text-[12px] font-medium text-[#1d1d1f] dark:text-white">{prefix}{formatCompact(curr)}</span>
+        <span className="text-[12px] font-medium text-ink">{prefix}{formatCompact(curr)}</span>
         {!isZero && (
-          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${isPos ? 'bg-[#34c759]/10 text-[#1a7a2e] dark:text-[#34c759]' : 'bg-[#ff3b30]/10 text-[#cc2200] dark:text-[#ff3b30]'}`}>
+          <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${isPos ? 'bg-positive/10 text-[#1a7a2e] dark:text-positive' : 'bg-danger/10 text-[#cc2200] dark:text-danger'}`}>
             {isPos ? '+' : ''}{formatCompact(diff)}{pct ? ` (${pct}%)` : ''}
           </span>
         )}
-        {isZero && <span className="text-[11px] text-[#86868b]">—</span>}
+        {isZero && <span className="text-[11px] text-ink-muted">—</span>}
       </div>
     </div>
   );
@@ -674,24 +674,24 @@ const InstagramReportsPage = () => {
 
     const CompletionBadge = () => {
       if (completionStatus === 'complete') return (
-        <span className="flex items-center gap-1 text-[10px] font-medium text-[#1a7a2e] dark:text-[#34c759] bg-[#34c759]/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+        <span className="flex items-center gap-1 text-[10px] font-medium text-[#1a7a2e] dark:text-positive bg-positive/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
           <CheckCircle2 className="w-3 h-3" strokeWidth={2} />Complete
         </span>
       );
       if (completionStatus === 'partial') return (
-        <span className="flex items-center gap-1 text-[10px] font-medium text-[#b45309] dark:text-[#ff9500] bg-[#ff9500]/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+        <span className="flex items-center gap-1 text-[10px] font-medium text-[#b45309] dark:text-warning bg-warning/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
           <AlertTriangle className="w-3 h-3" strokeWidth={2} />Partial
         </span>
       );
       return (
-        <span className="flex items-center gap-1 text-[10px] font-medium text-[#cc2200] dark:text-[#ff3b30] bg-[#ff3b30]/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+        <span className="flex items-center gap-1 text-[10px] font-medium text-[#cc2200] dark:text-danger bg-danger/10 px-1.5 py-0.5 rounded-md whitespace-nowrap">
           <XCircle className="w-3 h-3" strokeWidth={2} />No data
         </span>
       );
     };
 
     return (
-      <div className={`rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10 overflow-hidden ${compact ? '' : 'hover:shadow-md'} transition-all`}>
+      <div className={`rounded-xl bg-surface border border-hairline overflow-hidden ${compact ? '' : 'hover:shadow-md'} transition-all`}>
         <div className={`${compact ? 'p-3' : 'p-4'} flex items-center justify-between gap-3`}>
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-gradient-to-br from-[#833AB4] to-[#E1306C] flex items-center justify-center flex-shrink-0`}>
@@ -705,21 +705,21 @@ const InstagramReportsPage = () => {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h4 className={`${compact ? 'text-[13px]' : 'text-[14px]'} font-medium text-[#1d1d1f] dark:text-white truncate`}>
+                <h4 className={`${compact ? 'text-[13px]' : 'text-[14px]'} font-medium text-ink truncate`}>
                   {report.title || report.reportTitle}
                 </h4>
                 {report.reportType && (
                   <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                     report.reportType === 'yearly'
-                      ? 'bg-[#5856d6]/10 text-[#5856d6]'
-                      : 'bg-[#34c759]/10 text-[#34c759]'
+                      ? 'bg-brand/10 text-brand'
+                      : 'bg-positive/10 text-positive'
                   }`}>
                     {report.reportType === 'yearly' ? 'Annual' : 'Quarterly'}
                   </span>
                 )}
                 <CompletionBadge />
               </div>
-              <p className={`${compact ? 'text-[11px]' : 'text-[12px]'} text-[#86868b] truncate`}>
+              <p className={`${compact ? 'text-[11px]' : 'text-[12px]'} text-ink-muted truncate`}>
                 {report.dateRange}
               </p>
             </div>
@@ -729,7 +729,7 @@ const InstagramReportsPage = () => {
               <button
                 type="button"
                 onClick={() => setShowCompare(v => !v)}
-                className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg transition-colors ${showCompare ? 'bg-[#0071e3]/10 text-[#0071e3]' : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'}`}
+                className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg transition-colors ${showCompare ? 'bg-brand/10 text-brand' : 'bg-surface-3 text-ink hover:bg-hairline-strong'}`}
                 title="Compare with previous"
               >
                 <GitCompare className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
@@ -737,14 +737,14 @@ const InstagramReportsPage = () => {
             )}
             <button
               onClick={() => window.open(`${window.location.origin}/report/${report.publicLinkId}`, '_blank')}
-              className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+              className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-surface-3 text-ink hover:bg-hairline-strong transition-colors`}
               title="Preview report"
             >
               <Eye className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
             </button>
             <button
               onClick={() => setSharingReport(report)}
-              className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+              className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-surface-3 text-ink hover:bg-hairline-strong transition-colors`}
               title="Share — publish link & export PDF"
             >
               <Share2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
@@ -753,14 +753,14 @@ const InstagramReportsPage = () => {
               <>
                 <button
                   onClick={() => setEditingReport(report)}
-                  className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15 transition-colors`}
+                  className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-surface-3 text-ink hover:bg-hairline-strong transition-colors`}
                   title="Edit"
                 >
                   <Edit className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
                 </button>
                 <button
                   onClick={() => handleDeleteReport(report)}
-                  className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-[#ff3b30]/10 text-[#ff3b30] hover:bg-[#ff3b30]/20 transition-colors`}
+                  className={`${compact ? 'p-1.5' : 'p-2'} rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors`}
                   title="Delete"
                 >
                   <Trash2 className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
@@ -772,8 +772,8 @@ const InstagramReportsPage = () => {
 
         {/* MoM Comparison Panel */}
         {showCompare && compareWith && (
-          <div className="border-t border-black/5 dark:border-white/10 px-4 py-3 bg-[#f5f5f7] dark:bg-[#1c1c1e]">
-            <p className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <div className="border-t border-hairline px-4 py-3 bg-surface-2">
+            <p className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <GitCompare className="w-3.5 h-3.5" />
               vs. {compareWith.title || compareWith.dateRange || 'Previous Report'}
             </p>
@@ -799,13 +799,13 @@ const InstagramReportsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-[24px] sm:text-[34px] font-semibold text-[#1d1d1f] dark:text-white tracking-[-0.02em] flex items-center gap-2 sm:gap-3">
+          <h1 className="text-[24px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em] flex items-center gap-2 sm:gap-3">
             <span className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] text-white">
               <Instagram className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
             </span>
             Instagram Analytics
           </h1>
-          <p className="text-[13px] sm:text-[15px] text-[#86868b] mt-1">
+          <p className="text-[13px] sm:text-[15px] text-ink-muted mt-1">
             {effectiveIsAdmin ? 'Manage analytics reports for all clients' : `Analytics reports for your ${myClients.length} assigned client${myClients.length !== 1 ? 's' : ''}`}
           </p>
         </div>
@@ -813,9 +813,9 @@ const InstagramReportsPage = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate('/analytics-template-builder')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/10 dark:border-white/10 text-[#1d1d1f] dark:text-white text-[13px] sm:text-[14px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface border border-hairline-strong text-ink text-[13px] sm:text-[14px] font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
             >
-              <FileBarChart className="w-4 h-4 text-[#5856d6]" />
+              <FileBarChart className="w-4 h-4 text-brand" />
               Build Template
             </button>
             <button
@@ -831,33 +831,33 @@ const InstagramReportsPage = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+        <div className="p-3 sm:p-4 rounded-xl bg-surface border border-hairline">
           <div className="flex items-center gap-2 mb-1">
-            <Building2 className="w-4 h-4 text-[#0071e3]" />
-            <span className="text-[11px] sm:text-[12px] text-[#86868b]">Clients</span>
+            <Building2 className="w-4 h-4 text-brand" />
+            <span className="text-[11px] sm:text-[12px] text-ink-muted">Clients</span>
           </div>
-          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myClientsOnlyActive.length}</p>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-ink">{myClientsOnlyActive.length}</p>
         </div>
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+        <div className="p-3 sm:p-4 rounded-xl bg-surface border border-hairline">
           <div className="flex items-center gap-2 mb-1">
             <FolderOpen className="w-4 h-4 text-[#8e8e93]" />
-            <span className="text-[11px] sm:text-[12px] text-[#86868b]">Internal Accounts</span>
+            <span className="text-[11px] sm:text-[12px] text-ink-muted">Internal Accounts</span>
           </div>
-          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{myInternalAccounts.length}</p>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-ink">{myInternalAccounts.length}</p>
         </div>
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+        <div className="p-3 sm:p-4 rounded-xl bg-surface border border-hairline">
           <div className="flex items-center gap-2 mb-1">
             <FileText className="w-4 h-4 text-[#E1306C]" />
-            <span className="text-[11px] sm:text-[12px] text-[#86868b]">Reports</span>
+            <span className="text-[11px] sm:text-[12px] text-ink-muted">Reports</span>
           </div>
-          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">{totalReports}</p>
+          <p className="text-[20px] sm:text-[24px] font-semibold text-ink">{totalReports}</p>
         </div>
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+        <div className="p-3 sm:p-4 rounded-xl bg-surface border border-hairline">
           <div className="flex items-center gap-2 mb-1">
-            <CalendarDays className="w-4 h-4 text-[#34c759]" />
-            <span className="text-[11px] sm:text-[12px] text-[#86868b]">This Quarter</span>
+            <CalendarDays className="w-4 h-4 text-positive" />
+            <span className="text-[11px] sm:text-[12px] text-ink-muted">This Quarter</span>
           </div>
-          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+          <p className="text-[20px] sm:text-[24px] font-semibold text-ink">
             {myReports.filter(r => {
               const d = r.startDate?.toDate?.();
               return d && isWithinInterval(d, { 
@@ -867,12 +867,12 @@ const InstagramReportsPage = () => {
             }).length}
           </p>
         </div>
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#2c2c2e] border border-black/5 dark:border-white/10">
+        <div className="p-3 sm:p-4 rounded-xl bg-surface border border-hairline">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="w-4 h-4 text-[#ff9500]" />
-            <span className="text-[11px] sm:text-[12px] text-[#86868b]">This Year</span>
+            <TrendingUp className="w-4 h-4 text-warning" />
+            <span className="text-[11px] sm:text-[12px] text-ink-muted">This Year</span>
           </div>
-          <p className="text-[20px] sm:text-[24px] font-semibold text-[#1d1d1f] dark:text-white">
+          <p className="text-[20px] sm:text-[24px] font-semibold text-ink">
             {myReports.filter(r => {
               const d = r.startDate?.toDate?.();
               return d && getYear(d) === new Date().getFullYear();
@@ -884,16 +884,16 @@ const InstagramReportsPage = () => {
       {/* Search / Filter */}
       {activeTab !== 'archive' && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#86868b] pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search clients…"
-            className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 text-[14px] text-[#1d1d1f] dark:text-white placeholder-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3]/30 transition-all"
+            className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-surface-3 border border-hairline-strong text-[14px] text-ink placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all"
           />
           {searchQuery && (
-            <button type="button" onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-colors">
+            <button type="button" onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink dark:hover:text-white transition-colors">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -901,18 +901,18 @@ const InstagramReportsPage = () => {
       )}
 
       {/* Tabs: Clients | Internal Accounts */}
-      <div className="flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-surface-3 border border-hairline w-fit">
         <button
           type="button"
           onClick={() => setActiveTab('clients')}
-          className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'clients' ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'clients' ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted hover:text-ink dark:hover:text-white'}`}
         >
           Clients ({myClientsOnlyActive.length})
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('internal')}
-          className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'internal' ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+          className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'internal' ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted hover:text-ink dark:hover:text-white'}`}
         >
           Internal Accounts ({myInternalAccounts.length})
         </button>
@@ -920,7 +920,7 @@ const InstagramReportsPage = () => {
           <button
             type="button"
             onClick={() => setActiveTab('archive')}
-            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'archive' ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
+            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'archive' ? 'bg-surface text-ink shadow-sm' : 'text-ink-muted hover:text-ink dark:hover:text-white'}`}
           >
             Archived reports ({archivedReports.length})
           </button>
@@ -947,46 +947,46 @@ const InstagramReportsPage = () => {
         });
         const total = filteredClientsForTab.length;
         return (
-          <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-2xl bg-white/70 dark:bg-[#1d1d1f]/70 backdrop-blur-xl border border-black/5 dark:border-white/10">
-            <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-wider flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl bg-white/70 dark:bg-ink/70 backdrop-blur-xl border border-hairline">
+            <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1.5">
               <CalendarDays className="w-3.5 h-3.5" />
               {MONTH_NAMES[(thisMonth - 1)]} {thisYear}
             </span>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#34c759]" />
-              <span className="text-[13px] font-medium text-[#34c759]">{complete}</span>
-              <span className="text-[12px] text-[#86868b]">complete</span>
+              <span className="w-2 h-2 rounded-full bg-positive" />
+              <span className="text-[13px] font-medium text-positive">{complete}</span>
+              <span className="text-[12px] text-ink-muted">complete</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#ff9500]" />
-              <span className="text-[13px] font-medium text-[#ff9500]">{partial}</span>
-              <span className="text-[12px] text-[#86868b]">partial</span>
+              <span className="w-2 h-2 rounded-full bg-warning" />
+              <span className="text-[13px] font-medium text-warning">{partial}</span>
+              <span className="text-[12px] text-ink-muted">partial</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#ff3b30]" />
-              <span className="text-[13px] font-medium text-[#ff3b30]">{missing}</span>
-              <span className="text-[12px] text-[#86868b]">missing</span>
+              <span className="w-2 h-2 rounded-full bg-danger" />
+              <span className="text-[13px] font-medium text-danger">{missing}</span>
+              <span className="text-[12px] text-ink-muted">missing</span>
             </div>
-            <span className="ml-auto text-[12px] text-[#86868b]">{total} client{total !== 1 ? 's' : ''} total</span>
+            <span className="ml-auto text-[12px] text-ink-muted">{total} client{total !== 1 ? 's' : ''} total</span>
           </div>
         );
       })()}
 
       {activeTab === 'archive' && (
-        <div className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden">
-          <div className="p-4 border-b border-black/5 dark:border-white/10 flex items-center gap-2">
-            <Archive className="w-5 h-5 text-[#86868b]" />
-            <h3 className="text-[15px] font-semibold text-[#1d1d1f] dark:text-white">Archived reports</h3>
-            <span className="text-[12px] text-[#86868b]">Deleted by users; visible here only to system admins.</span>
+        <div className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden">
+          <div className="p-4 border-b border-hairline flex items-center gap-2">
+            <Archive className="w-5 h-5 text-ink-muted" />
+            <h3 className="text-[15px] font-semibold text-ink">Archived reports</h3>
+            <span className="text-[12px] text-ink-muted">Deleted by users; visible here only to system admins.</span>
           </div>
           <div className="p-4">
             {archiveLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="w-8 h-8 border-2 border-[#E1306C] border-t-transparent rounded-full animate-spin" />
-                <span className="ml-3 text-[14px] text-[#86868b]">Loading archive...</span>
+                <span className="ml-3 text-[14px] text-ink-muted">Loading archive...</span>
               </div>
             ) : archivedReports.length === 0 ? (
-              <div className="text-center py-12 text-[#86868b] text-[14px]">No archived reports.</div>
+              <div className="text-center py-12 text-ink-muted text-[14px]">No archived reports.</div>
             ) : (
               <div className="space-y-2">
                 {archivedReports.map((report) => (
@@ -1002,29 +1002,29 @@ const InstagramReportsPage = () => {
       {activeTab !== 'archive' && (loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="w-8 h-8 border-2 border-[#E1306C] border-t-transparent rounded-full animate-spin" />
-          <span className="ml-3 text-[14px] text-[#86868b]">Loading...</span>
+          <span className="ml-3 text-[14px] text-ink-muted">Loading...</span>
         </div>
       ) : (activeTab === 'internal' && myInternalAccounts.length === 0) ? (
-        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
-          <Building2 className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
-          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No internal accounts</h3>
-          <p className="text-[14px] text-[#86868b] mt-2">
+        <div className="rounded-xl border-2 border-dashed border-hairline-strong p-12 text-center">
+          <Building2 className="w-16 h-16 mx-auto text-ink-muted opacity-50 mb-4" />
+          <h3 className="text-[17px] font-medium text-ink">No internal accounts</h3>
+          <p className="text-[14px] text-ink-muted mt-2">
             Add internal accounts in Clients to create analytics reports for them here.
           </p>
         </div>
       ) : myClients.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
-          <Users className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
-          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No clients assigned</h3>
-          <p className="text-[14px] text-[#86868b] mt-2">
+        <div className="rounded-xl border-2 border-dashed border-hairline-strong p-12 text-center">
+          <Users className="w-16 h-16 mx-auto text-ink-muted opacity-50 mb-4" />
+          <h3 className="text-[17px] font-medium text-ink">No clients assigned</h3>
+          <p className="text-[14px] text-ink-muted mt-2">
             {effectiveIsAdmin ? 'No clients exist in the system yet.' : 'Contact your admin to get clients assigned to you.'}
           </p>
         </div>
       ) : filteredClientsForTab.length === 0 && searchQuery ? (
-        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-10 text-center">
-          <Search className="w-12 h-12 mx-auto text-[#86868b] opacity-30 mb-3" />
-          <h3 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white">No results for "{searchQuery}"</h3>
-          <button type="button" onClick={() => setSearchQuery('')} className="mt-3 text-[13px] font-medium text-[#0071e3] hover:underline">
+        <div className="rounded-xl border-2 border-dashed border-hairline-strong p-10 text-center">
+          <Search className="w-12 h-12 mx-auto text-ink-muted opacity-30 mb-3" />
+          <h3 className="text-[17px] font-semibold text-ink">No results for "{searchQuery}"</h3>
+          <button type="button" onClick={() => setSearchQuery('')} className="mt-3 text-[13px] font-medium text-brand hover:underline">
             Clear search
           </button>
         </div>
@@ -1045,15 +1045,15 @@ const InstagramReportsPage = () => {
             });
             const reportStatus = getReportCompletionStatus(thisMonthReport?.metrics);
             const monthBadge = !thisMonthReport
-              ? { color: '#ff3b30', label: `${MONTH_NAMES[thisMonth - 1]} report missing`, bg: 'bg-[#ff3b30]/10' }
+              ? { color: '#ff3b30', label: `${MONTH_NAMES[thisMonth - 1]} report missing`, bg: 'bg-danger/10' }
               : reportStatus === 'partial'
-              ? { color: '#ff9500', label: `${MONTH_NAMES[thisMonth - 1]} report partial`, bg: 'bg-[#ff9500]/10' }
+              ? { color: '#ff9500', label: `${MONTH_NAMES[thisMonth - 1]} report partial`, bg: 'bg-warning/10' }
               : null; // complete — no badge
             
             return (
               <div 
                 key={client.id}
-                className="rounded-2xl bg-white/80 dark:bg-[#1d1d1f]/80 backdrop-blur-xl border border-black/5 dark:border-white/10 overflow-hidden"
+                className="rounded-xl bg-surface backdrop-blur-xl border border-hairline overflow-hidden"
               >
                 {/* Client Header */}
                 <button
@@ -1076,10 +1076,10 @@ const InstagramReportsPage = () => {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-[15px] sm:text-[17px] font-semibold truncate">
-                        <ClientLink client={client} showId className="text-[#1d1d1f] dark:text-white" />
+                        <ClientLink client={client} showId className="text-ink" />
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-0.5">
-                        <span className="text-[11px] sm:text-[12px] text-[#86868b] flex items-center gap-1">
+                        <span className="text-[11px] sm:text-[12px] text-ink-muted flex items-center gap-1">
                           <FileText className="w-3 h-3" />
                           {clientReports.length} report{clientReports.length !== 1 ? 's' : ''}
                         </span>
@@ -1106,8 +1106,8 @@ const InstagramReportsPage = () => {
                     )}
                     <span className={`text-[12px] px-2 py-1 rounded-lg font-medium ${
                       clientReports.length > 0
-                        ? 'bg-[#34c759]/10 text-[#34c759]'
-                        : 'bg-[#86868b]/10 text-[#86868b]'
+                        ? 'bg-positive/10 text-positive'
+                        : 'bg-ink-muted/10 text-ink-muted'
                     }`}>
                       {clientReports.length > 0 ? `${clientReports.length} reports` : 'No reports'}
                     </span>
@@ -1118,7 +1118,7 @@ const InstagramReportsPage = () => {
                       return followerVals.length >= 2 ? (
                         <div className="hidden sm:flex flex-col items-end gap-0.5 mr-1">
                           <Sparkline values={followerVals} width={56} height={20} />
-                          <span className="text-[10px] text-[#86868b]">followers</span>
+                          <span className="text-[10px] text-ink-muted">followers</span>
                         </div>
                       ) : null;
                     })()}
@@ -1128,24 +1128,24 @@ const InstagramReportsPage = () => {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleCopyLink(clientReports[0].publicLinkId); }}
                         title="Copy latest report link"
-                        className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[#86868b] hover:text-[#0071e3]"
+                        className="p-1.5 rounded-lg hover:bg-surface-3 transition-colors text-ink-muted hover:text-brand"
                       >
                         {copiedLink === clientReports[0].publicLinkId
-                          ? <Check className="w-4 h-4 text-[#34c759]" />
+                          ? <Check className="w-4 h-4 text-positive" />
                           : <LinkIcon className="w-4 h-4" />}
                       </button>
                     )}
                     {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-[#86868b]" />
+                      <ChevronUp className="w-5 h-5 text-ink-muted" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-[#86868b]" />
+                      <ChevronDown className="w-5 h-5 text-ink-muted" />
                     )}
                   </div>
                 </button>
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="border-t border-black/5 dark:border-white/10">
+                  <div className="border-t border-hairline">
                     {/* Action Buttons */}
                     <div className="p-4 bg-black/[0.02] dark:bg-white/[0.03] flex flex-wrap items-center gap-2">
                       <button
@@ -1160,7 +1160,7 @@ const InstagramReportsPage = () => {
                           e.stopPropagation(); 
                           setGeneratingReport({ clientId: client.id, type: 'quarterly' });
                         }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#34c759] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-positive text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
                       >
                         <CalendarDays className="w-3.5 h-3.5" />
                         Generate Quarterly
@@ -1170,7 +1170,7 @@ const InstagramReportsPage = () => {
                           e.stopPropagation(); 
                           setGeneratingReport({ clientId: client.id, type: 'yearly' });
                         }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#5856d6] text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand text-white text-[12px] font-medium hover:opacity-90 transition-opacity"
                       >
                         <FileBarChart className="w-3.5 h-3.5" />
                         Generate Yearly
@@ -1181,8 +1181,8 @@ const InstagramReportsPage = () => {
                     <div className="p-4 space-y-4">
                       {clientReports.length === 0 ? (
                         <div className="text-center py-6">
-                          <FolderOpen className="w-10 h-10 mx-auto text-[#86868b] opacity-50 mb-2" />
-                          <p className="text-[13px] text-[#86868b]">No reports yet for this client</p>
+                          <FolderOpen className="w-10 h-10 mx-auto text-ink-muted opacity-50 mb-2" />
+                          <p className="text-[13px] text-ink-muted">No reports yet for this client</p>
                           <button
                             onClick={() => handleCreateForClient(client.id)}
                             className="mt-3 text-[13px] text-[#E1306C] font-medium hover:underline"
@@ -1195,13 +1195,13 @@ const InstagramReportsPage = () => {
                           {/* Yearly Reports – grouped by year */}
                           {yearlyReports.length > 0 && (
                             <div>
-                              <h4 className="text-[12px] font-semibold text-[#5856d6] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                              <h4 className="text-[12px] font-semibold text-brand uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                 <FileBarChart className="w-3.5 h-3.5" />
                                 Annual Reports ({yearlyReports.length})
                               </h4>
                               {groupReportsByYearMonth(yearlyReports).map(({ year, month, reports: groupReports }) => (
                                 <div key={`y-${year}-${month}`} className="mb-4">
-                                  <p className="text-[11px] font-medium text-[#86868b] mb-1.5">{year}</p>
+                                  <p className="text-[11px] font-medium text-ink-muted mb-1.5">{year}</p>
                                   <div className="space-y-2">
                                     {groupReports.map(report => (
                                       <ReportCard key={report.id} report={report} compact />
@@ -1215,13 +1215,13 @@ const InstagramReportsPage = () => {
                           {/* Quarterly Reports – grouped by year then month */}
                           {quarterlyReports.length > 0 && (
                             <div>
-                              <h4 className="text-[12px] font-semibold text-[#34c759] uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                              <h4 className="text-[12px] font-semibold text-positive uppercase tracking-wide mb-2 flex items-center gap-1.5">
                                 <CalendarDays className="w-3.5 h-3.5" />
                                 Quarterly Reports ({quarterlyReports.length})
                               </h4>
                               {groupReportsByYearMonth(quarterlyReports).map(({ year, month, reports: groupReports }) => (
                                 <div key={`q-${year}-${month}`} className="mb-4">
-                                  <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
+                                  <p className="text-[11px] font-medium text-ink-muted mb-1.5">
                                     {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
                                   </p>
                                   <div className="space-y-2">
@@ -1260,7 +1260,7 @@ const InstagramReportsPage = () => {
                                   const sortedGroup = [...groupReports].sort((a, b) => getReportSortDate(b) - getReportSortDate(a));
                                   return (
                                     <div key={`m-${year}-${month}`} className="mb-4">
-                                      <p className="text-[11px] font-medium text-[#86868b] mb-1.5">
+                                      <p className="text-[11px] font-medium text-ink-muted mb-1.5">
                                         {format(new Date(year, month - 1, 1), 'MMMM yyyy')}
                                       </p>
                                       <div className="space-y-2">
@@ -1285,32 +1285,32 @@ const InstagramReportsPage = () => {
 
           {/* Unlinked Reports (Admin only, Clients tab only) */}
           {activeTab === 'clients' && effectiveIsAdmin && unlinkedReports.length > 0 && (
-            <div className="rounded-2xl bg-[#ff9500]/5 dark:bg-[#ff9500]/10 border border-[#ff9500]/20 overflow-hidden">
+            <div className="rounded-xl bg-warning/5 dark:bg-warning/10 border border-warning/20 overflow-hidden">
               <button
                 onClick={() => setExpandedClient(expandedClient === 'unlinked' ? null : 'unlinked')}
-                className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-[#ff9500]/5 transition-colors text-left"
+                className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-warning/5 transition-colors text-left"
               >
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#ff9500] flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-warning flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-[15px] sm:text-[17px] font-semibold text-[#1d1d1f] dark:text-white">
+                    <h3 className="text-[15px] sm:text-[17px] font-semibold text-ink">
                       Unlinked Reports
                     </h3>
-                    <p className="text-[11px] sm:text-[12px] text-[#ff9500]">
+                    <p className="text-[11px] sm:text-[12px] text-warning">
                       {unlinkedReports.length} report{unlinkedReports.length !== 1 ? 's' : ''} not linked to any client
                     </p>
                   </div>
                 </div>
                 {expandedClient === 'unlinked' ? (
-                  <ChevronUp className="w-5 h-5 text-[#86868b]" />
+                  <ChevronUp className="w-5 h-5 text-ink-muted" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-[#86868b]" />
+                  <ChevronDown className="w-5 h-5 text-ink-muted" />
                 )}
               </button>
               {expandedClient === 'unlinked' && (
-                <div className="border-t border-[#ff9500]/20 p-4 space-y-2">
+                <div className="border-t border-warning/20 p-4 space-y-2">
                   {unlinkedReports.map(report => (
                     <ReportCard key={report.id} report={report} compact />
                   ))}
@@ -1359,9 +1359,9 @@ const InstagramReportsPage = () => {
       {/* Share Link Popup — shown after creating or saving a report */}
       {sharePopupLink && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-black/5 dark:border-white/10">
+          <div className="bg-surface rounded-xl shadow-lg max-w-md w-full p-6 border border-hairline">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center flex-shrink-0">
                 <LinkIcon className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -1378,7 +1378,7 @@ const InstagramReportsPage = () => {
                   navigator.clipboard.writeText(`${window.location.origin}/report/${sharePopupLink}`);
                   toast.success('Link copied!');
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors flex-shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-white text-xs font-medium transition-colors flex-shrink-0"
               >
                 <Copy className="w-3.5 h-3.5" />
                 Copy
@@ -1394,7 +1394,7 @@ const InstagramReportsPage = () => {
               </button>
               <button
                 onClick={() => setSharePopupLink(null)}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm font-medium transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-sm font-medium transition-colors"
               >
                 <Check className="w-4 h-4" />
                 Done
@@ -1420,25 +1420,25 @@ const InstagramReportsPage = () => {
         })();
         return (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="bg-surface rounded-xl shadow-lg max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-[17px] font-semibold text-[#1d1d1f] dark:text-white flex items-center gap-2">
+                <h2 className="text-[17px] font-semibold text-ink flex items-center gap-2">
                   {generatingReport.type === 'quarterly'
-                    ? <><CalendarDays className="w-5 h-5 text-[#34c759]" />Generate Quarterly Report</>
-                    : <><FileBarChart className="w-5 h-5 text-[#5856d6]" />Generate Yearly Report</>}
+                    ? <><CalendarDays className="w-5 h-5 text-positive" />Generate Quarterly Report</>
+                    : <><FileBarChart className="w-5 h-5 text-brand" />Generate Yearly Report</>}
                 </h2>
-                <button onClick={() => setGeneratingReport(null)} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-[#86868b]" />
+                <button onClick={() => setGeneratingReport(null)} className="p-2 hover:bg-surface-3 rounded-lg transition-colors">
+                  <X className="w-5 h-5 text-ink-muted" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Year</label>
+                  <label className="block text-[13px] font-medium text-ink mb-2">Year</label>
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="w-full h-11 px-4 rounded-xl bg-black/5 dark:bg-white/10 border-0 text-[#1d1d1f] dark:text-white text-[14px] focus:outline-none focus:ring-2 focus:ring-[#E1306C]"
+                    className="w-full h-11 px-4 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px] focus:outline-none focus:ring-2 focus:ring-[#E1306C]"
                   >
                     {[...Array(5)].map((_, i) => {
                       const year = new Date().getFullYear() - i;
@@ -1449,11 +1449,11 @@ const InstagramReportsPage = () => {
 
                 {generatingReport.type === 'quarterly' && (
                   <div>
-                    <label className="block text-[13px] font-medium text-[#1d1d1f] dark:text-white mb-2">Quarter</label>
+                    <label className="block text-[13px] font-medium text-ink mb-2">Quarter</label>
                     <div className="grid grid-cols-4 gap-2">
                       {[1, 2, 3, 4].map(q => (
                         <button key={q} onClick={() => setSelectedQuarter(q)}
-                          className={`h-11 rounded-xl text-[14px] font-medium transition-colors ${selectedQuarter === q ? 'text-white' : 'bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white hover:bg-black/10 dark:hover:bg-white/15'}`}
+                          className={`h-11 rounded-xl text-[14px] font-medium transition-colors ${selectedQuarter === q ? 'text-white' : 'bg-surface-3 text-ink hover:bg-hairline-strong'}`}
                           style={selectedQuarter === q ? { backgroundColor: accentColor } : {}}
                         >Q{q}</button>
                       ))}
@@ -1463,27 +1463,27 @@ const InstagramReportsPage = () => {
 
                 {/* Source report preview */}
                 {previewSources.length > 0 ? (
-                  <div className="rounded-xl bg-black/5 dark:bg-white/5 p-3 space-y-1">
-                    <p className="text-[12px] font-medium text-[#86868b]">
+                  <div className="rounded-xl bg-surface-3 p-3 space-y-1">
+                    <p className="text-[12px] font-medium text-ink-muted">
                       Will aggregate {previewSources.length} report{previewSources.length !== 1 ? 's' : ''}
                       {generatingReport.type === 'yearly' && reports.some(r => r.clientId === generatingReport.clientId && r.reportType === 'quarterly' && getReportYear(r) === selectedYear) ? ' (from quarterly)' : ''}:
                     </p>
                     {previewSources.map(r => (
-                      <p key={r.id} className="text-[12px] text-[#1d1d1f] dark:text-white flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-[#34c759] shrink-0" />
+                      <p key={r.id} className="text-[12px] text-ink flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-positive shrink-0" />
                         {r.title || r.dateRange || r.id}
                       </p>
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-[#ff3b30]/10 p-3">
-                    <p className="text-[12px] text-[#ff3b30]">No reports found for this period — create monthly reports first.</p>
+                  <div className="rounded-xl bg-danger/10 p-3">
+                    <p className="text-[12px] text-danger">No reports found for this period — create monthly reports first.</p>
                   </div>
                 )}
 
                 <div className="flex gap-3 pt-2">
                   <button onClick={() => setGeneratingReport(null)}
-                    className="flex-1 h-11 rounded-xl bg-black/5 dark:bg-white/10 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/15 transition-colors"
+                    className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
                   >Cancel</button>
                   <button
                     disabled={isGenerating || previewSources.length === 0}
@@ -1541,10 +1541,10 @@ const ReportShareModal = ({ report, onClose }) => {
 
   return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[160] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface rounded-xl shadow-lg max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
           <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-purple-500" />Share report
+            <Share2 className="w-5 h-5 text-brand" />Share report
           </h3>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors">
             <X className="w-5 h-5 text-gray-500" />
@@ -1554,7 +1554,7 @@ const ReportShareModal = ({ report, onClose }) => {
           {/* Publish */}
           <div className="flex items-center justify-between gap-4 p-3 rounded-xl border border-gray-200 dark:border-white/10">
             <div className="flex items-start gap-3 min-w-0">
-              <Globe className={`w-5 h-5 mt-0.5 flex-shrink-0 ${published ? 'text-[#34c759]' : 'text-gray-400'}`} />
+              <Globe className={`w-5 h-5 mt-0.5 flex-shrink-0 ${published ? 'text-positive' : 'text-gray-400'}`} />
               <div className="min-w-0">
                 <p className="text-[14px] font-medium text-gray-900 dark:text-white">{published ? 'Published' : 'Draft'}</p>
                 <p className="text-[12.5px] text-gray-500 dark:text-gray-400">
@@ -1566,7 +1566,7 @@ const ReportShareModal = ({ report, onClose }) => {
               onClick={togglePublish}
               disabled={busy}
               title={published ? 'Unpublish' : 'Publish'}
-              className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-60 ${published ? 'bg-[#34c759]' : 'bg-gray-300 dark:bg-white/20'}`}
+              className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-60 ${published ? 'bg-positive' : 'bg-gray-300 dark:bg-white/20'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${published ? 'translate-x-5' : ''}`} />
             </button>
@@ -1579,7 +1579,7 @@ const ReportShareModal = ({ report, onClose }) => {
                 <LinkIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
                 <span className="truncate">{link}</span>
               </div>
-              <button onClick={copyLink} className="px-4 h-11 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium flex items-center gap-2 flex-shrink-0">
+              <button onClick={copyLink} className="px-4 h-11 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-[14px] font-medium flex items-center gap-2 flex-shrink-0">
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}{copied ? 'Copied' : 'Copy'}
               </button>
             </div>
@@ -1588,7 +1588,7 @@ const ReportShareModal = ({ report, onClose }) => {
           {/* Export PDF */}
           <div className="pt-1 border-t border-gray-100 dark:border-white/5">
             <button onClick={exportPdf} className="w-full mt-4 flex items-center justify-center gap-2 h-11 rounded-xl border border-gray-200 dark:border-white/15 text-[14px] font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-              <Download className="w-4 h-4 text-purple-500" /> Export as PDF
+              <Download className="w-4 h-4 text-brand" /> Export as PDF
             </button>
             <p className="text-[12px] text-gray-400 mt-2 text-center">Opens a print-ready view — choose “Save as PDF” in the dialog.</p>
           </div>
@@ -1605,7 +1605,7 @@ const TemplatePickerCard = ({ label, sub, active, onClick, previewReport, templa
   <button
     type="button"
     onClick={onClick}
-    className={`text-left rounded-xl border-2 overflow-hidden transition-colors bg-white dark:bg-[#1c1c1e] ${active ? 'border-purple-500' : 'border-gray-200 dark:border-white/10 hover:border-purple-300'}`}
+    className={`text-left rounded-xl border-2 overflow-hidden transition-colors bg-surface ${active ? 'border-brand' : 'border-gray-200 dark:border-white/10 hover:border-purple-300'}`}
   >
     <div style={{ position: 'relative', height: 190, overflow: 'hidden', background: '#f4f4f6' }}>
       <div style={{ transform: 'scale(0.34)', transformOrigin: 'top left', width: 900, pointerEvents: 'none' }}>
@@ -1615,9 +1615,9 @@ const TemplatePickerCard = ({ label, sub, active, onClick, previewReport, templa
     <div className="px-3 py-2 flex items-center justify-between gap-2">
       <span className="text-[13px] font-medium text-gray-900 dark:text-white truncate">{label}</span>
       {sub ? (
-        <span className="flex-shrink-0 text-[10.5px] font-semibold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">{sub}</span>
+        <span className="flex-shrink-0 text-[10.5px] font-semibold px-1.5 py-0.5 rounded bg-brand-soft dark:bg-purple-900/40 text-brand dark:text-purple-300">{sub}</span>
       ) : active ? (
-        <Check className="w-4 h-4 text-purple-500 flex-shrink-0" />
+        <Check className="w-4 h-4 text-brand flex-shrink-0" />
       ) : null}
     </div>
   </button>
@@ -2011,7 +2011,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
           </h5>
           <button
             onClick={() => addArrayItem(arrayKey, { type: '', count: 0 })}
-            className="text-xs text-purple-600 hover:text-purple-700"
+            className="text-xs text-brand hover:text-brand"
           >
             + Add Type
           </button>
@@ -2042,7 +2042,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 />
                 <button
                   onClick={() => removeArrayItem(arrayKey, idx)}
-                  className="p-1 text-red-500 hover:bg-red-50 rounded"
+                  className="p-1 text-danger hover:bg-danger-soft rounded"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -2144,7 +2144,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     <>
       {createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
+          <div className="bg-surface rounded-xl shadow-lg max-w-5xl w-full max-h-[90vh] overflow-hidden">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
           <div>
@@ -2168,12 +2168,12 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
           <div className="space-y-6">
             {/* Unlinked Report Alert */}
             {report && !report.clientId && (
-              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <div className="p-4 rounded-lg bg-warning-soft dark:bg-amber-900/20 border border-amber-200 dark:border-warning">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="font-medium text-amber-800 dark:text-amber-200">Unlinked Report</h4>
-                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                    <h4 className="font-medium text-warning dark:text-amber-200">Unlinked Report</h4>
+                    <p className="text-sm text-warning dark:text-amber-300 mt-1">
                       This report isn't linked to a client. Select a client below to enable filtering and comparison features.
                     </p>
                   </div>
@@ -2185,13 +2185,13 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Client <span className="text-red-500">*</span>
+                  Client <span className="text-danger">*</span>
                 </label>
                 <select
                   value={formData.clientId}
                   onChange={(e) => handleClientSelect(e.target.value)}
                   disabled={loadingClients}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
                 >
                   <option value="">
                     {loadingClients ? 'Loading clients...' : 'Select a client'}
@@ -2203,7 +2203,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                   ))}
                 </select>
                 {!formData.clientId && formData.clientName && (
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                  <p className="mt-1 text-xs text-warning dark:text-amber-400">
                     Using custom name: {formData.clientName}
                   </p>
                 )}
@@ -2217,7 +2217,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g., Monthly Performance"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             </div>
@@ -2247,7 +2247,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       return { ...prev, startDate: newStart, title: newTitle };
                     });
                   }}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
@@ -2258,7 +2258,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
@@ -2270,7 +2270,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                   value={formData.dateRange}
                   onChange={(e) => setFormData(prev => ({ ...prev, dateRange: e.target.value }))}
                   placeholder="Auto-generated or custom"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Auto-generated from dates, or customize
@@ -2291,8 +2291,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                   title={!hasMetricsForSummary ? 'Add or extract metrics above to generate an AI summary' : undefined}
                   className="
                     inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white text-sm
-                    bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-500
-                    hover:from-violet-500 hover:via-fuchsia-500 hover:to-cyan-400
+                    bg-gradient-to-r from-brand via-fuchsia-600 to-cyan-500
+                    hover:from-brand hover:via-fuchsia-500 hover:to-cyan-400
                     focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:ring-offset-2 focus:ring-offset-gray-900
                     disabled:opacity-60 disabled:cursor-not-allowed
                     transition-all duration-300
@@ -2320,9 +2320,9 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 placeholder="Add insights, highlights, and recommendations for the client — or use the button above to generate an AI summary from your metrics."
                 rows={3}
                 maxLength={5000}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand resize-none"
               />
-              <p className={`text-xs mt-1 text-right ${(formData.notes?.length || 0) > 4500 ? 'text-orange-500' : 'text-gray-400'}`}>
+              <p className={`text-xs mt-1 text-right ${(formData.notes?.length || 0) > 4500 ? 'text-warning' : 'text-gray-400'}`}>
                 {formData.notes?.length || 0} / 5,000
               </p>
             </div>
@@ -2340,7 +2340,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 className={`
                   border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors
                   ${dragOver 
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
+                    ? 'border-brand bg-brand-soft dark:bg-purple-900/20' 
                     : 'border-gray-300 dark:border-white/20 hover:border-purple-400 hover:bg-gray-50 dark:hover:bg-white/5'
                   }
                 `}
@@ -2355,7 +2355,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 />
                 {uploading ? (
                   <div className="flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+                    <Loader2 className="w-6 h-6 animate-spin text-brand" />
                     <span className="ml-3 text-gray-600 dark:text-gray-400">Adding...</span>
                   </div>
                 ) : (
@@ -2373,21 +2373,21 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
             {formData.screenshots.length > 0 && (
               <div className="space-y-4">
                 {extracting && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
+                  <div className="bg-warning-soft dark:bg-amber-900/20 rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <Sparkles className="w-5 h-5 text-amber-600 animate-pulse" />
-                      <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      <Sparkles className="w-5 h-5 text-warning animate-pulse" />
+                      <span className="text-sm font-medium text-warning dark:text-amber-200">
                         {extractionProgress.status}
                       </span>
                     </div>
                     {slowExtraction && (
-                      <p className="text-xs text-amber-700 dark:text-amber-300 mb-2 italic">
+                      <p className="text-xs text-warning dark:text-amber-300 mb-2 italic">
                         ⏳ Thinking longer than usual — the AI is processing multiple images. Hang tight…
                       </p>
                     )}
-                    <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-2">
+                    <div className="w-full bg-amber-200 dark:bg-warning rounded-full h-2">
                       <div 
-                        className="bg-amber-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-warning h-2 rounded-full transition-all duration-300"
                         style={{ width: `${extractionProgress.total ? (extractionProgress.current / extractionProgress.total) * 100 : 0}%` }}
                       />
                     </div>
@@ -2409,7 +2409,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       {!extracting && (
                         <button
                           onClick={() => handleRemoveScreenshot(index)}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 p-1 bg-danger text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -2421,8 +2421,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
             )}
 
             {/* Metrics section — always visible; manual entry for missing fields */}
-            <div className="border border-purple-200 dark:border-purple-800 rounded-xl overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-3 flex items-center justify-between">
+            <div className="border border-purple-200 dark:border-brand rounded-xl overflow-hidden">
+                <div className="bg-gradient-to-r from-brand to-pink-500 px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white">
                     <BarChart3 className="w-5 h-5" />
                     <span className="font-medium">Metrics</span>
@@ -2437,7 +2437,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 </div>
                 
                 {!metricsSectionCollapsed && (
-                <div className="p-4 bg-purple-50 dark:bg-purple-900/10 space-y-6">
+                <div className="p-4 bg-brand-soft dark:bg-purple-900/10 space-y-6">
                   {/* Key Metrics — manual entry for missing fields */}
                   <div>
                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
@@ -2548,7 +2548,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       </h5>
                       <button
                         onClick={() => addArrayItem('topCities', { name: '', percentage: 0 })}
-                        className="text-xs text-purple-600 hover:text-purple-700"
+                        className="text-xs text-brand hover:text-brand"
                       >
                         + Add City
                       </button>
@@ -2573,7 +2573,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           />
                           <button
                             onClick={() => removeArrayItem('topCities', idx)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded"
+                            className="p-2 text-danger hover:bg-danger-soft rounded"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -2590,7 +2590,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       </h5>
                       <button
                         onClick={() => addArrayItem('topCountries', { name: '', percentage: 0 })}
-                        className="text-xs text-purple-600 hover:text-purple-700"
+                        className="text-xs text-brand hover:text-brand"
                       >
                         + Add Country
                       </button>
@@ -2615,7 +2615,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           />
                           <button
                             onClick={() => removeArrayItem('topCountries', idx)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded"
+                            className="p-2 text-danger hover:bg-danger-soft rounded"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -2632,7 +2632,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       </h5>
                       <button
                         onClick={() => addArrayItem('ageRanges', { range: '', percentage: 0 })}
-                        className="text-xs text-purple-600 hover:text-purple-700"
+                        className="text-xs text-brand hover:text-brand"
                       >
                         + Add Range
                       </button>
@@ -2657,7 +2657,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                           />
                           <button
                             onClick={() => removeArrayItem('ageRanges', idx)}
-                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                            className="p-1 text-danger hover:bg-danger-soft rounded"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -2709,7 +2709,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, postLinks: (prev.postLinks || []).filter((_, i) => i !== idx) }))}
-                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      className="p-2 text-danger hover:bg-danger-soft dark:hover:bg-red-900/20 rounded"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -2730,7 +2730,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, postLinks: [...(prev.postLinks || []), { url: '', label: '', comment: '' }] }))}
-                className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                className="text-sm text-brand dark:text-purple-400 hover:underline flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" /> Add link
               </button>
@@ -2748,7 +2748,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
               <button
                 type="button"
                 onClick={() => window.open('/analytics-template-builder', '_blank')}
-                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 text-[13px] font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border border-purple-200 dark:border-brand text-brand dark:text-purple-400 text-[13px] font-medium hover:bg-brand-soft dark:hover:bg-purple-900/20 transition-colors"
               >
                 <FileBarChart className="w-4 h-4" /> Build new template
               </button>
@@ -2786,14 +2786,14 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl border border-black/10 dark:border-white/20 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="px-4 py-2 rounded-xl border border-hairline-strong text-ink text-[14px] font-medium hover:bg-surface-3 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => setStep(2)}
                 disabled={!formData.title || !formData.startDate || !formData.endDate}
-                className="flex items-center px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
+                className="flex items-center px-5 py-2 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
               >
                 Next
                 <ChevronRight className="w-4 h-4 ml-2" />
@@ -2803,7 +2803,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
             <>
               <button
                 onClick={() => setStep(1)}
-                className="flex items-center px-4 py-2 rounded-xl border border-black/10 dark:border-white/20 text-[#1d1d1f] dark:text-white text-[14px] font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                className="flex items-center px-4 py-2 rounded-xl border border-hairline-strong text-ink text-[14px] font-medium hover:bg-surface-3 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Back
@@ -2811,7 +2811,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowTemplatePreview(true)}
-                  className="flex items-center px-4 py-2 rounded-xl border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 text-[14px] font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                  className="flex items-center px-4 py-2 rounded-xl border border-purple-200 dark:border-brand text-brand dark:text-purple-400 text-[14px] font-medium hover:bg-brand-soft dark:hover:bg-purple-900/20 transition-colors"
                 >
                   <Eye className="w-4 h-4 mr-2" />
                   Preview
@@ -2819,7 +2819,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 <button
                   onClick={handleSave}
                   disabled={saving || uploading || extracting}
-                  className="flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
+                  className="flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <>
@@ -2887,7 +2887,7 @@ const renderContentTypePreview = (items, title) => {
   const max = useCount ? (Math.max(...items.map((it) => Number(it.count) || 0)) || 1) : 100;
   return (
     <div className="mt-8">
-      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-purple-500" />{title}</h3>
+      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-brand" />{title}</h3>
       <div className="space-y-3">
         {items.map((item, idx) => {
           const barPct = useCount ? Math.min(100, ((Number(item.count) || 0) / max) * 100) : Math.min(100, item.percentage ?? 0);
@@ -3026,8 +3026,8 @@ const ReportPreviewModal = ({ report, onClose }) => {
                   <Calendar className="w-3.5 h-3.5 text-white/70" />
                   <span className="text-sm text-white/90">{report.dateRange || 'Date Range'}</span>
                 </div>
-                {isYearly && <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-indigo-400/30 bg-indigo-500/20 text-sm text-indigo-200 font-medium">Annual Report</span>}
-                {isQuarterly && <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/20 text-sm text-emerald-200 font-medium">Quarterly Report</span>}
+                {isYearly && <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-indigo-400/30 bg-brand/20 text-sm text-indigo-200 font-medium">Annual Report</span>}
+                {isQuarterly && <span className="inline-flex items-center px-3 py-1.5 rounded-full border border-emerald-400/30 bg-positive/20 text-sm text-emerald-200 font-medium">Quarterly Report</span>}
                 {isAggregated && sourceCount > 0 && <span className="text-xs text-white/50 px-2">Aggregated from {sourceCount} monthly report{sourceCount !== 1 ? 's' : ''}</span>}
               </div>
             </div>
@@ -3051,16 +3051,16 @@ const ReportPreviewModal = ({ report, onClose }) => {
           const followerChangeVal = (() => { const fc = m.followerChange; if (fc == null) return null; const n = parseInt(fc); return isNaN(n) ? String(fc) : `${n > 0 ? '+' : ''}${n}`; })();
           const followerChangePosNeg = (() => { const fc = m.followerChange; const n = parseInt(fc); return !isNaN(n) ? n : Number(fc); })();
           const cards = [
-            m.accountsReached != null ? { icon: Users, label: 'Accounts Reached', value: formatCompact(m.accountsReached), badge: m.accountsReachedChange, badgePos: m.accountsReachedChange?.startsWith('+'), iconGradient: 'from-violet-600 to-purple-700' } : null,
-            m.followers != null ? { icon: Users, label: 'Total Followers', value: formatCompact(m.followers), badge: followerChangeVal, badgePos: followerChangePosNeg >= 0, iconGradient: 'from-pink-600 to-rose-700' } : null,
-            m.views != null ? { icon: Eye, label: 'Total Views', value: formatCompact(m.views), badge: m.viewsFollowerPercent != null ? `${m.viewsFollowerPercent}% followers` : null, badgeNeutral: true, iconGradient: 'from-violet-500 to-indigo-600' } : null,
-            m.interactions != null ? { icon: Heart, label: 'Interactions', value: formatCompact(m.interactions), badge: null, iconGradient: 'from-orange-500 to-red-600' } : (m.profileVisits != null ? { icon: MousePointer, label: 'Profile Visits', value: formatCompact(m.profileVisits), badge: m.profileVisitsChange, badgePos: m.profileVisitsChange?.startsWith('+'), iconGradient: 'from-blue-500 to-indigo-600' } : null),
+            m.accountsReached != null ? { icon: Users, label: 'Accounts Reached', value: formatCompact(m.accountsReached), badge: m.accountsReachedChange, badgePos: m.accountsReachedChange?.startsWith('+'), iconGradient: 'from-brand to-brand' } : null,
+            m.followers != null ? { icon: Users, label: 'Total Followers', value: formatCompact(m.followers), badge: followerChangeVal, badgePos: followerChangePosNeg >= 0, iconGradient: 'from-pink-600 to-danger' } : null,
+            m.views != null ? { icon: Eye, label: 'Total Views', value: formatCompact(m.views), badge: m.viewsFollowerPercent != null ? `${m.viewsFollowerPercent}% followers` : null, badgeNeutral: true, iconGradient: 'from-brand to-brand' } : null,
+            m.interactions != null ? { icon: Heart, label: 'Interactions', value: formatCompact(m.interactions), badge: null, iconGradient: 'from-warning to-danger' } : (m.profileVisits != null ? { icon: MousePointer, label: 'Profile Visits', value: formatCompact(m.profileVisits), badge: m.profileVisitsChange, badgePos: m.profileVisitsChange?.startsWith('+'), iconGradient: 'from-brand to-brand' } : null),
           ].filter(Boolean);
           return (
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 relative z-10">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {cards.map((card, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-purple-100/60 p-5 flex flex-col" style={{ boxShadow: '0 8px 30px rgba(124,58,237,0.09), 0 2px 8px rgba(0,0,0,0.05)' }}>
+                  <div key={i} className="bg-white rounded-xl border border-brand-soft/60 p-5 flex flex-col" style={{ boxShadow: '0 8px 30px rgba(124,58,237,0.09), 0 2px 8px rgba(0,0,0,0.05)' }}>
                     <div className="flex items-center gap-2 mb-4">
                       <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${card.iconGradient} flex items-center justify-center flex-shrink-0`}>
                         <card.icon className="w-4 h-4 text-white" />
@@ -3069,7 +3069,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                     </div>
                     <p className="text-4xl font-black text-gray-900 tracking-tight leading-none mb-2" style={{ fontVariantNumeric: 'tabular-nums' }}>{card.value}</p>
                     {card.badge && (
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold w-fit px-2 py-0.5 rounded-full ${card.badgeNeutral ? 'bg-violet-50 text-violet-700' : card.badgePos ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold w-fit px-2 py-0.5 rounded-full ${card.badgeNeutral ? 'bg-brand-soft text-brand' : card.badgePos ? 'bg-positive-soft text-positive' : 'bg-danger-soft text-danger'}`}>
                         {!card.badgeNeutral && (card.badgePos ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />)}
                         {card.badge}
                       </span>
@@ -3084,9 +3084,9 @@ const ReportPreviewModal = ({ report, onClose }) => {
         {/* Quarterly breakdown — yearly only */}
         {isYearly && report.quarterlyBreakdown && report.quarterlyBreakdown.length > 0 && (
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-indigo-500" />Quarterly breakdown</h2>
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-brand-soft to-brand-soft">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-brand" />Quarterly breakdown</h2>
                 <p className="text-sm text-gray-500 mt-0.5">Performance by quarter</p>
               </div>
               <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -3094,9 +3094,9 @@ const ReportPreviewModal = ({ report, onClose }) => {
                   const qm = q.metrics;
                   const hasData = qm && (qm.views != null || qm.interactions != null || qm.profileVisits != null);
                   return (
-                    <div key={q.quarter} className={`rounded-xl border-2 p-4 ${hasData ? 'bg-gray-50/80 border-indigo-100' : 'bg-gray-50/50 border-gray-100'}`}>
+                    <div key={q.quarter} className={`rounded-xl border-2 p-4 ${hasData ? 'bg-gray-50/80 border-brand-soft' : 'bg-gray-50/50 border-gray-100'}`}>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-bold text-indigo-600">Q{q.quarter}</span>
+                        <span className="font-bold text-brand">Q{q.quarter}</span>
                         {q.reportCount != null && <span className="text-xs text-gray-500">{q.reportCount} report{q.reportCount !== 1 ? 's' : ''}</span>}
                       </div>
                       {hasData ? (
@@ -3117,9 +3117,9 @@ const ReportPreviewModal = ({ report, onClose }) => {
         {/* Notes / Report Highlights */}
         {report.notes && (
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-            <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+            <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-purple-500" />
+                <MessageCircle className="w-5 h-5 text-brand" />
                 Report Highlights
               </h2>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{report.notes}</p>
@@ -3130,7 +3130,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
         {/* Insights */}
         {report.metrics && (
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-            <div className="rounded-2xl overflow-hidden bg-white border border-gray-200 text-gray-900 shadow-lg">
+            <div className="rounded-xl overflow-hidden bg-white border border-gray-200 text-gray-900 shadow-lg">
               <div className="p-6 sm:p-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Insights</h2>
                 <p className="text-sm text-gray-500 mb-6">{report.dateRange}</p>
@@ -3164,7 +3164,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                           </div>
                           {hasTopCities && (
                             <div className="min-w-0 flex-1 max-w-xs sm:max-w-sm">
-                              <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-500 flex-shrink-0" />Top locations</h3>
+                              <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-brand flex-shrink-0" />Top locations</h3>
                               <div className="space-y-3">
                                 {m.topCities.map((city, idx) => {
                                   const maxPct = m.topCities[0]?.percentage || 100;
@@ -3208,7 +3208,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 {/* Top cities standalone */}
                 {m.topCities && m.topCities.length > 0 && (m.views == null && m.viewsFollowerPercent == null) && (
                   <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-500" />Top locations</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-brand" />Top locations</h3>
                     <div className="space-y-3">
                       {m.topCities.map((city, idx) => {
                         const maxPct = m.topCities[0]?.percentage || 100;
@@ -3228,7 +3228,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 {/* Top countries */}
                 {m.topCountries && m.topCountries.length > 0 && (
                   <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-500" />Top countries</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-4 h-4 text-brand" />Top countries</h3>
                     <div className="space-y-3">
                       {m.topCountries.map((country, idx) => {
                         const maxPct = m.topCountries[0]?.percentage || 100;
@@ -3248,7 +3248,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 {/* Age range */}
                 {m.ageRanges && m.ageRanges.length > 0 && (
                   <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Users className="w-4 h-4 text-purple-500" />Age range</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Users className="w-4 h-4 text-brand" />Age range</h3>
                     <div className="space-y-3">
                       {m.ageRanges.map((range, idx) => {
                         const barPct = Math.min(100, range.percentage ?? 0);
@@ -3271,7 +3271,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 {/* Gender */}
                 {m.gender && (m.gender.men != null || m.gender.women != null) && (
                   <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-purple-500" />Gender</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-brand" />Gender</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <div className="flex justify-between text-sm mb-2"><span className="text-gray-600">Men</span><span className="font-medium text-gray-900">{m.gender.men ?? 0}%</span></div>
@@ -3288,7 +3288,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 {/* Growth */}
                 {m.growth && (m.growth.follows != null || m.growth.unfollows != null || m.growth.overall !== undefined) && (
                   <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-purple-500" />Growth</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-brand" />Growth</h3>
                     {(() => {
                       const follows = m.growth.follows ?? 0;
                       const unfollows = m.growth.unfollows ?? 0;
@@ -3296,15 +3296,15 @@ const ReportPreviewModal = ({ report, onClose }) => {
                       return (
                         <div className="grid grid-cols-3 gap-4">
                           <div className="bg-gray-100 rounded-xl p-4 text-center">
-                            <div className={`text-xl font-bold ${netChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{netChange >= 0 ? '+' : ''}{Number(netChange).toLocaleString()}</div>
+                            <div className={`text-xl font-bold ${netChange >= 0 ? 'text-positive' : 'text-danger'}`}>{netChange >= 0 ? '+' : ''}{Number(netChange).toLocaleString()}</div>
                             <p className="text-xs text-gray-500 mt-1">Overall</p>
                           </div>
                           <div className="bg-gray-100 rounded-xl p-4 text-center">
-                            <div className="text-xl font-bold text-emerald-600">{follows.toLocaleString()}</div>
+                            <div className="text-xl font-bold text-positive">{follows.toLocaleString()}</div>
                             <p className="text-xs text-gray-500 mt-1">Follows</p>
                           </div>
                           <div className="bg-gray-100 rounded-xl p-4 text-center">
-                            <div className="text-xl font-bold text-red-600">{unfollows.toLocaleString()}</div>
+                            <div className="text-xl font-bold text-danger">{unfollows.toLocaleString()}</div>
                             <p className="text-xs text-gray-500 mt-1">Unfollows</p>
                           </div>
                         </div>
@@ -3316,7 +3316,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 {/* By interaction */}
                 {(m.likes != null || m.comments != null || m.shares != null || m.saves != null || m.reposts != null) && (
                   <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Heart className="w-4 h-4 text-purple-500" />By interaction</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Heart className="w-4 h-4 text-brand" />By interaction</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                       {m.likes != null && <div className="bg-gray-100 rounded-xl p-4 text-center"><div className="text-xl font-bold text-gray-900">{formatCompact(m.likes)}</div><p className="text-xs text-gray-500 mt-1">Likes</p></div>}
                       {m.comments != null && <div className="bg-gray-100 rounded-xl p-4 text-center"><div className="text-xl font-bold text-gray-900">{formatCompact(m.comments)}</div><p className="text-xs text-gray-500 mt-1">Comments</p></div>}
@@ -3330,7 +3330,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
                 {/* Most active times */}
                 {m.activeTimes && m.activeTimes.length > 0 && m.activeTimes.some(t => (t.activity ?? 0) > 0) && (
                   <div className="mt-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Clock className="w-4 h-4 text-purple-500" />Most active times</h3>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><Clock className="w-4 h-4 text-brand" />Most active times</h3>
                     <div className="flex items-end justify-between gap-1 h-28">
                       {m.activeTimes.map((time, idx) => (
                         <div key={idx} className="flex-1 flex flex-col items-center min-w-0">
@@ -3351,7 +3351,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {screenshots.map((screenshot, index) => (
-                <div key={index} onClick={() => openLightbox(index)} className="group bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl">
+                <div key={index} onClick={() => openLightbox(index)} className="group bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-2 transition-all duration-300 hover:shadow-md">
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <img src={screenshot.url} alt={screenshot.caption || `Screenshot ${index + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -3375,13 +3375,13 @@ const ReportPreviewModal = ({ report, onClose }) => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               {report.postLinks.filter(l => l.url).map((link, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col">
+                <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden flex flex-col">
                   <a href={link.url} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-4 p-5 flex-shrink-0">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center flex-shrink-0">
                       <Instagram className="w-6 h-6 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 truncate group-hover:text-purple-600">{link.label || 'View post'}</p>
+                      <p className="font-medium text-gray-900 truncate group-hover:text-brand">{link.label || 'View post'}</p>
                       <p className="text-xs text-gray-500 truncate">{link.url}</p>
                     </div>
                     <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />

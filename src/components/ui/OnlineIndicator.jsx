@@ -32,9 +32,9 @@ const OnlineIndicator = ({ lastSeenAt, showLabel = true, className = '' }) => {
   const label = formatLastSeen(lastSeenAt);
 
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[12px] text-[#86868b] ${className}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[12px] text-ink-muted ${className}`}>
       <span
-        className={`shrink-0 rounded-full ${online ? 'bg-[#34c759]' : 'bg-[#86868b]/50'} ${online ? 'w-2 h-2' : 'w-1.5 h-1.5'}`}
+        className={`shrink-0 rounded-full ${online ? 'bg-positive' : 'bg-ink-muted/50'} ${online ? 'w-2 h-2' : 'w-1.5 h-1.5'}`}
         title={online ? 'Online' : label ? `Last seen ${label}` : 'Never seen'}
         aria-hidden
       />

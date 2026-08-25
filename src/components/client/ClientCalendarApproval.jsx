@@ -30,10 +30,10 @@ const VISIBLE_STATUSES = ['pending_approval', 'needs_revision', 'approved', 'sch
 const ACTIONABLE_STATUSES = ['pending_approval', 'needs_revision'];
 
 const STATUS_META = {
-  pending_approval: { label: 'Awaiting your review', badge: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500' },
-  needs_revision: { label: 'Changes requested', badge: 'bg-red-100 text-red-800', dot: 'bg-red-500' },
-  approved: { label: 'Approved', badge: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
-  scheduled: { label: 'Scheduled', badge: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500' },
+  pending_approval: { label: 'Awaiting your review', badge: 'bg-warning-soft text-warning', dot: 'bg-warning' },
+  needs_revision: { label: 'Changes requested', badge: 'bg-danger-soft text-danger', dot: 'bg-danger' },
+  approved: { label: 'Approved', badge: 'bg-positive-soft text-positive', dot: 'bg-positive' },
+  scheduled: { label: 'Scheduled', badge: 'bg-brand-soft text-brand', dot: 'bg-brand' },
   published: { label: 'Published', badge: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
 };
 
@@ -154,7 +154,7 @@ const ClientCalendarApproval = ({ clientId, clientEmail, calendarId, clientName 
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
         <p className="text-gray-600 mt-4">Loading content calendar...</p>
       </div>
     );
@@ -189,7 +189,7 @@ const ClientCalendarApproval = ({ clientId, clientEmail, calendarId, clientName 
           <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date())}>Today</Button>
         </div>
         {pendingCount > 0 && (
-          <Badge className="bg-amber-100 text-amber-800">
+          <Badge className="bg-warning-soft text-warning">
             {pendingCount} awaiting your review
           </Badge>
         )}
@@ -201,10 +201,10 @@ const ClientCalendarApproval = ({ clientId, clientEmail, calendarId, clientName 
           const dayContent = itemsForDate(day);
           const isToday = isSameDay(day, new Date());
           return (
-            <Card key={index} className={`p-3 ${isToday ? 'ring-2 ring-blue-500' : ''}`}>
+            <Card key={index} className={`p-3 ${isToday ? 'ring-2 ring-brand' : ''}`}>
               <div className="mb-2">
                 <p className="text-[10px] font-medium text-gray-500 uppercase">{format(day, 'EEE')}</p>
-                <p className={`text-lg font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>{format(day, 'd')}</p>
+                <p className={`text-lg font-semibold ${isToday ? 'text-brand' : 'text-gray-900'}`}>{format(day, 'd')}</p>
               </div>
               <div className="space-y-2">
                 {dayContent.map((item) => {
@@ -330,7 +330,7 @@ const ClientCalendarApproval = ({ clientId, clientEmail, calendarId, clientName 
                   <Button
                     onClick={() => handleApprove(selectedItem)}
                     disabled={submitting}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    className="flex-1 bg-positive hover:bg-positive-hover text-white"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" /> Approve
                   </Button>
@@ -338,14 +338,14 @@ const ClientCalendarApproval = ({ clientId, clientEmail, calendarId, clientName 
                     onClick={() => setRejectModal({ open: true, itemId: selectedItem.id, reason: '' })}
                     disabled={submitting}
                     variant="outline"
-                    className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                    className="flex-1 border-red-300 text-danger hover:bg-danger-soft"
                   >
                     <XCircle className="w-4 h-4 mr-2" /> Request Changes
                   </Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 pt-4 border-t text-sm text-gray-500">
-                  {selectedItem.status === 'approved' ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Clock className="w-4 h-4" />}
+                  {selectedItem.status === 'approved' ? <CheckCircle className="w-4 h-4 text-positive" /> : <Clock className="w-4 h-4" />}
                   {(STATUS_META[selectedItem.status] || STATUS_META.scheduled).label}
                 </div>
               )}
@@ -369,12 +369,12 @@ const ClientCalendarApproval = ({ clientId, clientEmail, calendarId, clientName 
               value={rejectModal.reason}
               onChange={(e) => setRejectModal((p) => ({ ...p, reason: e.target.value }))}
               placeholder="e.g. Please use the second photo and shorten the caption…"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-brand"
               autoFocus
             />
             <div className="flex gap-2 mt-4">
               <Button onClick={() => setRejectModal({ open: false, itemId: null, reason: '' })} variant="outline" className="flex-1">Cancel</Button>
-              <Button onClick={submitRejectModal} disabled={submitting} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
+              <Button onClick={submitRejectModal} disabled={submitting} className="flex-1 bg-danger hover:bg-danger-hover text-white">
                 {submitting ? 'Sending…' : 'Send Request'}
               </Button>
             </div>

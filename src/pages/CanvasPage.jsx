@@ -845,10 +845,10 @@ export default function CanvasPage() {
   if (!currentUser) return null;
 
   return (
-    <div className="flex flex-1 min-h-0 bg-[#f5f5f7] dark:bg-[#161617] overflow-hidden">
+    <div className="flex flex-1 min-h-0 bg-surface-2 dark:bg-canvas overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-20 w-[280px] min-w-[280px] flex flex-col bg-[#ffffff] dark:bg-[#1c1c1e] border-r border-border transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-20 w-[280px] min-w-[280px] flex flex-col bg-surface border-r border-border transition-transform duration-300 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -891,7 +891,7 @@ export default function CanvasPage() {
             />
           </div>
           {searchFocused && search.trim().length >= 2 && (
-            <div className="absolute left-3.5 right-3.5 top-full mt-1 py-1.5 max-h-64 overflow-y-auto bg-popover border border-border rounded-lg shadow-xl z-30">
+            <div className="absolute left-3.5 right-3.5 top-full mt-1 py-1.5 max-h-64 overflow-y-auto bg-popover border border-border rounded-lg shadow-lg z-30">
               {searchBlocksInCanvases([...canvases, ...sharedCanvases], search).length === 0 ? (
                 <p className="px-3 py-2 text-sm text-muted-foreground">No matches in content</p>
               ) : (
@@ -1051,16 +1051,16 @@ export default function CanvasPage() {
       )}
 
       {/* Main */}
-      <main className="flex-1 flex flex-col min-w-0 bg-[#f5f5f7] dark:bg-[#161617]">
+      <main className="flex-1 flex flex-col min-w-0 bg-surface-2 dark:bg-canvas">
         {!activeId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
-            <div className="w-16 h-16 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center text-primary mb-5">
+            <div className="w-16 h-16 rounded-xl bg-surface-3 flex items-center justify-center text-primary mb-5">
               <PencilRuler className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-[#1d1d1f] dark:text-[#f5f5f7] mb-2">
+            <h3 className="text-xl font-bold text-ink mb-2">
               Your Workspace
             </h3>
-            <p className="text-sm max-w-[340px] leading-relaxed text-[#86868b] dark:text-[#a1a1a6] mb-5">
+            <p className="text-sm max-w-[340px] leading-relaxed text-ink-muted mb-5">
               Create workspaces with blocks, checklists, media, and slash commands. Type{' '}
               <strong className="text-foreground">/</strong> for quick commands. Use <strong className="text-foreground">[[</strong> to link to other workspaces.
             </p>
@@ -1075,7 +1075,7 @@ export default function CanvasPage() {
         ) : (
           <>
             {/* Top bar */}
-            <div className="h-[52px] flex items-center gap-2.5 px-4 border-b border-border bg-[#f5f5f7] dark:bg-[#161617] flex-shrink-0">
+            <div className="h-[52px] flex items-center gap-2.5 px-4 border-b border-border bg-surface-2 dark:bg-canvas flex-shrink-0">
               <button
                 type="button"
                 className="md:hidden p-1.5 text-muted-foreground hover:bg-muted rounded"
@@ -1099,7 +1099,7 @@ export default function CanvasPage() {
                       onClick={() => setEmojiPickerOpen(false)}
                       aria-hidden
                     />
-                    <div className="absolute top-full left-0 mt-1 z-50 w-[270px] p-3 bg-popover border border-border rounded-xl shadow-xl grid grid-cols-7 gap-1">
+                    <div className="absolute top-full left-0 mt-1 z-50 w-[270px] p-3 bg-popover border border-border rounded-xl shadow-lg grid grid-cols-7 gap-1">
                       {EMOJIS.map((e) => (
                         <button
                           key={e}
@@ -1176,7 +1176,7 @@ export default function CanvasPage() {
                   {aiMenuOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setAiMenuOpen(false)} aria-hidden />
-                      <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl">
+                      <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-lg">
                         <button type="button" onClick={() => handleAiAssist('summarize')} className="w-full text-left py-2 px-3 rounded-lg hover:bg-muted text-sm">Summarize</button>
                         <button type="button" onClick={() => handleAiAssist('expand')} className="w-full text-left py-2 px-3 rounded-lg hover:bg-muted text-sm">Expand</button>
                         <button type="button" onClick={() => handleAiAssist('professional')} className="w-full text-left py-2 px-3 rounded-lg hover:bg-muted text-sm">Professional tone</button>
@@ -1243,7 +1243,7 @@ export default function CanvasPage() {
                         aria-hidden
                       />
                       <div
-                        className="fixed z-50 min-w-[180px] py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-xl"
+                        className="fixed z-50 min-w-[180px] py-1.5 px-1.5 bg-popover border border-border rounded-xl shadow-lg"
                         style={{ top: contextPos.top, left: contextPos.left }}
                       >
                         <button
@@ -1294,7 +1294,7 @@ export default function CanvasPage() {
             </div>
 
             {/* Format toolbar */}
-            <div className="h-[46px] flex items-center gap-0.5 px-4 border-b border-border bg-[#f5f5f7] dark:bg-[#161617] flex-shrink-0 overflow-x-auto">
+            <div className="h-[46px] flex items-center gap-0.5 px-4 border-b border-border bg-surface-2 dark:bg-canvas flex-shrink-0 overflow-x-auto">
               <FormatBtn cmd="bold" icon={<Bold className="w-3.5 h-3.5" />} />
               <FormatBtn cmd="italic" icon={<Italic className="w-3.5 h-3.5" />} />
               <FormatBtn cmd="underline" icon={<Underline className="w-3.5 h-3.5" />} />
@@ -1374,7 +1374,7 @@ export default function CanvasPage() {
             {collabEnabled && collab.ready ? <CollaborationCursors others={collab.others} /> : null}
 
             {/* Word count */}
-            <div className="h-7 flex items-center justify-end px-5 border-t border-border bg-[#f5f5f7] dark:bg-[#161617] text-[11px] text-muted-foreground">
+            <div className="h-7 flex items-center justify-end px-5 border-t border-border bg-surface-2 dark:bg-canvas text-[11px] text-muted-foreground">
               {wordCountStr}
             </div>
           </>
@@ -1389,7 +1389,7 @@ export default function CanvasPage() {
         );
         return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45">
-          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-md w-full max-h-[80vh] flex flex-col">
+          <div className="bg-card border border-border rounded-xl shadow-lg p-7 max-w-md w-full max-h-[80vh] flex flex-col">
             <h3 className="text-lg font-bold text-foreground mb-2">Share workspace</h3>
             <p className="text-sm text-muted-foreground mb-4">Invite a team member to edit this workspace. They will get a notification.</p>
             <div className="flex gap-2 mb-4">
@@ -1454,7 +1454,7 @@ export default function CanvasPage() {
       {/* Shortcuts modal */}
       {shortcutsOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45" onClick={() => setShortcutsOpen(false)}>
-          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-xl shadow-lg p-7 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
               <Keyboard className="w-5 h-5" /> Shortcuts
             </h3>
@@ -1476,7 +1476,7 @@ export default function CanvasPage() {
       {/* History modal */}
       {historyModalOpen && activeId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45">
-          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-md w-full max-h-[80vh] flex flex-col">
+          <div className="bg-card border border-border rounded-xl shadow-lg p-7 max-w-md w-full max-h-[80vh] flex flex-col">
             <h3 className="text-lg font-bold text-foreground mb-2">Version history</h3>
             <p className="text-sm text-muted-foreground mb-4">Restore a previous version of this workspace.</p>
             {historyLoading ? (
@@ -1520,7 +1520,7 @@ export default function CanvasPage() {
       {/* Link modal */}
       {linkModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/45">
-          <div className="bg-card border border-border rounded-xl shadow-xl p-7 max-w-md w-full">
+          <div className="bg-card border border-border rounded-xl shadow-lg p-7 max-w-md w-full">
             <h3 className="text-lg font-bold text-foreground mb-2">
               Insert Link
             </h3>

@@ -133,7 +133,7 @@ const ClientPortal = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your portal...</p>
         </div>
       </div>
@@ -145,7 +145,7 @@ const ClientPortal = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-6">
           <div className="text-center">
-            <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <XCircle className="w-12 h-12 text-danger mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
             <p className="text-gray-600 mb-4">
               We couldn't find a client account associated with your email address.
@@ -177,10 +177,10 @@ const ClientPortal = () => {
               <Badge 
                 className={
                   clientData.approvalStatus === 'Approved' 
-                    ? 'bg-green-100 text-green-800' 
+                    ? 'bg-positive-soft text-positive' 
                     : clientData.approvalStatus === 'Pending'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
+                    ? 'bg-warning-soft text-warning'
+                    : 'bg-danger-soft text-danger'
                 }
               >
                 {clientData.approvalStatus}
