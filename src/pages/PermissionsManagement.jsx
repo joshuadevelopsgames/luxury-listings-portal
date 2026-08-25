@@ -5,21 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { getDefaultPagePermissions } from '../entities/UserRoles';
 import { toast } from 'react-hot-toast';
+import { AVAILABLE_PAGES } from '../data/appPages';
 
 // Available pages that can be granted permissions
-const AVAILABLE_PAGES = [
-  { id: 'dashboard', name: 'Dashboard', icon: '🏠', category: 'Core' },
-  { id: 'tasks', name: 'Tasks', icon: '✅', category: 'Core' },
-  { id: 'clients', name: 'Client Management', icon: '👥', category: 'Client Management' },
-  { id: 'posting-packages', name: 'Posting Packages', icon: '📦', category: 'Content' },
-  { id: 'instagram-reports', name: 'Instagram Analytics', icon: '📸', category: 'Client Management' },
-  { id: 'content-calendar', name: 'Content Calendar', icon: '📅', category: 'Content' },
-  { id: 'crm', name: 'CRM', icon: '💼', category: 'Sales' },
-  { id: 'hr-calendar', name: 'HR Calendar', icon: '📆', category: 'HR' },
-  { id: 'team', name: 'Team Management', icon: '👨‍👩‍👧‍👦', category: 'HR' },
-  { id: 'it-support', name: 'IT Support', icon: '🛠️', category: 'Support' },
-  { id: 'my-time-off', name: 'My Time Off', icon: '🏖️', category: 'HR' },
-];
 
 const PermissionsManagement = () => {
   const { currentUser } = useAuth();
@@ -232,7 +220,7 @@ const PermissionsManagement = () => {
                               onChange={() => handleTogglePermission(selectedUser.email, page.id)}
                               className="w-4 h-4 text-brand rounded focus:ring-brand"
                             />
-                            <span className="text-lg">{page.icon}</span>
+                            <page.Icon className="w-4 h-4 text-ink-muted shrink-0" />
                             <span className="flex-1 text-[13px] font-medium text-ink">{page.name}</span>
                             {hasPermission ? (
                               <Check className="w-5 h-5 text-positive" />

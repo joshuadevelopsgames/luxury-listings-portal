@@ -832,7 +832,7 @@ const HRCalendar = () => {
       await googleCalendarService.authorize(currentUser.email);
       
       toast.dismiss('google-auth');
-      toast.success('🎉 Google Calendar connected successfully!');
+      toast.success('Google Calendar connected successfully!');
       setIsGoogleConnected(true);
       
       // Load events after successful connection

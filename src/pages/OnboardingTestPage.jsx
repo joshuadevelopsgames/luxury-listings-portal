@@ -30,7 +30,7 @@ const OnboardingTestPage = () => {
     try {
       await googleCalendarService.signOut();
       setIsCalendarConnected(false);
-      toast.success('📅 Google Calendar disconnected!');
+      toast.success('Google Calendar disconnected!');
     } catch (error) {
       console.error('Error disconnecting calendar:', error);
       toast.error('Failed to disconnect calendar');
@@ -76,7 +76,7 @@ const OnboardingTestPage = () => {
       }
 
       setStatus('success');
-      toast.success('✅ Onboarding status reset! Redirecting to onboarding...');
+      toast.success('Onboarding status reset! Redirecting to onboarding...');
 
       // Redirect to onboarding page after 2 seconds
       setTimeout(() => {
@@ -85,7 +85,7 @@ const OnboardingTestPage = () => {
     } catch (error) {
       console.error('Error resetting onboarding:', error);
       setStatus('error');
-      toast.error(`❌ Failed to reset onboarding status: ${error.message}`);
+      toast.error(`Failed to reset onboarding status: ${error.message}`);
     } finally {
       setResetting(false);
     }

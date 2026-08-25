@@ -472,8 +472,12 @@ const V3Layout = ({ basePath = '' }) => {
               // something. Single-item sections ("DASHBOARD" > Dashboard) just
               // restate the item, so render the item on its own.
               const showTitle = !sidebarCollapsed && section.items.length > 1;
+              // Separation belongs to the header, not the section. Otherwise a
+              // titled section's bottom margin opens a gap above the untitled
+              // one that follows it, which reads as a missing header.
+              const spacing = sIdx === 0 ? '' : showTitle ? 'mt-5' : 'mt-1';
               return (
-                <div key={sIdx} className={showTitle ? 'mb-5' : 'mb-2'}>
+                <div key={sIdx} className={spacing}>
                   {showTitle && (
                     <p className="px-3 mb-1.5 text-[11px] font-semibold text-ink-muted uppercase tracking-wider">
                       {section.title}

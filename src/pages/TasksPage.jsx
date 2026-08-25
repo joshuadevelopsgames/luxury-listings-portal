@@ -301,7 +301,7 @@ const TasksPage = () => {
           updateTaskStatus(taskId, 'completed')
         )
       );
-      toast.success(`✓ Completed ${selectedTasks.length} tasks`);
+      toast.success(`Completed ${selectedTasks.length} tasks`);
       exitBulkMode();
     } catch (error) {
       console.error('Error bulk completing tasks:', error);
@@ -819,9 +819,9 @@ const TasksPage = () => {
         } else if (pattern === 'yearly') {
           repeatText = interval === 1 ? 'yearly' : `every ${interval} years`;
         }
-        toast.success(`✓ Recurring task created! Will repeat ${repeatText}`);
+        toast.success(`Recurring task created! Will repeat ${repeatText}`);
       } else {
-        toast.success('✓ Task created!');
+        toast.success('Task created!');
       }
       
       // Refresh tasks after creation

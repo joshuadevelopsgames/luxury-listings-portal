@@ -128,7 +128,7 @@ const OnboardingPage = () => {
       
       await googleCalendarService.initialize(currentUser.email);
       setIsGoogleConnected(true);
-      toast.success('📅 Google Calendar connected successfully!');
+      toast.success('Google Calendar connected successfully!');
     } catch (error) {
       console.error('Error connecting calendar:', error);
       toast.error('Failed to connect Google Calendar. You can try again later.');
@@ -179,7 +179,7 @@ const OnboardingPage = () => {
         await supabaseService.addEmployee(employeeData);
       }
 
-      toast.success('🎉 Welcome aboard! Let\'s get started!');
+      toast.success('Welcome aboard! Let\'s get started!');
       navigate('/dashboard');
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);

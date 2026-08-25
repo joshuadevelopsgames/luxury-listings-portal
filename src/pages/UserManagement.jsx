@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { 
+import { AVAILABLE_PAGES } from '../data/appPages';
   Users, 
   UserPlus, 
   UserCheck, 
@@ -85,20 +86,6 @@ const UserManagement = () => {
   const [manageModalTab, setManageModalTab] = useState('basic');
   
   // Available pages for page permissions
-  const AVAILABLE_PAGES = [
-    { id: 'dashboard', name: 'Dashboard', icon: '🏠', category: 'Core' },
-    { id: 'tasks', name: 'Tasks', icon: '✅', category: 'Core' },
-    { id: 'clients', name: 'Client Management', icon: '👥', category: 'Client Management' },
-    { id: 'posting-packages', name: 'Posting Packages', icon: '📦', category: 'Content' },
-    { id: 'instagram-reports', name: 'Instagram Analytics', icon: '📸', category: 'Client Management' },
-    { id: 'content-calendar', name: 'Content Calendar', icon: '📅', category: 'Content' },
-    { id: 'crm', name: 'CRM', icon: '💼', category: 'Sales' },
-    { id: 'hr-calendar', name: 'HR Calendar', icon: '📆', category: 'HR' },
-    { id: 'team', name: 'Team Management', icon: '👨‍👩‍👧‍👦', category: 'HR' },
-    { id: 'it-support', name: 'IT Support', icon: '🛠️', category: 'Support' },
-    { id: 'my-time-off', name: 'My Time Off', icon: '🏖️', category: 'HR' },
-    { id: 'user-management', name: 'User Management', icon: '👤', category: 'Admin' },
-  ];
 
   // Load approved users from Firestore
   useEffect(() => {
@@ -730,7 +717,7 @@ const UserManagement = () => {
       }
       
       console.log('✅ Permissions saved successfully');
-      toast.success(`✅ Permissions updated for ${selectedUserForPermissions.email}`);
+      toast.success(`Permissions updated for ${selectedUserForPermissions.email}`);
       
       setShowPermissionsModal(false);
       setSelectedUserForPermissions(null);
@@ -810,7 +797,7 @@ const UserManagement = () => {
         // Don't fail user creation if Drive access fails
       }
       
-      toast.success(`✅ User ${newUserForm.email} added successfully!`);
+      toast.success(`User ${newUserForm.email} added successfully!`);
       
       // Reset form and close modal
       setNewUserForm({
@@ -902,7 +889,7 @@ const UserManagement = () => {
       }
       
       console.log('✅ Roles assigned successfully');
-      toast.success(`✅ Roles updated for ${selectedUserForRoles.email}`);
+      toast.success(`Roles updated for ${selectedUserForRoles.email}`);
       
       setShowRoleAssignmentModal(false);
       setSelectedUserForRoles(null);
@@ -1605,13 +1592,13 @@ const UserManagement = () => {
                         const { data: { session: refreshedSession }, error: refreshErr } = await supabase.auth.refreshSession();
                         if (refreshErr) throw refreshErr;
                         if (refreshedSession) {
-                          toast.success('✅ Authentication session refreshed successfully!');
+                          toast.success('Authentication session refreshed successfully!');
                           console.log('✅ Session refreshed:', !!refreshedSession);
                         } else {
-                          toast.error('❌ No active session');
+                          toast.error('No active session');
                         }
                       } catch (error) {
-                        toast.error('❌ Failed to refresh session: ' + error.message);
+                        toast.error('Failed to refresh session: ' + error.message);
                         console.error('❌ Session refresh error:', error);
                       }
                     }}
@@ -2213,7 +2200,7 @@ const UserManagement = () => {
                                 }}
                                 className="w-4 h-4 text-brand rounded"
                               />
-                              <span className="text-lg">{page.icon}</span>
+                              <page.Icon className="w-4 h-4 text-ink-muted shrink-0" />
                               <span className="flex-1 font-medium text-gray-900">{page.name}</span>
                             </label>
                           );
@@ -2303,7 +2290,7 @@ const UserManagement = () => {
                   console.log('🔐 Custom permissions:', selectedPermissions);
                   
                   if (!managedUser || !managedUser.email) {
-                    toast.error('❌ No user selected');
+                    toast.error('No user selected');
                     console.error('❌ No managed user or email');
                     return;
                   }
@@ -2353,7 +2340,7 @@ const UserManagement = () => {
                     });
                     console.log('✅ Custom permissions saved');
 
-                    toast.success('✅ User updated successfully!');
+                    toast.success('User updated successfully!');
                     console.log('✅ All changes saved successfully');
                     
                     setShowUnifiedManageModal(false);

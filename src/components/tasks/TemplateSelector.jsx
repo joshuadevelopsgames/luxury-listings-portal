@@ -67,7 +67,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated
 
       await Promise.all(promises);
       onTasksCreated?.();
-      toast.success(`✨ Created ${selectedTemplate.tasks.length} tasks from template!`);
+      toast.success(`Created ${selectedTemplate.tasks.length} tasks from template!`);
       onClose();
     } catch (error) {
       console.error('Error applying template:', error);

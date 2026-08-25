@@ -155,7 +155,7 @@ const InstagramAnalyticsHero = () => {
               </div>
               {outstanding.length > 0 && (
                 <div className="text-right">
-                  <p className="text-[28px] leading-none font-semibold text-danger tracking-[-0.02em]">{outstanding.length}</p>
+                  <p className="text-[28px] leading-none font-semibold text-danger-light tracking-[-0.02em]">{outstanding.length}</p>
                   <p className="text-[12px] text-ink-muted mt-1.5">still to do</p>
                 </div>
               )}
@@ -164,13 +164,13 @@ const InstagramAnalyticsHero = () => {
             {/* Segmented bar */}
             <div className="h-2.5 w-full rounded-full bg-surface-3 overflow-hidden flex">
               <div className="h-full bg-positive transition-all" style={{ width: `${pct(complete)}%` }} />
-              <div className="h-full bg-warning transition-all" style={{ width: `${pct(partial)}%` }} />
-              <div className="h-full bg-danger/70 transition-all" style={{ width: `${pct(missing)}%` }} />
+              <div className="h-full bg-warning-light transition-all" style={{ width: `${pct(partial)}%` }} />
+              <div className="h-full bg-danger-light transition-all" style={{ width: `${pct(missing)}%` }} />
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-[12px] text-ink-muted">
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-positive" />{complete} complete</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-warning" />{partial} partial</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-danger" />{missing} missing</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-warning-light" />{partial} partial</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-danger-light" />{missing} missing</span>
             </div>
           </div>
 

@@ -29,26 +29,51 @@
        Semantic tokens flip automatically under .dark, so component code
        writes `text-ink` once instead of `text-[#1d1d1f] dark:text-white`. */
     --ds-bg:            #f7f7f8;   /* page                        */
+    --ds-bg-rgb: 247 247 248;
     --ds-surface:       #ffffff;   /* card                        */
+    --ds-surface-rgb: 255 255 255;
     --ds-surface-2:     #fafafb;   /* sunken tile inside a card   */
+    --ds-surface-2-rgb: 250 250 251;
     --ds-surface-3:     #f2f2f5;   /* input / ghost control       */
+    --ds-surface-3-rgb: 242 242 245;
     --ds-hairline:      #ebebee;   /* default 1px border          */
+    --ds-hairline-rgb: 235 235 238;
     --ds-hairline-2:    #e2e2e6;   /* stronger border, control    */
+    --ds-hairline-2-rgb: 226 226 230;
     --ds-ink:           #1a1a1e;   /* primary text                */
+    --ds-ink-rgb: 26 26 30;
     --ds-ink-muted:     #61616b;   /* secondary text              */
+    --ds-ink-muted-rgb: 97 97 107;
     --ds-ink-subtle:    #8a8a93;   /* tertiary text, placeholders */
+    --ds-ink-subtle-rgb: 138 138 147;
     --ds-accent:        #1a7aad;   /* brand action — cerulean     */
+    --ds-accent-rgb: 26 122 173;
     --ds-accent-hover:  #15618a;
+    --ds-accent-hover-rgb: 21 97 138;
     --ds-accent-soft:   #d8ebf6;   /* active nav, tinted chip     */
+    --ds-accent-soft-rgb: 216 235 246;
     --ds-accent-fg:     #ffffff;
+    --ds-accent-fg-rgb: 255 255 255;
     --ds-positive:      #067647;
+    --ds-positive-rgb: 6 118 71;
     --ds-positive-soft: #ecfdf3;
+    --ds-positive-soft-rgb: 236 253 243;
     --ds-warning:       #a16207;  /* yellow-700: 31° from danger, so Priority 2 reads distinct from Priority 1 */
+    --ds-warning-rgb: 161 98 7;
     --ds-warning-soft:  #fffaeb;
+    --ds-warning-light: #e28432;
+    --ds-warning-light-rgb: 226 132 50;
+    --ds-warning-soft-rgb: 255 250 235;
     --ds-danger:        #b42318;
+    --ds-danger-rgb: 180 35 24;
     --ds-danger-soft:   #fef3f2;
+    --ds-danger-light:  #e5534b;
+    --ds-danger-light-rgb: 229 83 75;
+    --ds-danger-soft-rgb: 254 243 242;
     --ds-info:          #026aa2;
+    --ds-info-rgb: 2 106 162;
     --ds-info-soft:     #f0f9ff;
+    --ds-info-soft-rgb: 240 249 255;
     --ds-shadow-sm:     0 1px 2px rgba(16,16,20,.04);
     --ds-shadow-md:     0 2px 6px rgba(16,16,20,.07);
     --ds-shadow-lg:     0 12px 32px rgba(16,16,20,.14);
@@ -78,26 +103,47 @@
 
     /* ══ Design system — dark ("Dense pro") ══════════════════════════ */
     --ds-bg:            #0b0b0d;
+    --ds-bg-rgb: 11 11 13;
     --ds-surface:       #101014;
+    --ds-surface-rgb: 16 16 20;
     --ds-surface-2:     #151519;
+    --ds-surface-2-rgb: 21 21 25;
     --ds-surface-3:     #18181d;
+    --ds-surface-3-rgb: 24 24 29;
     --ds-hairline:      #1e1e23;
+    --ds-hairline-rgb: 30 30 35;
     --ds-hairline-2:    #26262d;
+    --ds-hairline-2-rgb: 38 38 45;
     --ds-ink:           #e6e6e9;
+    --ds-ink-rgb: 230 230 233;
     --ds-ink-muted:     #8b8b94;
+    --ds-ink-muted-rgb: 139 139 148;
     --ds-ink-subtle:    #6e6e78;
+    --ds-ink-subtle-rgb: 110 110 120;
     /* accent-* deliberately omitted here. `dark` is also applied to an inner
        wrapper, so declaring the accent in this block would shadow the root
        theme for that subtree — the dark accent lives in :root.dark below,
        which only ever matches <html>. */
     --ds-positive:      #3fb950;
+    --ds-positive-rgb: 63 185 80;
     --ds-positive-soft: rgba(63,185,80,.14);
+    --ds-positive-soft-rgb: 23 40 28;
     --ds-warning:       #fbbf24;  /* amber-400 */
+    --ds-warning-rgb: 251 191 36;
     --ds-warning-soft:  rgba(251,191,36,.14);
+    --ds-warning-light: #ffb370;
+    --ds-warning-light-rgb: 255 179 112;
+    --ds-warning-soft-rgb: 49 40 22;
     --ds-danger:        #f85149;
+    --ds-danger-rgb: 248 81 73;
     --ds-danger-soft:   rgba(248,81,73,.14);
+    --ds-danger-light:  #ff7b72;
+    --ds-danger-light-rgb: 255 123 114;
+    --ds-danger-soft-rgb: 48 25 27;
     --ds-info:          #58a6ff;
+    --ds-info-rgb: 88 166 255;
     --ds-info-soft:     rgba(88,166,255,.14);
+    --ds-info-soft-rgb: 26 37 53;
     --ds-shadow-sm:     0 1px 2px rgba(0,0,0,.4);
     --ds-shadow-md:     0 2px 6px rgba(0,0,0,.5);
     --ds-shadow-lg:     0 12px 32px rgba(0,0,0,.6);
@@ -147,9 +193,13 @@
    surface unchanged); only the hover step inverts direction. */
 :root.dark {
   --ds-accent: #1a7aad;
+  --ds-accent-rgb: 26 122 173;
   --ds-accent-hover: #1f92d1;
+  --ds-accent-hover-rgb: 31 146 209;
   --ds-accent-soft: rgba(26, 122, 173, .18);
+  --ds-accent-soft-rgb: 18 35 48;
   --ds-accent-fg: #ffffff;
+  --ds-accent-fg-rgb: 255 255 255;
 }
 
 /* Custom scrollbar */
@@ -292,9 +342,13 @@
 
 .michelle-theme.dark {
   --ds-accent: #da216e;
+  --ds-accent-rgb: 218 33 110;
   --ds-accent-hover: #e34184;
+  --ds-accent-hover-rgb: 227 65 132;
   --ds-accent-soft: rgba(218, 33, 110, .18);
+  --ds-accent-soft-rgb: 52 19 36;
   --ds-accent-fg: #ffffff;
+  --ds-accent-fg-rgb: 255 255 255;
 }
 
 /* ══ Interaction polish ═════════════════════════════════════════════════ */

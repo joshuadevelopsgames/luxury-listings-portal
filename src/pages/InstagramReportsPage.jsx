@@ -799,13 +799,10 @@ const InstagramReportsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-[24px] sm:text-[34px] font-semibold text-ink tracking-[-0.02em] flex items-center gap-2 sm:gap-3">
-            <span className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] text-white">
-              <Instagram className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
-            </span>
+          <h1 className="text-[20px] sm:text-[24px] font-semibold text-ink tracking-[-0.02em]">
             Instagram Analytics
           </h1>
-          <p className="text-[13px] sm:text-[15px] text-ink-muted mt-1">
+          <p className="text-[12.5px] text-ink-muted mt-0.5">
             {effectiveIsAdmin ? 'Manage analytics reports for all clients' : `Analytics reports for your ${myClients.length} assigned client${myClients.length !== 1 ? 's' : ''}`}
           </p>
         </div>

@@ -971,7 +971,7 @@ const ContentCalendar = () => {
         setContentItems(prev => [...prev, ...importedContent]);
       }
 
-      toast.success(`✅ Refreshed "${calendarName}" with ${successCount} posts!`, { id: 'refresh-cal' });
+      toast.success(`Refreshed "${calendarName}" with ${successCount} posts!`, { id: 'refresh-cal' });
 
     } catch (error) {
       console.error('❌ Refresh error:', error);
@@ -999,7 +999,7 @@ const ContentCalendar = () => {
       if (!result.needsAuth) {
         setIsSheetsAuthorized(true);
         setImportStep(2);
-        toast.success('✅ Already authorized!');
+        toast.success('Already authorized!');
       }
     } catch (error) {
       console.error('❌ Error initializing Sheets:', error);
@@ -1014,7 +1014,7 @@ const ContentCalendar = () => {
       
       await googleSheetsService.requestAuthorization();
       
-      toast.success('✅ Google Sheets authorized!', { id: 'auth-sheets' });
+      toast.success('Google Sheets authorized!', { id: 'auth-sheets' });
       setIsSheetsAuthorized(true);
       setImportStep(2);
     } catch (error) {
@@ -1077,7 +1077,7 @@ const ContentCalendar = () => {
         setColumnMappings(aiResult.mappings);
         setMappingConfidence(aiResult.confidence);
         setMappingSuggestions(aiResult.suggestions);
-        toast.success('✅ Sheet analyzed successfully!', { id: 'fetch-sheet' });
+        toast.success('Sheet analyzed successfully!', { id: 'fetch-sheet' });
       } catch (aiError) {
         console.warn('⚠️ AI analysis failed, using fallback:', aiError);
         toast.loading('Using fallback mapping...', { id: 'fetch-sheet' });
@@ -1085,7 +1085,7 @@ const ContentCalendar = () => {
         setColumnMappings(fallback.mappings);
         setMappingConfidence(fallback.confidence);
         setMappingSuggestions(fallback.suggestions);
-        toast.success('✅ Sheet fetched! Please review mappings.', { id: 'fetch-sheet' });
+        toast.success('Sheet fetched! Please review mappings.', { id: 'fetch-sheet' });
       }
 
       setImportStep(3);
@@ -1310,7 +1310,7 @@ const ContentCalendar = () => {
 
       setSelectedCalendarId(newCalendarId);
 
-      toast.success(`✅ Created "${newCalendarName}" with ${successCount} posts! ${skipCount > 0 ? `(${skipCount} skipped)` : ''}`);
+      toast.success(`Created "${newCalendarName}" with ${successCount} posts! ${skipCount > 0 ? `(${skipCount} skipped)` : ''}`);
       
       // Close modal after a short delay
       setTimeout(() => {
