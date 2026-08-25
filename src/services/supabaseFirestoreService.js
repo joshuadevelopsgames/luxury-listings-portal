@@ -37,6 +37,10 @@ const normalizeTs = (val) => {
   return String(val);
 };
 
+/** True when a value is already a UUID (vs an email or a legacy Firebase id) */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (v) => typeof v === 'string' && UUID_RE.test(v.trim());
+
 /** Strip undefined values from an object */
 const clean = (obj) => {
   const out = {};
@@ -1166,11 +1170,22 @@ class SupabaseService {
 
   async cancelLeaveRequest(requestId, cancelledBy, reason = null) {
     try {
+      // time_off_requests.cancelled_by is a UUID FK to profiles.id, and there is
+      // no cancelled_by_email column (unlike reviewed_by / reviewed_by_email).
+      // Callers pass an email, so resolve it first — writing the raw email made
+      // Postgres reject the whole update with 22P02 (PostgREST 400).
+      // The email itself is preserved in the history entry below.
+      let cancelledById = null;
+      if (cancelledBy) {
+        cancelledById = isUuid(cancelledBy)
+          ? cancelledBy
+          : (await supabase.from('profiles').select('id').ilike('email', cancelledBy).maybeSingle()).data?.id || null;
+      }
       const { data: existing } = await supabase.from('time_off_requests').select('history').eq('id', requestId).maybeSingle();
       const history = [...normalizeEntryArray(existing?.history), { action: 'cancelled', at: ts(), by: cancelledBy, reason }];
-      const { error } = await supabase.from('time_off_requests').update({ status: 'cancelled', cancelled_at: ts(), cancelled_by: cancelledBy, cancellation_reason: reason, history, updated_at: ts() }).eq('id', requestId);
+      const { error } = await supabase.from('time_off_requests').update({ status: 'cancelled', cancelled_at: ts(), cancelled_by: cancelledById, cancellation_reason: reason, history, updated_at: ts() }).eq('id', requestId);
       if (error) throw error;
-    } catch (error) { throw error; }
+    } catch (error) { console.error('❌ Error cancelling leave request:', error); throw error; }
   }
 
   async archiveLeaveRequest(requestId, archivedBy) {
