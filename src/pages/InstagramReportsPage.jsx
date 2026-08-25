@@ -264,7 +264,7 @@ const InstagramReportsPage = () => {
   const [expandedReport, setExpandedReport] = useState(null);
   const [preSelectedClientId, setPreSelectedClientId] = useState(null);
   const [sharingReport, setSharingReport] = useState(null); // report whose Share modal is open
-  const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'internal' | 'archivedClients' | 'archive'
+  const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'internal' | 'archive'
   const [archivedReports, setArchivedReports] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   
@@ -366,15 +366,18 @@ const InstagramReportsPage = () => {
   }, [currentUser?.uid, effectiveIsAdmin, isViewingAs, permissionsLoading, assignedReportClientIdsKey]);
 
   const myClientsOnly = useMemo(() => myClients.filter(c => !c.isInternal), [myClients]);
+  // Archived clients are hidden everywhere on this page. Archiving is a
+  // temporary state: their reports stay in the DB untouched and reappear as
+  // soon as the client is unarchived in Client Management.
   /** Active CRM clients only (non-archived) — main Clients tab */
   const myClientsOnlyActive = useMemo(
     () => myClientsOnly.filter((c) => !isClientStatusArchived(c)),
     [myClientsOnly]
   );
-  /** Archived CRM clients — separate tab */
-  const myClientsOnlyArchived = useMemo(
-    () => myClientsOnly.filter((c) => isClientStatusArchived(c)),
-    [myClientsOnly]
+  /** Clients + internal accounts, minus anything archived. */
+  const myClientsVisible = useMemo(
+    () => myClients.filter((c) => !isClientStatusArchived(c)),
+    [myClients]
   );
   const myInternalAccounts = useMemo(() => myClients.filter(c => c.isInternal), [myClients]);
 
@@ -434,11 +437,6 @@ const InstagramReportsPage = () => {
   const clientsWithReportsForTab = useMemo(() => {
     if (activeTab === 'internal') {
       return clientsWithReports.filter(({ client }) => !!client.isInternal);
-    }
-    if (activeTab === 'archivedClients') {
-      return clientsWithReports.filter(
-        ({ client }) => !client.isInternal && isClientStatusArchived(client)
-      );
     }
     return clientsWithReports.filter(
       ({ client }) => !client.isInternal && !isClientStatusArchived(client)
@@ -918,15 +916,6 @@ const InstagramReportsPage = () => {
         >
           Internal Accounts ({myInternalAccounts.length})
         </button>
-        {myClientsOnlyArchived.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setActiveTab('archivedClients')}
-            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${activeTab === 'archivedClients' ? 'bg-white dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white shadow-sm' : 'text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white'}`}
-          >
-            Archived clients ({myClientsOnlyArchived.length})
-          </button>
-        )}
         {effectiveIsAdmin && (
           <button
             type="button"
@@ -1023,14 +1012,6 @@ const InstagramReportsPage = () => {
             Add internal accounts in Clients to create analytics reports for them here.
           </p>
         </div>
-      ) : (activeTab === 'archivedClients' && myClientsOnlyArchived.length === 0) ? (
-        <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
-          <FolderOpen className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
-          <h3 className="text-[17px] font-medium text-[#1d1d1f] dark:text-white">No archived clients</h3>
-          <p className="text-[14px] text-[#86868b] mt-2">
-            Clients marked archived in Client Management appear here with their analytics history.
-          </p>
-        </div>
       ) : myClients.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-black/10 dark:border-white/10 p-12 text-center">
           <Users className="w-16 h-16 mx-auto text-[#86868b] opacity-50 mb-4" />
@@ -1049,11 +1030,6 @@ const InstagramReportsPage = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {activeTab === 'archivedClients' && (
-            <p className="text-[13px] text-[#86868b] px-1">
-              Analytics for clients marked <span className="font-medium text-[#1d1d1f] dark:text-white">archived</span> in Client Management. They stay out of the main Clients tab.
-            </p>
-          )}
           {filteredClientsForTab.map(({ client, reports: clientReports }) => {
             const isExpanded = expandedClient === client.id;
             const monthlyReports = clientReports.filter(r => !r.reportType || r.reportType === 'monthly');
@@ -1354,11 +1330,11 @@ const InstagramReportsPage = () => {
             !editingReport && !preSelectedClientId
               ? (activeTab === 'internal'
                   ? myInternalAccounts
-                  : activeTab === 'archivedClients'
-                    ? myClientsOnlyArchived
-                    : activeTab === 'clients'
-                      ? myClientsOnlyActive
-                      : myClients)
+                  : activeTab === 'clients'
+                    ? myClientsOnlyActive
+                    : myClientsVisible)
+              // Editing: pass the full list so a report whose client was archived
+              // after the fact keeps its selection (client is a required field).
               : myClients
           }
           onClose={() => {
@@ -2070,36 +2046,6 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Compact count formatter for the in-form preview bars (18000 -> "18K").
-  const fmtCountPreview = (n) => {
-    const num = Number(n) || 0; const abs = Math.abs(num);
-    if (abs >= 1000) return (abs >= 10000 ? Math.round(num / 1000) : Math.round(num / 100) / 10) + 'K';
-    return num.toLocaleString();
-  };
-
-  const renderContentTypePreview = (items, title) => {
-    if (!Array.isArray(items) || !items.length) return null;
-    const useCount = items.some((it) => it.count != null);
-    const max = useCount ? (Math.max(...items.map((it) => Number(it.count) || 0)) || 1) : 100;
-    return (
-      <div className="mt-8">
-        <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-purple-500" />{title}</h3>
-        <div className="space-y-3">
-          {items.map((item, idx) => {
-            const barPct = useCount ? Math.min(100, ((Number(item.count) || 0) / max) * 100) : Math.min(100, item.percentage ?? 0);
-            return (
-              <div key={idx} className="flex items-center gap-3">
-                <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
-                <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
-                <span className="text-sm font-medium text-gray-900 w-12 text-right">{useCount ? fmtCountPreview(item.count) : `${item.percentage}%`}</span>
               </div>
             );
           })}
@@ -2925,6 +2871,36 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
         document.body
       )}
     </>
+  );
+};
+
+// Compact count formatter for the content-type preview bars (18000 -> "18K").
+const fmtCountPreview = (n) => {
+  const num = Number(n) || 0; const abs = Math.abs(num);
+  if (abs >= 1000) return (abs >= 10000 ? Math.round(num / 1000) : Math.round(num / 100) / 10) + 'K';
+  return num.toLocaleString();
+};
+
+const renderContentTypePreview = (items, title) => {
+  if (!Array.isArray(items) || !items.length) return null;
+  const useCount = items.some((it) => it.count != null);
+  const max = useCount ? (Math.max(...items.map((it) => Number(it.count) || 0)) || 1) : 100;
+  return (
+    <div className="mt-8">
+      <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-purple-500" />{title}</h3>
+      <div className="space-y-3">
+        {items.map((item, idx) => {
+          const barPct = useCount ? Math.min(100, ((Number(item.count) || 0) / max) * 100) : Math.min(100, item.percentage ?? 0);
+          return (
+            <div key={idx} className="flex items-center gap-3">
+              <span className="text-sm text-gray-700 w-20 flex-shrink-0">{item.type}</span>
+              <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden"><div className="h-full rounded-full bg-[#E040FB] transition-all duration-500" style={{ width: `${barPct}%` }} /></div>
+              <span className="text-sm font-medium text-gray-900 w-12 text-right">{useCount ? fmtCountPreview(item.count) : `${item.percentage}%`}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
