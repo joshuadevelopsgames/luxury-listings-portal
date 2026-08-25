@@ -2,13 +2,21 @@
  * Helpers for client posts: supports legacy (postsRemaining number) and per-platform (postsRemainingByPlatform).
  */
 
+/** Coerce to a non-negative finite number. Number(undefined) is NaN, and NaN
+ *  is not nullish, so `Number(x) ?? 0` yields NaN rather than 0 — which is how
+ *  "NaN remaining" reached the clients list. */
+function toCount(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
 export function getPostsRemaining(client) {
   if (!client) return 0;
   const byPlatform = client.postsRemainingByPlatform;
   if (byPlatform && typeof byPlatform === 'object') {
     return Object.values(byPlatform).reduce((sum, n) => sum + (Number(n) || 0), 0);
   }
-  return Math.max(0, Number(client.postsRemaining) ?? 0);
+  return toCount(client.postsRemaining);
 }
 
 export function getPostsUsed(client) {
@@ -17,7 +25,7 @@ export function getPostsUsed(client) {
   if (byPlatform && typeof byPlatform === 'object') {
     return Object.values(byPlatform).reduce((sum, n) => sum + (Number(n) || 0), 0);
   }
-  return Math.max(0, Number(client.postsUsed) ?? 0);
+  return toCount(client.postsUsed);
 }
 
 /** Platform keys used for posts (must match client.platforms keys). */
@@ -47,7 +55,7 @@ export function getPostLogUpdate(client, platform, delta) {
     const postsUsed = Object.values(nextUsed).reduce((s, n) => s + (Number(n) || 0), 0);
     return { postsRemaining, postsUsed, postsRemainingByPlatform: nextRemaining, postsUsedByPlatform: nextUsed };
   }
-  const postsUsed = Math.max(0, (Number(client?.postsUsed) ?? 0) + delta);
-  const postsRemaining = Math.max(0, (Number(client?.postsRemaining) ?? 0) - delta);
+  const postsUsed = Math.max(0, toCount(client?.postsUsed) + delta);
+  const postsRemaining = Math.max(0, toCount(client?.postsRemaining) - delta);
   return { postsUsed, postsRemaining };
 }
