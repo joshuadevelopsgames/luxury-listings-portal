@@ -207,7 +207,7 @@ const SmartFilters = ({ onClose, onApplyFilter, currentUser }) => {
               <button
                 type="button"
                 onClick={handleSaveFilter}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover"
               >
                 <Save className="w-4 h-4" />
                 Save Filter

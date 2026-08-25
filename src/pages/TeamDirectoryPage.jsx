@@ -108,7 +108,7 @@ export default function TeamDirectoryPage() {
         <button
           type="button"
           onClick={loadTeam}
-          className="flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong transition-colors"
+          className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh

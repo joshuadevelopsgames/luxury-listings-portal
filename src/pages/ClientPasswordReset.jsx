@@ -203,7 +203,7 @@ const ClientPasswordReset = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-10 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Resetting Password...' : 'Reset Password'}
           </button>

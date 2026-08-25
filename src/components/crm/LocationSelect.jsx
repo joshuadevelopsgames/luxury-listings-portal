@@ -65,7 +65,7 @@ export function LocationSelect({ value, onChange, placeholder = 'Search or selec
         <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-auto rounded-xl border border-hairline-strong bg-surface shadow-lg py-1 text-[14px]">
           {normalizedValue && (
             <li>
-              <button type="button" onClick={handleClear} className="w-full px-4 py-2.5 text-left text-ink-muted hover:bg-surface-3">
+              <button type="button" onClick={handleClear} className="w-full px-3.5 py-2 text-left text-ink-muted hover:bg-surface-3">
                 Clear location
               </button>
             </li>

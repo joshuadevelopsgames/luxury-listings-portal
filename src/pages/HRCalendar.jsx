@@ -934,25 +934,25 @@ const HRCalendar = () => {
           <button 
             onClick={checkGoogleCalendarConnection}
             disabled={isLoadingGoogle}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isLoadingGoogle ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Sync</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors">
+          <button className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors">
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filter</span>
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors"
           >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export</span>
           </button>
           <button 
             onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Add Leave</span>
@@ -1012,7 +1012,7 @@ const HRCalendar = () => {
               <button 
                 onClick={connectGoogleCalendar}
                 disabled={isLoadingGoogle}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
               >
                 {isLoadingGoogle ? (
                   <>
@@ -1401,7 +1401,7 @@ const HRCalendar = () => {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => { setShowEditLeaveModal(false); setEditingLeaveRequest(null); }} className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium">Cancel</button>
-                <button type="button" onClick={handleSaveEditLeave} disabled={savingEditLeave} className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50">{savingEditLeave ? 'Saving...' : 'Save & notify requester'}</button>
+                <button type="button" onClick={handleSaveEditLeave} disabled={savingEditLeave} className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50">{savingEditLeave ? 'Saving...' : 'Save & notify requester'}</button>
               </div>
             </div>
           </div>
@@ -2033,7 +2033,7 @@ const HRCalendar = () => {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors"
                 >
                   Create Leave Request
                 </button>
@@ -2111,7 +2111,7 @@ const HRCalendar = () => {
                 <button
                   onClick={saveUserBalances}
                   disabled={savingBalances}
-                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                  className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {savingBalances ? 'Saving...' : 'Save Changes'}
                 </button>

@@ -1383,7 +1383,7 @@ const GraphicProjectTracker = () => {
               <button
                 onClick={showEditModal ? handleEditProject : handleAddProject}
                 disabled={saving}
-                className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 h-10 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {showEditModal ? 'Save Changes' : 'Add Project'}
@@ -1516,7 +1516,7 @@ const GraphicProjectTracker = () => {
                 <button
                   type="submit"
                   disabled={submittingRequest}
-                  className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 h-10 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submittingRequest && <Loader2 className="w-4 h-4 animate-spin" />}
                   Send Request

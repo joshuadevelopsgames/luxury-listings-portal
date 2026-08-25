@@ -459,7 +459,7 @@ const UserDetailModal = ({
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
               >
                 {saving ? (
                   <>

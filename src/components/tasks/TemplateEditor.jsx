@@ -264,7 +264,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
                   rows={2}
                   className={`${inputClass} py-3 resize-none`}
                 />
-                <button type="button" onClick={handleAddTask} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover">
+                <button type="button" onClick={handleAddTask} className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover">
                   <Plus className="w-4 h-4" />
                   Add Task
                 </button>
@@ -297,10 +297,10 @@ const TemplateEditor = ({ onClose, currentUser }) => {
               )}
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-hairline">
-              <button type="button" onClick={resetForm} className="px-5 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">
+              <button type="button" onClick={resetForm} className="px-3.5 py-2 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">
                 Cancel
               </button>
-              <button type="button" onClick={handleSaveTemplate} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover">
+              <button type="button" onClick={handleSaveTemplate} className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover">
                 <Save className="w-4 h-4" />
                 {editingTemplate ? 'Update Template' : 'Create Template'}
               </button>
@@ -395,7 +395,7 @@ const TemplateEditor = ({ onClose, currentUser }) => {
                   <button type="button" onClick={() => { setShareModal(null); setShareEmail(''); }} className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium">
                     Cancel
                   </button>
-                  <button type="button" onClick={handleShareTemplate} disabled={sharing || !shareEmail.trim()} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive disabled:opacity-50">
+                  <button type="button" onClick={handleShareTemplate} disabled={sharing || !shareEmail.trim()} className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive disabled:opacity-50">
                     <Share2 className="w-4 h-4" />
                     {sharing ? 'Sharing…' : 'Share'}
                   </button>

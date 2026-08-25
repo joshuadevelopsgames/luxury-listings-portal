@@ -140,7 +140,7 @@ const HRAnalytics = () => {
               </option>
             ))}
           </select>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors">
+          <button className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong transition-colors">
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export Report</span>
           </button>

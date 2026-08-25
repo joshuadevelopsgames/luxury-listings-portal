@@ -2507,14 +2507,14 @@ export default function PostingPackages() {
             <div className="flex items-center gap-3 p-5 border-t border-black/5 dark:border-white/5 flex-shrink-0">
               <button
                 onClick={handleEditCancel}
-                className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="flex-1 h-10 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleEditSubmit}
                 disabled={approvalLoading[editingClient.id] || editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize}
-                className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 h-10 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Edit3 className="w-4 h-4" />
                 {approvalLoading[editingClient.id] ? 'Saving...' : 'Save Changes'}
@@ -2945,7 +2945,7 @@ export default function PostingPackages() {
             <div className="flex items-center gap-3 p-5 border-t border-black/5 dark:border-white/5 flex-shrink-0">
               <button
                 onClick={handleAddCancel}
-                className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="flex-1 h-10 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancel
               </button>
@@ -2958,7 +2958,7 @@ export default function PostingPackages() {
                   addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize ||
                   ((addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0))
                 }
-                className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 h-10 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 {approvalLoading['new'] ? 'Adding...' : 'Add Client'}

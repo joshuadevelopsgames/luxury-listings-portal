@@ -243,7 +243,7 @@ class ErrorBoundary extends React.Component {
                 <div className="space-y-3">
                   <button
                     onClick={this.handleReload}
-                    className="w-full h-12 bg-brand hover:bg-brand-hover text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand/25"
+                    className="w-full h-10 bg-brand hover:bg-brand-hover text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand/25"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Reload Page
@@ -251,7 +251,7 @@ class ErrorBoundary extends React.Component {
                   
                   <button
                     onClick={this.handleGoHome}
-                    className="w-full h-12 bg-surface-2 dark:bg-[#3a3a3c] hover:bg-[#e8e8ed] dark:hover:bg-[#48484a] text-ink rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                    className="w-full h-10 bg-surface-2 dark:bg-[#3a3a3c] hover:bg-[#e8e8ed] dark:hover:bg-[#48484a] text-ink rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
                   >
                     <Home className="w-4 h-4" />
                     Go to Dashboard
@@ -274,7 +274,7 @@ class ErrorBoundary extends React.Component {
                       <button
                         onClick={this.handleSendReport}
                         disabled={sendingReport}
-                        className="w-full h-12 bg-positive hover:bg-positive disabled:bg-ink-muted text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                        className="w-full h-10 bg-positive hover:bg-positive disabled:bg-ink-muted text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
                       >
                         {sendingReport ? (
                           <>
@@ -547,7 +547,7 @@ export function RouteErrorPage() {
             <div className="space-y-3">
               <button
                 onClick={handleReload}
-                className="w-full h-12 bg-brand hover:bg-brand-hover text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand/25"
+                className="w-full h-10 bg-brand hover:bg-brand-hover text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand/25"
               >
                 <RefreshCw className="w-4 h-4" />
                 Reload Page
@@ -555,7 +555,7 @@ export function RouteErrorPage() {
               
               <button
                 onClick={handleGoHome}
-                className="w-full h-12 bg-surface-2 hover:bg-[#e8e8ed] text-ink rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                className="w-full h-10 bg-surface-2 hover:bg-[#e8e8ed] text-ink rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
               >
                 <Home className="w-4 h-4" />
                 Go to Dashboard
@@ -578,7 +578,7 @@ export function RouteErrorPage() {
                   <button
                     onClick={handleSendReport}
                     disabled={sendingReport}
-                    className="w-full h-12 bg-positive hover:bg-positive disabled:bg-ink-muted text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
+                    className="w-full h-10 bg-positive hover:bg-positive disabled:bg-ink-muted text-white rounded-xl font-medium text-[15px] transition-all flex items-center justify-center gap-2"
                   >
                     {sendingReport ? (
                       <>

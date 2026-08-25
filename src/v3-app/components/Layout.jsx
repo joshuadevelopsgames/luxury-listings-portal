@@ -717,21 +717,21 @@ const V3Layout = ({ basePath = '' }) => {
                         <p className="text-[12px] text-ink-muted truncate">{currentUser?.email}</p>
                       </div>
                       <div className="py-1">
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/self-service')); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-3.5 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/self-service')); }}>
                           <UserCircle className="w-4 h-4" strokeWidth={1.5} />
                           My Profile
                         </button>
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/my-time-off')); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-3.5 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/my-time-off')); }}>
                           <Clock className="w-4 h-4" strokeWidth={1.5} />
                           My Time Off
                         </button>
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/resources')); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-3.5 py-2 text-[13px] text-ink hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); handleNavigation(p('/resources')); }}>
                           <FileText className="w-4 h-4" strokeWidth={1.5} />
                           Resources
                         </button>
                       </div>
                       <div className="py-1 border-t border-black/5 dark:border-white/5">
-                        <button type="button" className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-danger dark:text-red-400 hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); logout(); }}>
+                        <button type="button" className="w-full flex items-center gap-3 px-3.5 py-2 text-[13px] text-danger dark:text-red-400 hover:bg-surface-3 text-left" onClick={() => { setProfileMenuOpen(false); logout(); }}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                           </svg>

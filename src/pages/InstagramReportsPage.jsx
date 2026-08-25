@@ -1576,7 +1576,7 @@ const ReportShareModal = ({ report, onClose }) => {
                 <LinkIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
                 <span className="truncate">{link}</span>
               </div>
-              <button onClick={copyLink} className="px-4 h-11 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-[14px] font-medium flex items-center gap-2 flex-shrink-0">
+              <button onClick={copyLink} className="px-4 h-10 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-[14px] font-medium flex items-center gap-2 flex-shrink-0">
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}{copied ? 'Copied' : 'Copy'}
               </button>
             </div>
@@ -1584,7 +1584,7 @@ const ReportShareModal = ({ report, onClose }) => {
 
           {/* Export PDF */}
           <div className="pt-1 border-t border-gray-100 dark:border-white/5">
-            <button onClick={exportPdf} className="w-full mt-4 flex items-center justify-center gap-2 h-11 rounded-xl border border-gray-200 dark:border-white/15 text-[14px] font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+            <button onClick={exportPdf} className="w-full mt-4 flex items-center justify-center gap-2 h-10 rounded-xl border border-gray-200 dark:border-white/15 text-[14px] font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
               <Download className="w-4 h-4 text-brand" /> Export as PDF
             </button>
             <p className="text-[12px] text-gray-400 mt-2 text-center">Opens a print-ready view — choose “Save as PDF” in the dialog.</p>
@@ -2287,7 +2287,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                   disabled={!hasMetricsForSummary || generatingSummary}
                   title={!hasMetricsForSummary ? 'Add or extract metrics above to generate an AI summary' : undefined}
                   className="
-                    inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white text-sm
+                    inline-flex items-center gap-2 px-3.5 py-2 rounded-xl font-medium text-white text-sm
                     bg-gradient-to-r from-brand via-fuchsia-600 to-cyan-500
                     hover:from-brand hover:via-fuchsia-500 hover:to-cyan-400
                     focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:ring-offset-2 focus:ring-offset-gray-900
@@ -2783,7 +2783,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl border border-hairline-strong text-ink text-[14px] font-medium hover:bg-surface-3 transition-colors"
+                className="px-3.5 py-2 rounded-xl border border-hairline-strong text-ink text-[14px] font-medium hover:bg-surface-3 transition-colors"
               >
                 Cancel
               </button>
@@ -2816,7 +2816,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                 <button
                   onClick={handleSave}
                   disabled={saving || uploading || extracting}
-                  className="flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
+                  className="flex items-center px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand to-pink-600 hover:from-brand hover:to-pink-700 text-white text-[14px] font-medium transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <>

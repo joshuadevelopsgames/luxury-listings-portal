@@ -1919,7 +1919,7 @@ const TasksPage = () => {
                 <button 
                   type="submit"
                   disabled={submittingRequest}
-                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                  className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {submittingRequest ? 'Sending...' : 'Send Request'}
                 </button>
@@ -2179,7 +2179,7 @@ const TasksPage = () => {
                 <button 
                   type="submit"
                   disabled={submittingProjectRequest}
-                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-[#4e4bc7] transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {submittingProjectRequest && <Loader2 className="w-4 h-4 animate-spin" />}
                   Send Request

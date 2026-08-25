@@ -79,7 +79,7 @@ const CalendarView = ({ tasks = [], sentRequests = [], outboxTaskMap = {}, onClo
             <button
               type="button"
               onClick={goToToday}
-              className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong"
+              className="px-3.5 py-2 rounded-xl bg-surface-3 text-ink text-[13px] font-medium hover:bg-hairline-strong"
             >
               Today
             </button>

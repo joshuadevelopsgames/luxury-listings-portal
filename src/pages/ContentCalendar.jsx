@@ -1449,7 +1449,7 @@ const ContentCalendar = () => {
             onClick={handleStartImport}
             disabled={!canCreateContent}
             title={!canCreateContent ? 'You need CREATE_CONTENT permission' : 'Import from Google Sheets'}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px] font-medium hover:bg-surface-2 dark:hover:bg-[#3d3d3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface border border-hairline-strong text-ink text-[14px] font-medium hover:bg-surface-2 dark:hover:bg-[#3d3d3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileSpreadsheet className="w-4 h-4" />
             Import from Sheets
@@ -2050,7 +2050,7 @@ const ContentCalendar = () => {
                 </button>
                 <button 
                   type="submit"
-                  className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors"
+                  className="px-3.5 py-2 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors"
                 >
                   {editingContent ? 'Update Content' : 'Create Content'}
                 </button>
@@ -2203,7 +2203,7 @@ const ContentCalendar = () => {
                     <button
                       type="button"
                       onClick={closeAICaptionModal}
-                      className="px-4 py-2 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
+                      className="px-3.5 py-2 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors"
                       disabled={isGeneratingCaption}
                     >
                       Cancel
@@ -2452,7 +2452,7 @@ const ContentCalendar = () => {
                     <button 
                       onClick={handleFetchSheet}
                       disabled={!sheetUrl.trim()}
-                      className="px-5 py-2.5 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3.5 py-2 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {availableTabs.length > 1 ? `Fetch "${selectedTabTitle || availableTabs[0]?.title}"` : 'Fetch Sheet Data'}
                     </button>
@@ -2548,7 +2548,7 @@ const ContentCalendar = () => {
                       type="button"
                       onClick={handleEnrichWithChatGPT}
                       disabled={isEnriching}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors disabled:opacity-60"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 text-[14px] font-medium rounded-xl bg-surface-3 text-ink hover:bg-hairline-strong transition-colors disabled:opacity-60"
                     >
                       {isEnriching ? (
                         <>
@@ -2561,7 +2561,7 @@ const ContentCalendar = () => {
                     </button>
                     <button 
                       onClick={handleImportContent}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 text-[14px] font-medium rounded-xl bg-brand text-white hover:bg-brand-hover transition-colors"
                     >
                       <Upload className="w-4 h-4" />
                       Import {sheetData.rows.length} Posts

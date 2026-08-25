@@ -195,7 +195,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong"
+              className="px-3.5 py-2 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong"
             >
               Cancel
             </button>
@@ -203,7 +203,7 @@ const TemplateSelector = ({ onClose, currentUser, onEditTemplate, onTasksCreated
               type="button"
               onClick={handleApplyTemplate}
               disabled={!selectedTemplate || creating}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Sparkles className="w-4 h-4" />
               {creating ? 'Creating Tasks...' : 'Apply Template'}

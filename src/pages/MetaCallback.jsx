@@ -144,13 +144,13 @@ const MetaCallback = () => {
             <div className="space-y-3">
               <button 
                 onClick={handleRetry} 
-                className="w-full h-11 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors"
+                className="w-full h-10 rounded-xl bg-brand text-white text-[15px] font-medium hover:bg-brand-hover transition-colors"
               >
                 Try Again
               </button>
               <button 
                 onClick={handleGoBack} 
-                className="w-full h-11 rounded-xl bg-surface-3 text-ink text-[15px] font-medium hover:bg-hairline-strong transition-colors"
+                className="w-full h-10 rounded-xl bg-surface-3 text-ink text-[15px] font-medium hover:bg-hairline-strong transition-colors"
               >
                 Go Back to Content Calendar
               </button>
@@ -160,7 +160,7 @@ const MetaCallback = () => {
           {status === 'success' && (
             <button 
               onClick={handleGoBack} 
-              className="w-full h-11 rounded-xl bg-surface-3 text-ink text-[15px] font-medium hover:bg-hairline-strong transition-colors"
+              className="w-full h-10 rounded-xl bg-surface-3 text-ink text-[15px] font-medium hover:bg-hairline-strong transition-colors"
             >
               Go to Content Calendar Now
             </button>

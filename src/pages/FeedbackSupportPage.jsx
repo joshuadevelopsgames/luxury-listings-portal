@@ -239,7 +239,7 @@ export default function FeedbackSupportPage() {
                     type="button"
                     onClick={handlePageSubmitBug}
                     disabled={pageSubmitting}
-                    className="px-5 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
                   >
                     {pageSubmitting ? 'Sending…' : 'Submit'}
                   </button>
@@ -268,7 +268,7 @@ export default function FeedbackSupportPage() {
                   type="button"
                   onClick={handlePageSubmitFeature}
                   disabled={pageSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
+                  className="px-3.5 py-2 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
                 >
                   {pageSubmitting ? 'Sending…' : 'Submit'}
                 </button>
@@ -291,7 +291,7 @@ export default function FeedbackSupportPage() {
                       type="button"
                       onClick={handlePageStartChat}
                       disabled={pageSubmitting}
-                      className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover disabled:opacity-50"
+                      className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover disabled:opacity-50"
                     >
                       {pageSubmitting ? 'Starting…' : 'Start chat'}
                     </button>
@@ -351,7 +351,7 @@ export default function FeedbackSupportPage() {
                           type="button"
                           onClick={handlePageSendMessage}
                           disabled={pageSubmitting}
-                          className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium disabled:opacity-50"
+                          className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium disabled:opacity-50"
                         >
                           Send
                         </button>

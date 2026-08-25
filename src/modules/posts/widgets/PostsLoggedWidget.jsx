@@ -400,7 +400,7 @@ const PostsLoggedWidget = () => {
               <button
                 onClick={handleLogPost}
                 disabled={logging || !selectedClient}
-                className="flex-1 h-11 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive transition-colors disabled:opacity-50"
+                className="flex-1 h-10 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive transition-colors disabled:opacity-50"
               >
                 {logging ? 'Logging...' : 'Log Post'}
               </button>

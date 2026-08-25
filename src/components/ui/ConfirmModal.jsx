@@ -95,14 +95,14 @@ const ConfirmModal = ({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-white bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg hover:bg-gray-50 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
+            className="px-3.5 py-2 text-sm font-medium text-gray-700 dark:text-white bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg hover:bg-gray-50 dark:hover:bg-white/15 transition-colors disabled:opacity-50"
           >
             {cancelText}
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${style.confirmBtn}`}
+            className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${style.confirmBtn}`}
           >
             {isLoading && (
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">

@@ -1086,7 +1086,7 @@ export default function ClientWorkspace() {
                     <button
                       onClick={generateCaption}
                       disabled={generatingCaption}
-                      className="w-full h-11 rounded-xl bg-gradient-to-r from-brand to-pink-500 text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-sm shadow-brand/20"
+                      className="w-full h-10 rounded-xl bg-gradient-to-r from-brand to-pink-500 text-white text-[13px] font-semibold inline-flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 shadow-sm shadow-brand/20"
                     >
                       {generatingCaption ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       {generatingCaption ? 'Generating…' : `Generate ${captionPlatform.charAt(0).toUpperCase() + captionPlatform.slice(1)} Caption`}

@@ -74,10 +74,10 @@ export default function EditPostsLoggedModal({ client, onClose, onSaved }) {
           </p>
         </div>
         <div className="flex gap-3 px-5 py-4 border-t border-hairline">
-          <button type="button" onClick={onClose} className="flex-1 h-11 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">
+          <button type="button" onClick={onClose} className="flex-1 h-10 rounded-xl bg-surface-3 text-ink text-[14px] font-medium hover:bg-hairline-strong">
             Cancel
           </button>
-          <button type="button" onClick={handleSave} disabled={saving || !valid} className="flex-1 h-11 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive disabled:opacity-50">
+          <button type="button" onClick={handleSave} disabled={saving || !valid} className="flex-1 h-10 rounded-xl bg-positive text-white text-[14px] font-medium hover:bg-positive disabled:opacity-50">
             {saving ? 'Saving...' : 'Save'}
           </button>
         </div>

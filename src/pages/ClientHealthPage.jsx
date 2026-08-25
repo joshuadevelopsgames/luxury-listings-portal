@@ -181,7 +181,7 @@ const ClientHealthPage = () => {
           <button
             onClick={runBulk}
             disabled={runningBulk}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand text-white text-[13px] font-medium hover:opacity-90 disabled:opacity-50"
           >
             {runningBulk ? (
               <RefreshCw className="w-4 h-4 animate-spin" />

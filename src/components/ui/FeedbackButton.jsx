@@ -637,7 +637,7 @@ export default function FeedbackButton() {
           hover scale — those are what made it read as a marketing widget. */}
       <button
         onClick={handleOpen}
-        className={`fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center z-40 transition-colors shadow-md ${
+        className={`fixed bottom-6 right-6 w-12 h-10 rounded-full flex items-center justify-center z-40 transition-colors shadow-md ${
           isMinimized && activeChat?.status === 'open'
             ? 'bg-positive hover:opacity-90'
             : 'bg-ink hover:bg-ink-muted'
@@ -1017,7 +1017,7 @@ export default function FeedbackButton() {
                 <button
                   onClick={handleStartChat}
                   disabled={isSubmitting}
-                  className="w-full h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-10 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   {isSubmitting ? 'Starting...' : 'Start Chat'}
@@ -1113,7 +1113,7 @@ export default function FeedbackButton() {
               <button
                 onClick={handleSubmitBug}
                 disabled={isSubmitting}
-                className="w-full h-11 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-danger/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-10 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-danger/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bug className="w-4 h-4" />}
                 {isSubmitting ? 'Submitting...' : 'Submit Bug Report'}
@@ -1126,7 +1126,7 @@ export default function FeedbackButton() {
               <button
                 onClick={handleSubmitFeature}
                 disabled={isSubmitting}
-                className="w-full h-11 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-warning/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-10 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-warning/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
                 {isSubmitting ? 'Submitting...' : 'Submit Feature Request'}

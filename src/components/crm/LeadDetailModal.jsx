@@ -526,7 +526,7 @@ const LeadDetailModal = ({
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -561,7 +561,7 @@ const LeadDetailModal = ({
               )}
               <button
                 onClick={onClose}
-                className="flex-1 min-w-[120px] h-11 rounded-xl border border-hairline-strong text-[14px] font-medium text-ink hover:bg-surface-3 transition-colors"
+                className="flex-1 min-w-[120px] h-10 rounded-xl border border-hairline-strong text-[14px] font-medium text-ink hover:bg-surface-3 transition-colors"
               >
                 Close
               </button>

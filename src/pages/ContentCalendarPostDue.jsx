@@ -224,7 +224,7 @@ export default function ContentCalendarPostDue() {
             <button
               type="button"
               onClick={copyCaption}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand text-white text-sm font-medium hover:bg-brand-hover"
             >
               <Copy className="w-4 h-4" />
               Copy caption
@@ -232,7 +232,7 @@ export default function ContentCalendarPostDue() {
             <button
               type="button"
               onClick={showInstagramQuickPost ? openInstagramApp : openPlatform}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/10 dark:bg-white/10 text-ink text-sm font-medium hover:bg-black/15 dark:hover:bg-white/15"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/10 dark:bg-white/10 text-ink text-sm font-medium hover:bg-black/15 dark:hover:bg-white/15"
             >
               {showInstagramQuickPost ? <Share2 className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
               Open in {platform === 'instagram' ? 'Instagram' : platform === 'facebook' ? 'Facebook' : platform === 'tiktok' ? 'TikTok' : item.platform}
@@ -241,7 +241,7 @@ export default function ContentCalendarPostDue() {
               <button
                 type="button"
                 onClick={markPublished}
-                className="px-4 py-2.5 rounded-xl border border-positive text-positive text-sm font-medium hover:bg-positive/10"
+                className="px-3.5 py-2 rounded-xl border border-positive text-positive text-sm font-medium hover:bg-positive/10"
               >
                 Mark as published
               </button>

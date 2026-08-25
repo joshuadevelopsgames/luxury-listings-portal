@@ -1619,7 +1619,7 @@ const CRMPage = () => {
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button type="button" onClick={handleAddNewLead} disabled={isAddingLead} className="flex-1 h-11 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                <button type="button" onClick={handleAddNewLead} disabled={isAddingLead} className="flex-1 h-10 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                   <Plus className="w-4 h-4" />
                   {isAddingLead ? 'Adding…' : 'Add Lead'}
                 </button>

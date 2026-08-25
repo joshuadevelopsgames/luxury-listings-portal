@@ -650,7 +650,7 @@ const AnnouncementManager = () => {
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-danger text-white text-[15px] font-medium hover:bg-[#ff453a] transition-all disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-danger text-white text-[15px] font-medium hover:bg-[#ff453a] transition-all disabled:opacity-50"
                 >
                   {deleting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   Delete

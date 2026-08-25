@@ -1203,7 +1203,7 @@ const MyTimeOff = () => {
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                  className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {submitting ? 'Submitting...' : 'Submit Request'}
                 </button>

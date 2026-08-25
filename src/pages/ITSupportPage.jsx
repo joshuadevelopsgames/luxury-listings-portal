@@ -964,7 +964,7 @@ const ITSupportPage = () => {
                     type="button"
                     onClick={handlePageSubmitBug}
                     disabled={pageSubmitting}
-                    className="px-5 py-2.5 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-xl bg-danger text-white text-[14px] font-medium hover:bg-[#e6352b] disabled:opacity-50"
                   >
                     {pageSubmitting ? 'Sending…' : 'Submit'}
                   </button>
@@ -994,7 +994,7 @@ const ITSupportPage = () => {
                   type="button"
                   onClick={handlePageSubmitFeature}
                   disabled={pageSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
+                  className="px-3.5 py-2 rounded-xl bg-warning text-white text-[14px] font-medium hover:bg-[#e68600] disabled:opacity-50"
                 >
                   {pageSubmitting ? 'Sending…' : 'Submit'}
                 </button>
@@ -1018,7 +1018,7 @@ const ITSupportPage = () => {
                       type="button"
                       onClick={handlePageStartChat}
                       disabled={pageSubmitting}
-                      className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover disabled:opacity-50"
+                      className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover disabled:opacity-50"
                     >
                       {pageSubmitting ? 'Starting…' : 'Start chat'}
                     </button>
@@ -1078,7 +1078,7 @@ const ITSupportPage = () => {
                           type="button"
                           onClick={handlePageSendMessage}
                           disabled={pageSubmitting}
-                          className="px-5 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium disabled:opacity-50"
+                          className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium disabled:opacity-50"
                         >
                           Send
                         </button>
@@ -1872,7 +1872,7 @@ const ITSupportPage = () => {
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit Request'}
@@ -2114,7 +2114,7 @@ const ITSupportPage = () => {
                 </button>
                 <button 
                   onClick={handleConfirmClose}
-                  className="px-4 py-2.5 rounded-xl bg-ink-muted text-white text-[14px] font-medium hover:bg-[#6e6e73] transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-ink-muted text-white text-[14px] font-medium hover:bg-[#6e6e73] transition-colors"
                 >
                   Close Ticket
                 </button>
@@ -2362,7 +2362,7 @@ const ITSupportPage = () => {
                   <button
                     onClick={handleChatReply}
                     disabled={!chatReply.trim()}
-                    className="px-4 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
+                    className="px-3.5 py-2 rounded-xl bg-brand text-white text-[14px] font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
                   >
                     <Send className="w-5 h-5" />
                   </button>

@@ -152,7 +152,7 @@ const PersonCard = ({
           {editable && !isEditing && (
             <button 
               onClick={handleEdit}
-              className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-brand hover:bg-brand/10 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 text-[13px] font-medium text-brand hover:bg-brand/10 rounded-xl transition-colors"
             >
               <Edit className="w-4 h-4" strokeWidth={1.5} />
               Edit
@@ -163,7 +163,7 @@ const PersonCard = ({
               <button 
                 onClick={handleSave} 
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-white bg-brand hover:bg-brand-hover rounded-xl transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-3.5 py-2 text-[13px] font-medium text-white bg-brand hover:bg-brand-hover rounded-xl transition-colors disabled:opacity-50"
               >
                 <Save className="w-4 h-4" strokeWidth={1.5} />
                 {saving ? 'Saving...' : 'Save'}
@@ -171,7 +171,7 @@ const PersonCard = ({
               <button 
                 onClick={handleCancel} 
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-ink-muted hover:text-ink dark:hover:text-white hover:bg-surface-3 rounded-xl transition-colors"
+                className="flex items-center gap-2 px-3.5 py-2 text-[13px] font-medium text-ink-muted hover:text-ink dark:hover:text-white hover:bg-surface-3 rounded-xl transition-colors"
               >
                 <X className="w-4 h-4" strokeWidth={1.5} />
                 Cancel

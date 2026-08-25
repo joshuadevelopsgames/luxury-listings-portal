@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useDropdownFlip } from '../../hooks/useDropdownFlip';
 import { toast } from 'react-hot-toast';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -62,6 +63,14 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
     }
   }, [formData.recurring]);
 
+  // Flip each dropdown above its trigger when it would run off-screen.
+  const dateFlipRef = useDropdownFlip(showDatePicker);
+  const recurringFlipRef = useDropdownFlip(showRecurringPicker);
+  const priorityFlipRef = useDropdownFlip(showPriorityPicker);
+  const reminderFlipRef = useDropdownFlip(showReminderPicker);
+  const labelsFlipRef = useDropdownFlip(showLabels);
+  const subtasksFlipRef = useDropdownFlip(showSubtasks);
+  const estimatedFlipRef = useDropdownFlip(showEstimatedTime);
   const datePickerRef = useRef(null);
   const priorityPickerRef = useRef(null);
   const reminderPickerRef = useRef(null);
@@ -285,7 +294,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Date Picker Dropdown */}
               {showDatePicker && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-3 z-[100]">
+                <div ref={dateFlipRef} className="absolute left-0 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-3 z-[100]">
                   <input
                     type="text"
                     value={naturalDateInput}
@@ -370,7 +379,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
                     {/* Recurring Picker Dropdown */}
                     {showRecurringPicker && (
-                      <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-[100]">
+                      <div ref={recurringFlipRef} className="absolute left-0 w-64 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-[100]">
                         <div className="mb-3">
                           <p className="text-sm font-semibold mb-3">Repeat Task</p>
                         </div>
@@ -478,7 +487,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Priority Picker Dropdown */}
               {showPriorityPicker && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100]">
+                <div ref={priorityFlipRef} className="absolute left-0 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100]">
                   {priorities.map((priority) => (
                     <button
                       key={priority.value}
@@ -523,7 +532,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Reminders Picker Dropdown */}
               {showReminderPicker && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-3 z-[100]">
+                <div ref={reminderFlipRef} className="absolute left-0 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-3 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Reminders</p>
                   </div>
@@ -664,7 +673,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Labels Dropdown */}
               {showLabels && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-4 z-[100]">
+                <div ref={labelsFlipRef} className="absolute left-0 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Labels</p>
                   </div>
@@ -757,7 +766,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Subtasks Dropdown */}
               {showSubtasks && (
-                <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-4 z-[100]">
+                <div ref={subtasksFlipRef} className="absolute left-0 w-72 bg-surface rounded-lg shadow-lg border border-hairline-strong p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Subtasks</p>
                   </div>
@@ -826,7 +835,7 @@ const TaskForm = ({ onSubmit, onCancel, initialData = null, mode = 'create' }) =
 
               {/* Estimated Time Dropdown */}
               {showEstimatedTime && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-[100]">
+                <div ref={estimatedFlipRef} className="absolute left-0 w-56 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-[100]">
                   <div className="mb-3">
                     <p className="text-sm font-semibold mb-2">Estimated Time</p>
                   </div>
