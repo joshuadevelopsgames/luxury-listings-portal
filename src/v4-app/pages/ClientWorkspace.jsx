@@ -321,7 +321,7 @@ export default function ClientWorkspace() {
               rawPayload: scraped,
             });
             await loadBase();
-            toast.success('Listing details filled in ✓');
+            toast.success('Listing details filled in');
           })
           .catch(() => { /* scrape failed — listing still usable */ })
           .finally(() => {

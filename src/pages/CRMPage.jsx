@@ -36,8 +36,9 @@ import {
   ArrowUp,
   ArrowDown,
   Ban,
-  Upload
-} from 'lucide-react';
+  Upload,
+  CheckCircle2,
+  Info} from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import { formatStat } from '../utils/formatStat';
@@ -1724,7 +1725,7 @@ const CRMPage = () => {
             : 'bg-brand text-white'
         }`}>
           <div className="flex items-center gap-2">
-            <span className="text-lg">{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
+            <span className="inline-flex">{toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : toast.type === 'error' ? <X className="w-4 h-4" /> : <Info className="w-4 h-4" />}</span>
             <span className="font-medium">{toast.message}</span>
           </div>
         </div>

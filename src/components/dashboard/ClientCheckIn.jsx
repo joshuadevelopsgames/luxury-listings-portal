@@ -25,8 +25,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Eye,
-  Archive
-} from 'lucide-react';
+  Archive,
+  X} from 'lucide-react';
 import { GOOGLE_SHEETS_CONFIG, GOOGLE_SHEETS_API } from '../../config/googleSheets';
 import { supabaseService } from '../../services/supabaseService';
 import ClientLink from '../ui/ClientLink';
@@ -605,7 +605,7 @@ Joshua@luxury-listings.com`);
                 onClick={() => setShowApprovalModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                ✕
+                <X className="w-4 h-4" />
               </Button>
             </div>
             
@@ -694,7 +694,7 @@ Joshua@luxury-listings.com`);
                 onClick={handleEditCancel}
                 className="text-gray-400 hover:text-gray-600"
               >
-                ✕
+                <X className="w-4 h-4" />
               </Button>
             </div>
             
@@ -835,7 +835,7 @@ Joshua@luxury-listings.com`);
             {editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize && (
               <div className="mt-4 p-3 bg-danger-soft border border-red-200 rounded-md">
                 <p className="text-sm text-danger">
-                  ⚠️ Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
+                  <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
                 </p>
               </div>
             )}

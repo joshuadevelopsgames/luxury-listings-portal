@@ -17,8 +17,8 @@ import {
   ArrowRight,
   CheckCircle,
   Clock,
-  AlertCircle
-} from 'lucide-react';
+  AlertCircle,,
+  X} from 'lucide-react';
 
 const SalesPipelinePage = () => {
   const { currentUser, currentRole } = useAuth();
@@ -227,7 +227,7 @@ const SalesPipelinePage = () => {
                 onClick={() => setSelectedDeal(null)}
                 className="text-gray-500 hover:text-gray-700"
               >
-                ✕
+                <X className="w-4 h-4" />
               </Button>
             </div>
             

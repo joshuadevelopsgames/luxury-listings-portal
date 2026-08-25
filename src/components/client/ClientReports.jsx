@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { FileText, Download, Calendar, TrendingUp } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, X} from 'lucide-react';
 import { format } from 'date-fns';
 import { supabaseService } from '../../services/supabaseService';
 
@@ -181,7 +181,7 @@ For questions or additional insights, please contact your media manager.
                   variant="ghost"
                   onClick={() => setSelectedReport(null)}
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
 

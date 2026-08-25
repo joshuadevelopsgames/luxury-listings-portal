@@ -22,7 +22,11 @@ import {
   Mail,
   MapPin,
   Search,
-  Filter
+  Filter,
+  Globe,
+  Smartphone,
+  PartyPopper,
+  X
 } from 'lucide-react';
 
 const LeadManagementPage = () => {
@@ -66,13 +70,13 @@ const LeadManagementPage = () => {
 
   const getSourceIcon = (source) => {
     const icons = {
-      website: '🌐',
-      referral: '👥',
-      social_media: '📱',
-      cold_call: '📞',
-      event: '🎉'
+      website: Globe,
+      referral: Users,
+      social_media: Smartphone,
+      cold_call: Phone,
+      event: PartyPopper
     };
-    return icons[source] || '🌐';
+    return icons[source] || Globe;
   };
 
   const filteredLeads = leads.filter(lead => {
@@ -239,7 +243,7 @@ const LeadManagementPage = () => {
                     <td className="py-3 px-4 text-gray-700">{lead.company}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{getSourceIcon(lead.source)}</span>
+                        {React.createElement(getSourceIcon(lead.source), { className: "w-4 h-4 text-ink-muted" })}
                         <Badge className={getSourceColor(lead.source)}>
                           {lead.source.replace('_', ' ').charAt(0).toUpperCase() + lead.source.replace('_', ' ').slice(1)}
                         </Badge>
@@ -303,7 +307,7 @@ const LeadManagementPage = () => {
                 onClick={() => setSelectedLead(null)}
                 className="text-gray-500 hover:text-gray-700"
               >
-                ✕
+                <X className="w-4 h-4" />
               </Button>
             </div>
             
@@ -328,7 +332,7 @@ const LeadManagementPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{getSourceIcon(selectedLead.source)}</span>
+                    {React.createElement(getSourceIcon(selectedLead.source), { className: "w-4 h-4 text-ink-muted" })}
                     <Badge className={getSourceColor(selectedLead.source)}>
                       {selectedLead.source.replace('_', ' ').charAt(0).toUpperCase() + selectedLead.source.replace('_', ' ').slice(1)}
                     </Badge>

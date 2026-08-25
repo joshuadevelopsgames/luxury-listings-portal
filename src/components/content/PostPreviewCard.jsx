@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Heart, MessageCircle } from 'lucide-react';
 
 const handlePlaceholder = 'preview_handle';
 const MAX_CAPTION_PREVIEW = 120;
@@ -124,8 +125,8 @@ export default function PostPreviewCard({ item, variant = 'instagram' }) {
       </div>
       <div className="p-3 space-y-1">
         <div className="flex gap-2">
-          <span className="text-lg">♡</span>
-          <span className="text-lg">💬</span>
+          <Heart className="w-4 h-4" />
+          <MessageCircle className="w-4 h-4" />
           <span className="text-lg">↗</span>
         </div>
         <p className="text-sm text-ink">

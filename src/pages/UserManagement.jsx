@@ -4,8 +4,8 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { 
 import { AVAILABLE_PAGES } from '../data/appPages';
+import { 
   Users, 
   UserPlus, 
   UserCheck, 
@@ -22,8 +22,15 @@ import { AVAILABLE_PAGES } from '../data/appPages';
   Briefcase,
   Clock,
   User,
-  X
-} from 'lucide-react';
+  X,
+  RefreshCw,
+  CheckCircle2,
+  AlertTriangle,
+  Wrench,
+  Loader2,
+  Eraser,
+  Star,,
+  Lightbulb} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { useConfirm } from '../contexts/ConfirmContext';
@@ -934,7 +941,7 @@ const UserManagement = () => {
             className={`${getRoleBadgeColor(role)} ${role === primaryRole ? 'ring-2 ring-blue-300' : ''}`}
           >
             {getRoleDisplayName(role)}
-            {role === primaryRole && <span className="ml-1">⭐</span>}
+            {role === primaryRole && <Star className="w-3 h-3 ml-1 inline-block fill-current" />}
           </Badge>
         ))}
       </div>
@@ -1216,10 +1223,10 @@ const UserManagement = () => {
             }`}
             disabled={loading || firestoreStatus === 'loading'}
           >
-            {firestoreStatus === 'loading' ? '🔄 Loading...' : 
-             firestoreStatus === 'success' ? '✅ Refreshed!' :
-             firestoreStatus === 'error' ? '❌ Error' :
-             '🔄 Refresh from Firestore'}
+            {firestoreStatus === 'loading' ? <><RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />Loading…</> :
+             firestoreStatus === 'success' ? <><CheckCircle2 className="w-4 h-4 mr-1.5" />Refreshed</> :
+             firestoreStatus === 'error' ? <><AlertTriangle className="w-4 h-4 mr-1.5" />Error</> :
+             <><RefreshCw className="w-4 h-4 mr-1.5" />Refresh from Firestore</>}
           </Button>
         </div>
       </div>
@@ -1259,7 +1266,7 @@ const UserManagement = () => {
             variant="outline"
             className="bg-warning-soft border-yellow-300 text-warning hover:bg-warning-soft"
           >
-            🔧 Fix User Roles
+            <Wrench className="w-4 h-4 mr-1.5" />Fix User Roles
           </Button>
           <Button
             onClick={handleCleanDuplicates}
@@ -1267,7 +1274,7 @@ const UserManagement = () => {
             className="bg-danger-soft border-red-300 text-danger hover:bg-danger-soft"
             disabled={isProcessing}
           >
-            {isProcessing ? '🧹 Processing...' : '🧹 Clean Duplicates'}
+            {isProcessing ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Processing…</> : <><Eraser className="w-4 h-4 mr-1.5" />Clean Duplicates</>}
           </Button>
         </div>
       </div>
@@ -1543,7 +1550,7 @@ const UserManagement = () => {
                           {roleObj.displayName}
                         </Badge>
                         {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
-                          <span className="text-xs text-brand dark:text-blue-400">⭐ Primary</span>
+                          <span className="text-xs text-brand dark:text-blue-400"><Star className="w-3 h-3 inline-block fill-current mr-0.5" />Primary</span>
                         )}
                       </div>
                     </label>
@@ -1572,7 +1579,7 @@ const UserManagement = () => {
                               {roleObj.icon || '👤'} {roleObj.displayName}
                             </Badge>
                             {selectedRoles.includes(roleObj.id) && selectedRoles.indexOf(roleObj.id) === 0 && (
-                              <span className="text-xs text-brand dark:text-blue-400">⭐ Primary</span>
+                              <span className="text-xs text-brand dark:text-blue-400"><Star className="w-3 h-3 inline-block fill-current mr-0.5" />Primary</span>
                             )}
                           </div>
                         </label>
@@ -1605,7 +1612,7 @@ const UserManagement = () => {
                     disabled={isProcessing}
                     className="text-xs"
                   >
-                    🔄 Refresh Auth
+                    <RefreshCw className="w-4 h-4 mr-1.5" />Refresh Auth
                   </Button>
                 </div>
                 
@@ -1711,7 +1718,7 @@ const UserManagement = () => {
 
               <div className="bg-brand-soft border-l-4 border-brand rounded-lg p-4">
                 <p className="text-sm text-blue-900">
-                  <strong>💡 Tip:</strong> Custom permissions give this user specific abilities across all roles they switch into. These override role-based permissions.
+                  <Lightbulb className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /><strong>Tip:</strong> Custom permissions give this user specific abilities across all roles they switch into. These override role-based permissions.
                 </p>
               </div>
             </div>
@@ -1908,7 +1915,7 @@ const UserManagement = () => {
                                 {getRoleDisplayName(role)}
                               </Badge>
                               {newUserForm.roles.includes(role) && newUserForm.roles.indexOf(role) === 0 && (
-                                <span className="text-xs text-brand font-medium">⭐ Primary</span>
+                                <span className="text-xs text-brand font-medium"><Star className="w-3 h-3 inline-block fill-current mr-0.5" />Primary</span>
                               )}
                             </div>
                           </label>
@@ -1937,7 +1944,7 @@ const UserManagement = () => {
                                   {role.icon || '👤'} {role.displayName}
                                 </Badge>
                                 {newUserForm.roles.includes(role.id) && newUserForm.roles.indexOf(role.id) === 0 && (
-                                  <span className="text-xs text-brand font-medium">⭐ Primary</span>
+                                  <span className="text-xs text-brand font-medium"><Star className="w-3 h-3 inline-block fill-current mr-0.5" />Primary</span>
                                 )}
                               </div>
                             </label>
@@ -2129,7 +2136,7 @@ const UserManagement = () => {
                           {getRoleDisplayName(role)}
                         </Badge>
                         {selectedRoles.includes(role) && selectedRoles.indexOf(role) === 0 && (
-                          <span className="text-xs text-brand font-medium">⭐ Primary</span>
+                          <span className="text-xs text-brand font-medium"><Star className="w-3 h-3 inline-block fill-current mr-0.5" />Primary</span>
                         )}
                       </label>
                     ))}
@@ -2156,7 +2163,7 @@ const UserManagement = () => {
                               {role.icon || '👤'} {role.displayName}
                             </Badge>
                             {selectedRoles.includes(role.id) && selectedRoles.indexOf(role.id) === 0 && (
-                              <span className="text-xs text-brand font-medium">⭐ Primary</span>
+                              <span className="text-xs text-brand font-medium"><Star className="w-3 h-3 inline-block fill-current mr-0.5" />Primary</span>
                             )}
                           </label>
                         ))}

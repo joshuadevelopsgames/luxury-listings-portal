@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2, Send, Bell, Archive, ArchiveRestore, CheckSquare, Bookmark } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, UserPlus, Users, X, Check, Inbox, Flag, Calendar, CalendarIcon, TrendingUp, Sparkles, Filter, Trash2, LayoutGrid, List, GripVertical, Palette, Loader2, Send, Bell, Archive, ArchiveRestore, CheckSquare, Bookmark, AlertTriangle} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -1828,7 +1828,7 @@ const TasksPage = () => {
               {/* Debug info */}
               {availableUsers.length === 0 && (
                 <div className="bg-warning/10 border border-warning/20 rounded-xl p-3 text-[13px] text-warning">
-                  ⚠️ No other team members found. Total employees: {availableUsers.length}
+                  <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />No other team members found. Total employees: {availableUsers.length}
                 </div>
               )}
               

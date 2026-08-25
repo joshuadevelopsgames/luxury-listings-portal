@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { RefreshCw, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertCircle, Calendar, AlertTriangle} from 'lucide-react';
 import { supabaseService } from '../services/supabaseService';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { toast } from 'react-hot-toast';
@@ -129,7 +129,7 @@ const OnboardingTestPage = () => {
           <CardContent className="space-y-6">
             <div className="bg-warning-soft dark:bg-yellow-900/20 border border-yellow-200 dark:border-warning rounded-lg p-4">
               <p className="text-sm text-yellow-900 dark:text-warning-soft">
-                <strong>⚠️ Testing Tool:</strong> This will reset the onboarding status for {currentUser?.email},
+                <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /><strong>Testing Tool:</strong> This will reset the onboarding status for {currentUser?.email},
                 allowing you to test the complete onboarding flow.
               </p>
             </div>
@@ -176,7 +176,7 @@ const OnboardingTestPage = () => {
                       <span className="font-medium">Calendar Not Connected</span>
                     </div>
                     <p className="text-sm text-positive dark:text-green-400">
-                      ✅ Ready to test calendar authorization in onboarding!
+                      <CheckCircle2 className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Ready to test calendar authorization in onboarding!
                     </p>
                   </>
                 )}

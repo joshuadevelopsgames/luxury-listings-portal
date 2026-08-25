@@ -246,7 +246,7 @@ const WelcomeCard = ({ user, overallProgress, currentRole, systemUptime, adminSt
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-2xl font-bold mb-2">
-              {getGreeting()}, {user?.firstName}! 👋
+              {getGreeting()}, {user?.firstName}
             </CardTitle>
             <p className="text-slate-200 text-lg leading-relaxed">
               {roleContent.motivationalMessage(overallProgress)}

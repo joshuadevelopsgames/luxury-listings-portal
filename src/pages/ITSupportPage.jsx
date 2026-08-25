@@ -23,8 +23,10 @@ import {
   Bell,
   Ticket,
   Loader,
-  AlertTriangle
-} from 'lucide-react';
+  AlertTriangle,
+  User,
+  CheckCircle2,
+  ArrowDown} from 'lucide-react';
 import { format } from 'date-fns';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
@@ -1294,7 +1296,7 @@ const ITSupportPage = () => {
                           </div>
                           {isITSupport && (
                             <p className="text-[12px] font-medium text-ink mb-1">
-                              👤 {ticket.requesterName} ({ticket.requesterEmail})
+                              <User className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />{ticket.requesterName} ({ticket.requesterEmail})
                             </p>
                           )}
                           <p className="text-[12px] text-ink-muted mb-2">
@@ -1425,7 +1427,7 @@ const ITSupportPage = () => {
                           </span>
                         </div>
                         <p className="text-[12px] font-medium text-ink mb-1">
-                          👤 {bug.userName} ({bug.userEmail})
+                          <User className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />{bug.userName} ({bug.userEmail})
                         </p>
                         <p className="text-[12px] text-ink-muted line-clamp-2">{bug.description}</p>
                         <p className="text-[11px] text-ink-muted mt-2">
@@ -1535,7 +1537,7 @@ const ITSupportPage = () => {
                           </span>
                         </div>
                         <p className="text-[12px] font-medium text-ink mb-1">
-                          👤 {feature.userName} ({feature.userEmail})
+                          <User className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />{feature.userName} ({feature.userEmail})
                         </p>
                         <p className="text-[12px] text-ink-muted line-clamp-2">{feature.description}</p>
                         <p className="text-[11px] text-ink-muted mt-2">
@@ -1767,7 +1769,7 @@ const ITSupportPage = () => {
                     {!uploading && supportForm.screenshotUrl && !uploadError && (
                       <div className="p-4 bg-positive/5 border border-positive/20 rounded-xl">
                         <p className="text-[13px] font-medium text-positive mb-1">
-                          ✅ Uploaded successfully!
+                          <CheckCircle2 className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Uploaded successfully!
                         </p>
                         <p className="text-[11px] text-positive/80 break-all">
                           {supportForm.screenshotUrl}
@@ -1780,7 +1782,7 @@ const ITSupportPage = () => {
                       <div className="space-y-3">
                         <div className="p-4 bg-warning/5 border border-warning/20 rounded-xl">
                           <p className="text-[13px] font-medium text-warning mb-2">
-                            ⚠️ Automatic upload failed - Please upload manually:
+                            <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Automatic upload failed - Please upload manually:
                           </p>
                           <div className="flex gap-2 mb-2">
                             <button
@@ -1793,7 +1795,7 @@ const ITSupportPage = () => {
                             </button>
                           </div>
                           <p className="text-[11px] text-warning/80">
-                            Upload your screenshot on imgbb.com, then paste the URL below ⬇️
+                            Upload your screenshot on imgbb.com, then paste the URL below
                           </p>
                         </div>
 
@@ -1993,7 +1995,7 @@ const ITSupportPage = () => {
               {/* Comments Section */}
               <div className="pt-4 border-t border-hairline">
                 <label className="text-[12px] font-medium text-ink-muted mb-3 block">
-                  💬 Comments ({ticketComments.length})
+                  <MessageSquare className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />Comments ({ticketComments.length})
                 </label>
                 
                 {/* Comments List */}
@@ -2012,7 +2014,7 @@ const ITSupportPage = () => {
                       >
                         <div className="flex items-start justify-between mb-1">
                           <p className="text-sm font-medium text-gray-900">
-                            {comment.isITSupport && '🔧 '}
+                            {comment.isITSupport && <Wrench className="w-3 h-3 inline-block mr-1" />}
                             {comment.authorName}
                             {comment.isITSupport && ' (IT Support)'}
                           </p>

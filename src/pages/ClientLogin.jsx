@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText } from 'lucide-react';
+import { Mail, Lock, Shield, Calendar, MessageSquare, BarChart3, FileText, CheckCircle2, AlertTriangle} from 'lucide-react';
 import { supabaseService } from '../services/supabaseService';
 import { supabase } from '../lib/supabase';
 import { createTestClient } from '../utils/createTestClient';
@@ -251,12 +251,12 @@ const ClientLogin = () => {
             <div className="mt-4 p-4 bg-brand/5 border border-brand/20 rounded-xl">
               {resetSent ? (
                 <div className="text-center">
-                  <p className="text-[13px] text-brand font-medium mb-2">✓ Password reset email sent!</p>
+                  <p className="text-[13px] text-brand font-medium mb-2"><CheckCircle2 className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Password reset email sent</p>
                   <p className="text-[12px] text-brand/80 mb-2">
                     Check your inbox at <strong>{resetEmail || email}</strong> and click the reset link.
                   </p>
                   <p className="text-[11px] text-warning bg-warning/10 border border-warning/20 rounded-lg px-2 py-1 mb-2">
-                    ⚠️ Don't see it? Please check your <strong>spam/junk folder</strong> - it may have been filtered there.
+                    <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Don't see it? Please check your <strong>spam/junk folder</strong> - it may have been filtered there.
                   </p>
                   <button
                     onClick={() => {

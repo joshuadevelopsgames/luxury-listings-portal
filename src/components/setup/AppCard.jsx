@@ -278,7 +278,7 @@ const AppCard = ({ integration }) => {
         {integration.isCritical && (
           <div className="p-2 bg-danger-soft dark:bg-red-900/20 rounded border border-red-200 dark:border-danger/50">
             <p className="text-xs text-danger dark:text-red-300 font-medium">
-              ⚠️ Critical tool for content workflow. Ensure this is properly configured.
+              <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Critical tool for content workflow. Ensure this is properly configured.
             </p>
           </div>
         )}

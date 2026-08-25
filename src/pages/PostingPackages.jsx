@@ -21,8 +21,11 @@ import {
   RefreshCw,
   Trash2,
   Wrench,
-  ExternalLink
-} from 'lucide-react';
+  ExternalLink,
+  X,
+  AlertTriangle,
+  CheckCircle2,
+  Info} from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import StatCard from '../components/ui/StatCard';
 import { formatStat, formatCurrency } from '../utils/formatStat';
@@ -2203,7 +2206,7 @@ export default function PostingPackages() {
                 onClick={handleEditCancel}
                 className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-ink-muted hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
             
@@ -2494,7 +2497,7 @@ export default function PostingPackages() {
               {editForm.postsUsed + editForm.postsRemaining !== editForm.packageSize && (
                 <div className="p-3 rounded-xl bg-danger/10 border border-danger/20">
                   <p className="text-[13px] text-danger">
-                    ⚠️ Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
+                    <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Posts Used ({editForm.postsUsed}) + Posts Remaining ({editForm.postsRemaining}) must equal Package Size ({editForm.packageSize})
                   </p>
                 </div>
               )}
@@ -2538,7 +2541,7 @@ export default function PostingPackages() {
                 onClick={handleAddCancel}
                 className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-ink-muted hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
             
@@ -2924,7 +2927,7 @@ export default function PostingPackages() {
               {addForm.postsUsed + addForm.postsRemaining !== addForm.packageSize && (
                 <div className="p-3 rounded-xl bg-danger/10 border border-danger/20">
                   <p className="text-[13px] text-danger">
-                    ⚠️ Posts Used ({addForm.postsUsed}) + Posts Remaining ({addForm.postsRemaining}) must equal Package Size ({addForm.packageSize})
+                    <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Posts Used ({addForm.postsUsed}) + Posts Remaining ({addForm.postsRemaining}) must equal Package Size ({addForm.packageSize})
                   </p>
                 </div>
               )}
@@ -2932,7 +2935,7 @@ export default function PostingPackages() {
               {(addForm.packageType === 'Custom' || addForm.packageType === 'Monthly') && (!addForm.customPrice || addForm.customPrice <= 0) && (
                 <div className="p-3 rounded-xl bg-danger/10 border border-danger/20">
                   <p className="text-[13px] text-danger">
-                    ⚠️ Please enter a valid {addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price
+                    <AlertTriangle className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Please enter a valid {addForm.packageType === 'Monthly' ? 'monthly' : 'custom'} price
                   </p>
                 </div>
               )}
@@ -2976,7 +2979,7 @@ export default function PostingPackages() {
             : 'bg-brand text-white'
         }`}>
           <div className="flex items-center gap-2">
-            <span className="text-base">{toastState.type === 'success' ? '✓' : toastState.type === 'error' ? '✕' : 'ℹ'}</span>
+            <span className="inline-flex">{toastState.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : toastState.type === 'error' ? <X className="w-4 h-4" /> : <Info className="w-4 h-4" />}</span>
             <span className="text-[14px] font-medium">{toastState.message}</span>
           </div>
         </div>

@@ -156,7 +156,7 @@ class ErrorBoundary extends React.Component {
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          _subject: `🚨 Error Report: ${report.errorMessage.substring(0, 50)}`,
+          _subject: `Error Report: ${report.errorMessage.substring(0, 50)}`,
           error_message: report.errorMessage,
           error_stack: report.errorStack?.substring(0, 2000) || 'N/A',
           user_email: report.userEmail,
@@ -473,7 +473,7 @@ export function RouteErrorPage() {
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          _subject: `🚨 Error Report: ${report.errorMessage.substring(0, 50)}`,
+          _subject: `Error Report: ${report.errorMessage.substring(0, 50)}`,
           error_message: report.errorMessage,
           error_stack: report.errorStack?.substring(0, 2000) || 'N/A',
           user_email: report.userEmail,

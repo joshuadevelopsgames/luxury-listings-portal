@@ -27,12 +27,12 @@ const MigrationBanner = () => {
       // Use the new test connection method
       const result = await supabaseService.testConnection();
       if (result.success) {
-        setDebugInfo(`✅ Firestore connection successful! Database: ${result.databaseName}, App: ${result.appName}`);
+        setDebugInfo(`Connected. Database: ${result.databaseName}, App: ${result.appName}`);
       } else {
-        setDebugInfo(`❌ Firestore connection failed: ${result.error} (Code: ${result.code})`);
+        setDebugInfo(`Connection failed: ${result.error} (Code: ${result.code})`);
       }
     } catch (error) {
-      setDebugInfo(`❌ Firestore connection failed: ${error.message}`);
+      setDebugInfo(`Connection failed: ${error.message}`);
       console.error('Firestore test error:', error);
     }
   };

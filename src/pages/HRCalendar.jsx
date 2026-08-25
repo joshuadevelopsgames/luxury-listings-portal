@@ -39,8 +39,8 @@ import {
   ArchiveRestore,
   Trash2,
   Eye,
-  EyeOff
-} from 'lucide-react';
+  EyeOff,
+  X} from 'lucide-react';
 import { format, isToday, isPast, addDays, differenceInDays } from 'date-fns';
 
 const HRCalendar = () => {
@@ -1240,7 +1240,7 @@ const HRCalendar = () => {
                           disabled={processingRequest === request.id}
                           className="px-3 py-1.5 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-colors disabled:opacity-50"
                         >
-                          ✗ Reject
+                          <X className="w-3.5 h-3.5 inline-block mr-1" />Reject
                         </button>
                       </div>
                     )}
@@ -2128,7 +2128,7 @@ const HRCalendar = () => {
           <div className="bg-surface rounded-xl max-w-md w-full border border-hairline-strong shadow-lg">
             <div className="border-b border-hairline px-6 py-4">
               <h2 className="text-[17px] font-semibold text-ink">
-                {showNotesModal === 'approve' ? '✓ Approve Request' : '✗ Reject Request'}
+                {showNotesModal === 'approve' ? 'Approve Request' : 'Reject Request'}
               </h2>
             </div>
             <div className="p-6 space-y-4">

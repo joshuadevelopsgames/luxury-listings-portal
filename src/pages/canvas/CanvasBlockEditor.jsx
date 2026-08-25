@@ -582,7 +582,7 @@ function UnifiedBlockRow({ block, bodyRefCallback, isTextLike, onContentChange, 
       <div className="flex-1 min-w-0 relative">
         {isTextLike ? (
           <div className={getUnifiedBlockWrapperClass(block.type)}>
-            {block.type === 'callout' && <span className="text-lg shrink-0">💡</span>}
+            {block.type === 'callout' && <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-warning" />}
             <div
               ref={(el) => bodyRefCallback(block.id, el)}
               data-block-body
@@ -896,7 +896,7 @@ function BlockContent({ block, onContentChange, onRemove, isFocused, onFocus, fi
         className={className}
         data-block-type={block.type}
       >
-        {block.type === 'callout' && <span className="text-lg shrink-0">💡</span>}
+        {block.type === 'callout' && <Lightbulb className="w-4 h-4 shrink-0 mt-0.5 text-warning" />}
         {block.type === 'bullet' && (
           <ul
             key={restoreKey != null ? `${block.id}-r${restoreKey}` : block.id}

@@ -46,6 +46,37 @@ const PLATFORM_LABELS = { instagram: 'Instagram', facebook: 'Facebook', linkedin
 
 const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 
+/* ── Presentational helpers for the read-only view ──────────────────────
+   Kept local to this modal: a heading + hairline rule, and a label/value
+   row. Using rows rather than filled tiles is what lets the panel show a
+   dozen fields without turning into a grid of identical grey rectangles. */
+
+const Empty = () => <span className="text-ink-subtle font-normal">—</span>;
+
+const Section = ({ title, children }) => (
+  <section className="border-t border-hairline pt-5 first:border-0 first:pt-0">
+    <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider mb-2.5">
+      {title}
+    </h3>
+    {children}
+  </section>
+);
+
+const Field = ({ label, children }) => (
+  <div className="flex items-baseline justify-between gap-4 py-2 border-b border-hairline last:border-b-0">
+    <dt className="text-[12.5px] text-ink-muted shrink-0">{label}</dt>
+    <dd className="text-[13px] font-medium text-ink text-right min-w-0">{children}</dd>
+  </div>
+);
+
+const StatusPill = ({ tone, label }) => (
+  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11.5px] font-medium ${
+    tone === 'positive' ? 'bg-positive-soft text-positive' : 'bg-warning-soft text-warning'
+  }`}>
+    {label}
+  </span>
+);
+
 const ClientDetailModal = ({
   client,
   onClose,
@@ -550,240 +581,167 @@ const ClientDetailModal = ({
             </div>
           ) : (
             /* View Mode */
-            <div className="space-y-6">
-              {/* Contact & Manager */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-[12px] font-semibold text-ink-muted mb-3 uppercase tracking-wide">Contact Information</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                      <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center flex-shrink-0">
-                        <Mail className="w-4 h-4 text-brand" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-ink-muted">Email</p>
-                        <button
-                          type="button"
-                          onClick={() => localClient.clientEmail && openGmailWithComposeTo(localClient.clientEmail)}
-                          className="text-[13px] font-medium text-ink truncate block text-left hover:text-brand"
-                        >
-                          {localClient.clientEmail || 'No email'}
-                        </button>
-                      </div>
-                    </div>
-                    {localClient.phone && (
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                        <div className="w-9 h-9 rounded-lg bg-positive/10 flex items-center justify-center flex-shrink-0">
-                          <Phone className="w-4 h-4 text-positive" />
-                        </div>
-                        <div>
-                          <p className="text-[11px] text-ink-muted">Phone</p>
-                          <p className="text-[13px] font-medium text-ink">{localClient.phone}</p>
-                        </div>
-                      </div>
+            <div className="space-y-5">
+              {/* Overview — label/value rows rather than a grid of tiles.
+                  The old layout put every field in its own filled box, which
+                  gave nine identical rectangles and no hierarchy, and used a
+                  rigid 4-column grid that stranded the last field on its own
+                  row. Rows wrap naturally and stay scannable. */}
+              <Section title="Overview">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+                  <Field label="Email">
+                    {localClient.clientEmail ? (
+                      <button
+                        type="button"
+                        onClick={() => openGmailWithComposeTo(localClient.clientEmail)}
+                        className="hover:text-brand truncate max-w-full"
+                      >
+                        {localClient.clientEmail}
+                      </button>
+                    ) : <Empty />}
+                  </Field>
+                  <Field label="Manager">
+                    {localClient.assignedManager
+                      ? (manager ? (manager.displayName || manager.email) : localClient.assignedManager)
+                      : <span className="text-warning">Unassigned</span>}
+                  </Field>
+                  {localClient.phone && <Field label="Phone">{localClient.phone}</Field>}
+                  {localClient.location && <Field label="Location">{localClient.location}</Field>}
+                  {localClient.startDate && (
+                    <Field label="Client since">
+                      {format(new Date(localClient.startDate), 'MMMM d, yyyy')}
+                    </Field>
+                  )}
+                </dl>
+              </Section>
+
+              <Section title="Package">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+                  <Field label="Service type">
+                    {getContactTypes(localClient)
+                      .map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t)
+                      .join(', ') || <Empty />}
+                  </Field>
+                  <Field label="Package type">{localClient.packageType || 'Standard'}</Field>
+                  <Field label="Posts remaining">
+                    <span className="tabular-nums">{getPostsRemaining(localClient)}</span>
+                    {localClient.postsRemainingByPlatform
+                      && Object.keys(localClient.postsRemainingByPlatform).length > 0 && (
+                      <span className="block text-[11.5px] font-normal text-ink-muted mt-0.5">
+                        {Object.entries(localClient.postsRemainingByPlatform)
+                          .map(([k, v]) => `${PLATFORM_LABELS[k] || k} ${v}`)
+                          .join(' · ')}
+                      </span>
                     )}
-                  </div>
-                </div>
+                  </Field>
+                  <Field label="Payment">
+                    <StatusPill
+                      tone={localClient.paymentStatus === 'Paid' ? 'positive' : 'warning'}
+                      label={localClient.paymentStatus || 'Unknown'}
+                    />
+                  </Field>
+                  <Field label="Status">
+                    <StatusPill
+                      tone={localClient.approvalStatus === 'Approved' ? 'positive' : 'warning'}
+                      label={localClient.approvalStatus || localClient.status || 'Active'}
+                    />
+                  </Field>
+                </dl>
+              </Section>
 
-                <div>
-                  <h3 className="text-[12px] font-semibold text-ink-muted mb-3 uppercase tracking-wide">Assigned Manager</h3>
-                  {localClient.assignedManager ? (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                      <div className="w-9 h-9 rounded-lg bg-positive/10 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-positive" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-ink-muted">Social Media Manager</p>
-                        <p className="text-[13px] font-medium text-ink">
-                          {manager ? (manager.displayName || manager.email) : localClient.assignedManager}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-warning/5">
-                      <div className="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center flex-shrink-0">
-                        <AlertCircle className="w-4 h-4 text-warning" />
-                      </div>
-                      <p className="text-[13px] text-warning">No manager assigned</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Links */}
-              {(localClient.website || localClient.instagramHandle) && (
-                <div className="flex flex-wrap gap-2">
-                  {localClient.website && (
-                    <a 
-                      href={localClient.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] text-[13px] text-ink hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors"
-                    >
-                      <Globe className="w-4 h-4 text-ink-muted" />
-                      Website
-                      <ExternalLink className="w-3.5 h-3.5 text-ink-muted" />
-                    </a>
-                  )}
-                  {localClient.instagramHandle && (
-                    <a 
-                      href={`https://instagram.com/${(localClient.instagramHandle || '').replace(/^@+/, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E1306C]/5 text-[13px] text-[#E1306C] hover:bg-[#E1306C]/10 transition-colors"
-                    >
-                      <Instagram className="w-4 h-4" />
-                      @{(localClient.instagramHandle || '').replace(/^@+/, '')}
-                    </a>
-                  )}
-                </div>
+              {localClient.primaryContact
+                && (localClient.primaryContact.name || localClient.primaryContact.email) && (
+                <Section title="Primary contact">
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+                    <Field label="Name">
+                      {localClient.primaryContact.name || <Empty />}
+                      {localClient.primaryContact.role && (
+                        <span className="text-ink-muted font-normal"> · {localClient.primaryContact.role}</span>
+                      )}
+                    </Field>
+                    {localClient.primaryContact.email && (
+                      <Field label="Email">{localClient.primaryContact.email}</Field>
+                    )}
+                    {localClient.primaryContact.phone && (
+                      <Field label="Phone">{localClient.primaryContact.phone}</Field>
+                    )}
+                  </dl>
+                </Section>
               )}
 
-              {/* Day-one & additional screenshots */}
-              {(localClient.signupScreenshotUrl || (localClient.additionalScreenshots && localClient.additionalScreenshots.length > 0)) && (
-                <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                  <h3 className="text-[12px] font-semibold text-ink-muted mb-3 uppercase tracking-wide">Screenshots</h3>
-                  <div className="space-y-3">
-                    {localClient.signupScreenshotUrl && (
-                      <div>
-                        <p className="text-[11px] text-ink-muted mb-1.5">Day-one (signup)</p>
-                        <a
-                          href={localClient.signupScreenshotUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block rounded-xl overflow-hidden border border-hairline-strong max-w-xs"
-                        >
-                          <img
-                            src={localClient.signupScreenshotUrl}
-                            alt="Day-one screenshot"
-                            className="w-full h-auto max-h-48 object-cover"
-                          />
-                        </a>
-                        {localClient.signupScreenshotUploadedAt && (
-                          <p className="text-[11px] text-ink-muted mt-1">
-                            Uploaded {format(new Date(localClient.signupScreenshotUploadedAt), 'MMM d, yyyy')}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {localClient.additionalScreenshots && localClient.additionalScreenshots.length > 0 && (
-                      <div>
-                        <p className="text-[11px] text-ink-muted mb-1.5">Additional screenshots</p>
-                        <div className="flex flex-wrap gap-2">
-                          {localClient.additionalScreenshots.map((s, i) => (
-                            <a
-                              key={i}
-                              href={s.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-lg overflow-hidden border border-hairline-strong w-24 h-24 flex-shrink-0"
-                            >
-                              <img src={s.url} alt={`Screenshot ${i + 1}`} className="w-full h-full object-cover" />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {(localClient.location || (localClient.primaryContact && (localClient.primaryContact.name || localClient.primaryContact.email))) && (
-              <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                <h3 className="text-[12px] font-semibold text-ink-muted mb-4 uppercase tracking-wide">Location & primary contact</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {localClient.location && (
-                    <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                      <p className="text-[11px] text-ink-muted mb-1">Location</p>
-                      <p className="text-[14px] font-semibold text-ink">{localClient.location}</p>
-                    </div>
-                  )}
-                  {localClient.primaryContact && (localClient.primaryContact.name || localClient.primaryContact.email) && (
-                    <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl md:col-span-2">
-                      <p className="text-[11px] text-ink-muted mb-1">Primary contact</p>
-                      <p className="text-[14px] font-semibold text-ink">{localClient.primaryContact.name || '—'}{localClient.primaryContact.role ? ` · ${localClient.primaryContact.role}` : ''}</p>
-                      {localClient.primaryContact.email && <p className="text-[12px] text-ink-muted">{localClient.primaryContact.email}</p>}
-                      {localClient.primaryContact.phone && <p className="text-[12px] text-ink-muted">{localClient.primaryContact.phone}</p>}
-                    </div>
-                  )}
-                </div>
-              </div>
-              )}
-              {/* Package Details */}
-              <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                <h3 className="text-[12px] font-semibold text-ink-muted mb-4 uppercase tracking-wide">Package Details</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                    <p className="text-[11px] text-ink-muted mb-1">Service type</p>
-                    <p className="text-[14px] font-semibold text-ink">
-                      {getContactTypes(localClient).map(t => CLIENT_TYPE_OPTIONS.find(o => o.value === t)?.label ?? t).join(', ') || 'N/A'}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                    <p className="text-[11px] text-ink-muted mb-1">Package Type</p>
-                    <p className="text-[14px] font-semibold text-ink">{localClient.packageType || 'Standard'}</p>
-                  </div>
-                  <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                    <p className="text-[11px] text-ink-muted mb-1">Posts Remaining</p>
-                    <p className="text-[14px] font-semibold text-ink">{getPostsRemaining(localClient)}</p>
-                    {localClient.postsRemainingByPlatform && Object.keys(localClient.postsRemainingByPlatform).length > 0 && (
-                      <p className="text-[11px] text-ink-muted mt-1">
-                        {Object.entries(localClient.postsRemainingByPlatform).map(([k, v]) => `${PLATFORM_LABELS[k] || k}: ${v}`).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                  <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                    <p className="text-[11px] text-ink-muted mb-1">Payment Status</p>
-                    <span className={`text-[12px] px-2 py-0.5 rounded-md font-medium ${
-                      localClient.paymentStatus === 'Paid' ? 'bg-positive/10 text-positive' : 'bg-warning/10 text-warning'
-                    }`}>
-                      {localClient.paymentStatus || 'Unknown'}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                    <p className="text-[11px] text-ink-muted mb-1">Status</p>
-                    <span className={`text-[12px] px-2 py-0.5 rounded-md font-medium ${
-                      localClient.approvalStatus === 'Approved' ? 'bg-positive/10 text-positive' : 'bg-warning/10 text-warning'
-                    }`}>
-                      {localClient.approvalStatus || localClient.status || 'Active'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Platforms */}
               {localClient.platforms && Object.values(localClient.platforms).some(v => v) && (
-                <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                  <h3 className="text-[12px] font-semibold text-ink-muted mb-3 uppercase tracking-wide">Platforms</h3>
+                <Section title="Platforms">
                   <PlatformIcons platforms={localClient.platforms} size="md" />
-                </div>
+                </Section>
               )}
 
-              {/* Client Since */}
-              {localClient.startDate && (
-                <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
-                    <div className="w-9 h-9 rounded-lg bg-surface-3 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-4 h-4 text-ink-muted" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-ink-muted">Client Since</p>
-                      <p className="text-[13px] font-medium text-ink">
-                        {format(new Date(localClient.startDate), 'MMMM d, yyyy')}
-                      </p>
-                    </div>
+              {(localClient.website || localClient.instagramHandle) && (
+                <Section title="Links">
+                  <div className="flex flex-wrap gap-2">
+                    {localClient.website && (
+                      <a
+                        href={localClient.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-hairline-strong text-[12.5px] text-ink hover:bg-surface-3 transition-colors"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-ink-muted" />
+                        Website
+                        <ExternalLink className="w-3 h-3 text-ink-muted" />
+                      </a>
+                    )}
+                    {localClient.instagramHandle && (
+                      <a
+                        href={`https://instagram.com/${(localClient.instagramHandle || '').replace(/^@+/, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-hairline-strong text-[12.5px] text-ink hover:bg-surface-3 transition-colors"
+                      >
+                        <Instagram className="w-3.5 h-3.5 text-ink-muted" />
+                        @{(localClient.instagramHandle || '').replace(/^@+/, '')}
+                        <ExternalLink className="w-3 h-3 text-ink-muted" />
+                      </a>
+                    )}
                   </div>
-                </div>
+                </Section>
               )}
 
-              {/* Notes */}
+              {(localClient.signupScreenshotUrl
+                || (localClient.additionalScreenshots && localClient.additionalScreenshots.length > 0)) && (
+                <Section title="Screenshots">
+                  <div className="flex flex-wrap gap-2">
+                    {localClient.signupScreenshotUrl && (
+                      <a
+                        href={localClient.signupScreenshotUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={localClient.signupScreenshotUploadedAt
+                          ? `Day one — uploaded ${format(new Date(localClient.signupScreenshotUploadedAt), 'MMM d, yyyy')}`
+                          : 'Day one'}
+                        className="rounded-lg overflow-hidden border border-hairline-strong w-24 h-24 flex-shrink-0"
+                      >
+                        <img src={localClient.signupScreenshotUrl} alt="Day one" className="w-full h-full object-cover" />
+                      </a>
+                    )}
+                    {(localClient.additionalScreenshots || []).map((shot, i) => (
+                      <a
+                        key={i}
+                        href={shot.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg overflow-hidden border border-hairline-strong w-24 h-24 flex-shrink-0"
+                      >
+                        <img src={shot.url} alt={`Screenshot ${i + 1}`} className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </Section>
+              )}
+
               {localClient.notes && (
-                <div className="border-t border-black/5 dark:border-white/5 pt-6">
-                  <h3 className="text-[12px] font-semibold text-ink-muted mb-3 uppercase tracking-wide">Notes</h3>
-                  <div className="p-4 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl">
-                    <p className="text-[13px] text-ink whitespace-pre-wrap">{localClient.notes}</p>
-                  </div>
-                </div>
+                <Section title="Notes">
+                  <p className="text-[13px] leading-relaxed text-ink whitespace-pre-wrap">{localClient.notes}</p>
+                </Section>
               )}
             </div>
           )}

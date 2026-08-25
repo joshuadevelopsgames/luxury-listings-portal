@@ -8,8 +8,10 @@ import {
   ExternalLink, Filter, Download, RefreshCw, CheckCircle, AlertCircle, Pause, Play,
   X, Edit, Trash2, Eye, CalendarDays, Folder, FolderPlus, FileSpreadsheet, Upload,
   Check, MoreVertical, Link as LinkIcon, ChevronLeft, ChevronRight,
-  Library, GripVertical, ChevronDown
-} from 'lucide-react';
+  Library, GripVertical, ChevronDown,
+  CheckCircle2,
+  Lightbulb,
+  ImageIcon} from 'lucide-react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { format, addDays, isToday, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
@@ -2470,13 +2472,13 @@ const ContentCalendar = () => {
 
                   <div className="bg-positive/10 rounded-xl p-4">
                     <p className="text-[13px] text-positive mb-2">
-                      ✅ Found <strong>{sheetData.headers.length}</strong> columns and <strong>{sheetData.rows.length}</strong> rows
+                      <CheckCircle2 className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />Found <strong>{sheetData.headers.length}</strong> columns and <strong>{sheetData.rows.length}</strong> rows
                     </p>
                     <p className="text-[12px] text-positive/80 mb-1">
-                      💡 <strong>Tip:</strong> Post dates are optional. If you don't have dates, they'll be auto-generated starting from today.
+                      <Lightbulb className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /><strong>Tip:</strong> Post dates are optional. If you don't have dates, they'll be auto-generated starting from today.
                     </p>
                     <p className="text-[12px] text-positive/80">
-                      🖼️ <strong>Images:</strong> Map photo columns to &quot;Image / Photo URL&quot;. If you map <strong>multiple</strong> columns to Image, each column becomes a <strong>separate post</strong> on the same day (one row = one day, one post per image column).
+                      <ImageIcon className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /><strong>Images:</strong> Map photo columns to &quot;Image / Photo URL&quot;. If you map <strong>multiple</strong> columns to Image, each column becomes a <strong>separate post</strong> on the same day (one row = one day, one post per image column).
                     </p>
                   </div>
 
@@ -2512,7 +2514,7 @@ const ContentCalendar = () => {
                               )}
                               {suggestion && (
                                 <p className="text-[11px] text-brand mt-1">
-                                  💡 {suggestion}
+                                  <Lightbulb className="w-3 h-3 inline-block mr-1" />{suggestion}
                                 </p>
                               )}
                             </div>
