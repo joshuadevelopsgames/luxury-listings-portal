@@ -282,9 +282,11 @@ class InstagramOCRService {
       }
     }
 
-    // === ACCOUNTS REACHED ===
+    // === ACCOUNTS REACHED (newest Instagram layout labels this "Viewers") ===
     const accountsReachedMatch = text.match(/Accounts?\s*reached\s*[\n\s]*([0-9,]+)/i) ||
-                                  text.match(/([0-9,]+)\s*[\n\s]*Accounts?\s*reached/i);
+                                  text.match(/([0-9,]+)\s*[\n\s]*Accounts?\s*reached/i) ||
+                                  text.match(/Viewers\s*[\n\s]*([0-9,]+)/i) ||
+                                  text.match(/([0-9,]+)\s*[\n\s]*Viewers/i);
     if (accountsReachedMatch) {
       metrics.accountsReached = this.parseNumber(accountsReachedMatch[1]);
     }
@@ -387,9 +389,10 @@ class InstagramOCRService {
       metrics.reach = this.parseNumber(reachMatch[1]);
     }
 
-    // === ACCOUNTS REACHED TREND % ===
+    // === ACCOUNTS REACHED TREND % (newest layout labels this "Viewers") ===
     const accountsReachedChangeMatch = text.match(/Accounts?\s*reached[^0-9]*([+-]?[0-9.]+%)/i) ||
-                                        text.match(/([+-][0-9.]+%)\s*.*Accounts?\s*reached/i);
+                                        text.match(/([+-][0-9.]+%)\s*.*Accounts?\s*reached/i) ||
+                                        text.match(/Viewers[^0-9]*([+-]?[0-9.]+%)/i);
     if (accountsReachedChangeMatch) {
       metrics.accountsReachedChange = accountsReachedChangeMatch[1];
     }

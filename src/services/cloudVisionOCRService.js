@@ -138,6 +138,7 @@ NEWER-LAYOUT LABELS — map these onto the fields below:
 - "New followers" on the Professional dashboard home screen is a GROSS count, NOT the net change — do NOT use it as followerChange. Only "Net followers" is the net change.
 - "Bio link taps" -> externalLinkTaps (the older layout calls this "External link taps"; same field).
 - "Accounts reached" (shown under the "Views by content type" heading) -> accountsReached.
+- "Viewers" -> accountsReached. Instagram's NEWEST layout renamed "Impressions" to "Views" and "Accounts reached" to "Viewers" — a "Viewers" count is the unique-accounts number, so map it to accountsReached, and a change % shown with it -> accountsReachedChange. Never create a separate "viewers" field.
 - FOLLOWER / NON-FOLLOWER SPLIT: in the newer layout the "X% followers / Y% non-followers" line sits directly under the row of metric cards and describes whichever card is CURRENTLY SELECTED (the card with the dark rounded border). If the selected card is "Views" -> viewsFollowerPercent = X. If the selected card is "Interactions" -> interactionsFollowerPercent = X. Never assign a follower % to a metric whose card is not the selected one in that screenshot.
 
 - IMPORTANT: "likes", "comments", "shares", "saves", "reposts" should ONLY be included if Instagram shows an explicit interaction-type breakdown screen listing those individual counts. If only a total "Interactions" number is shown, do NOT populate these fields — a single total does NOT imply individual breakdowns.
@@ -151,7 +152,7 @@ Use these exact field names (include ONLY fields you can actually see):
 {
   "followers": <total follower count, ONLY if explicitly shown>,
   "followerChange": <net change number ("Net followers"), ONLY if explicitly shown>,
-  "accountsReached": <number>,
+  "accountsReached": <number, from "Accounts reached" or the newer "Viewers" label>,
   "accountsReachedChange": "<string, e.g. '+12.4%', ONLY if shown>",
   "views": <number>,
   "viewsFollowerPercent": <number, the "% followers" shown while the Views card/section is selected>,

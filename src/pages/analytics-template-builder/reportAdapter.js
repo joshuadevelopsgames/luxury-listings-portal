@@ -54,7 +54,7 @@ export function buildMetricTiles(m = {}) {
       sub: m.profileVisitsChange != null ? String(m.profileVisitsChange) : '', trend: trendOf(m.profileVisitsChange) });
   }
   if ('accountsReached' in m) {
-    tiles.push({ icon: 'globe', label: 'Accounts Reached', value: fmtNum(m.accountsReached),
+    tiles.push({ icon: 'globe', label: 'Viewers', value: fmtNum(m.accountsReached),
       sub: m.accountsReachedChange != null ? String(m.accountsReachedChange) : '', trend: trendOf(m.accountsReachedChange) });
   }
   if ('contentShared' in m) {

@@ -164,9 +164,13 @@ const PublicInstagramReportPage = () => {
     );
   }
 
-  // Templated reports render through the chosen template (theme + section blocks);
-  // legacy reports without a template snapshot keep the original layout below.
-  if (report && report.template) {
+  // Templated reports render through the chosen template (theme + section blocks).
+  // Snapshot-less MONTHLY reports without attached screenshots also render through
+  // the template system (client default → Classic fallback) so the legacy layout
+  // can't drop or rearrange their metrics. Aggregated (quarterly/yearly) reports
+  // and old reports carrying screenshot galleries keep the original layout below.
+  const isMonthlyReport = report && (!report.reportType || report.reportType === 'monthly');
+  if (report && (report.template || (isMonthlyReport && !(report.screenshots?.length)))) {
     return (
       <div className="min-h-screen" style={{ background: '#e8e8ea' }}>
         <ReportTemplateView report={report} />
@@ -283,7 +287,7 @@ const PublicInstagramReportPage = () => {
 
         const cards = [
           m.accountsReached != null ? {
-            icon: Users, label: 'Accounts Reached',
+            icon: Users, label: 'Viewers',
             value: formatCompact(m.accountsReached),
             badge: m.accountsReachedChange,
             badgePos: m.accountsReachedChange?.startsWith('+'),

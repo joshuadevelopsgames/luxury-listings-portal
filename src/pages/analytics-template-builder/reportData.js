@@ -72,7 +72,7 @@ export const BLOCK_LIBRARY = [
       { icon: 'eye', label: 'Total Views', value: '24,807', sub: '16.7% from followers', trend: 'none' },
       { icon: 'users', label: 'Followers', value: '6,649', sub: '+64 (+1.0%)', trend: 'up' },
       { icon: 'pointer', label: 'Profile Visits', value: '203', sub: '', trend: 'none' },
-      { icon: 'globe', label: 'Accounts Reached', value: '5,626', sub: '', trend: 'none' },
+      { icon: 'globe', label: 'Viewers', value: '5,626', sub: '', trend: 'none' },
       { icon: 'image', label: 'Content Shared', value: '31', sub: '', trend: 'none' },
     ] } },
   { type: 'highlights', name: 'Written Highlights', desc: 'Manager notes & takeaways', icon: 'message', span: 'full',

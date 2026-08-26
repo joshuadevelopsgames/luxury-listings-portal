@@ -531,7 +531,7 @@ const InstagramReportsPage = () => {
     const metrics = aggregateMetrics(periodReports);
     const clientName = client.clientName || client.name;
     const dateRange = `Q${quarter} ${year} (${format(qStart, 'MMM d')} - ${format(qEnd, 'MMM d, yyyy')})`;
-    const fallbackNotes = `Aggregated from ${periodReports.length} monthly report(s).\n\nTotal Views: ${metrics.views.toLocaleString()}\nAccounts Reached: ${metrics.accountsReached.toLocaleString()}\nTotal Interactions: ${metrics.interactions.toLocaleString()}\nProfile Visits: ${metrics.profileVisits.toLocaleString()}\nLikes: ${metrics.likes.toLocaleString()} | Comments: ${metrics.comments.toLocaleString()} | Shares: ${metrics.shares.toLocaleString()} | Saves: ${metrics.saves.toLocaleString()} | Reposts: ${metrics.reposts.toLocaleString()}\nFollowers: ${metrics.followers?.toLocaleString() || 'N/A'}\nNet Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`;
+    const fallbackNotes = `Aggregated from ${periodReports.length} monthly report(s).\n\nTotal Views: ${metrics.views.toLocaleString()}\nViewers: ${metrics.accountsReached.toLocaleString()}\nTotal Interactions: ${metrics.interactions.toLocaleString()}\nProfile Visits: ${metrics.profileVisits.toLocaleString()}\nLikes: ${metrics.likes.toLocaleString()} | Comments: ${metrics.comments.toLocaleString()} | Shares: ${metrics.shares.toLocaleString()} | Saves: ${metrics.saves.toLocaleString()} | Reposts: ${metrics.reposts.toLocaleString()}\nFollowers: ${metrics.followers?.toLocaleString() || 'N/A'}\nNet Follower Change: ${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange}`;
 
     setIsGenerating(true);
     let notes = fallbackNotes;
@@ -779,7 +779,7 @@ const InstagramReportsPage = () => {
             </p>
             <Delta current={report.metrics?.followers} previous={compareWith.metrics?.followers} label="Followers" />
             <Delta current={report.metrics?.followerChange} previous={compareWith.metrics?.followerChange} label="Net Growth" prefix="+" />
-            <Delta current={report.metrics?.accountsReached} previous={compareWith.metrics?.accountsReached} label="Accounts Reached" />
+            <Delta current={report.metrics?.accountsReached} previous={compareWith.metrics?.accountsReached} label="Viewers" />
             <Delta current={report.metrics?.interactions} previous={compareWith.metrics?.interactions} label="Interactions" />
             <Delta current={report.metrics?.profileVisits} previous={compareWith.metrics?.profileVisits} label="Profile Visits" />
             <Delta current={report.metrics?.views} previous={compareWith.metrics?.views} label="Views" />
@@ -2080,11 +2080,14 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
         else delete metrics._ignoredFields;
       }
       // Chosen template: persist its id + a snapshot so the report's look is
-      // stable even if the template is later edited. null => Classic/client default.
+      // stable even if the template is later edited. ALWAYS snapshot — with no
+      // selection we snapshot the built-in Classic template, so the built report
+      // renders through the template canvas exactly as previewed in step 2
+      // (a null snapshot would fall back to the legacy public layout, which
+      // drops/rearranges metrics).
       const templateId = selectedTemplate ? selectedTemplate.id : null;
-      const templateSnapshot = selectedTemplate
-        ? { id: selectedTemplate.id, name: selectedTemplate.name, theme: selectedTemplate.theme, blocks: selectedTemplate.blocks }
-        : null;
+      const chosenTemplate = selectedTemplate || classicTemplate();
+      const templateSnapshot = { id: chosenTemplate.id ?? null, name: chosenTemplate.name, theme: chosenTemplate.theme, blocks: chosenTemplate.blocks };
 
       // Guard against oversized payloads (Supabase PostgREST limit ~10MB, warn >200KB)
       const payloadSize = new Blob([JSON.stringify({ clientId, clientName, title, dateRange, notes, postLinks, metrics })]).size;
@@ -2448,7 +2451,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       {mf('followers', 'Followers', <input type="number" value={formData.metrics?.followers || ''} onChange={(e) => updateMetric('followers', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('interactions', 'Interactions', <input type="number" value={formData.metrics?.interactions || ''} onChange={(e) => updateMetric('interactions', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('profileVisits', 'Profile Visits', <input type="number" value={formData.metrics?.profileVisits || ''} onChange={(e) => updateMetric('profileVisits', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
-                      {mf('accountsReached', 'Accounts Reached', <input type="number" value={formData.metrics?.accountsReached || ''} onChange={(e) => updateMetric('accountsReached', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('accountsReached', 'Viewers (Accounts Reached)', <input type="number" value={formData.metrics?.accountsReached || ''} onChange={(e) => updateMetric('accountsReached', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('likes', 'Likes', <input type="number" value={formData.metrics?.likes || ''} onChange={(e) => updateMetric('likes', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('comments', 'Comments', <input type="number" value={formData.metrics?.comments || ''} onChange={(e) => updateMetric('comments', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('reposts', 'Reposts', <input type="number" value={formData.metrics?.reposts || ''} onChange={(e) => updateMetric('reposts', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
@@ -2460,7 +2463,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                       {mf('followerChange', 'Follower Change', <input type="number" value={formData.metrics?.followerChange ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('followerChange', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('profileVisitsChange', 'Profile Visits Change', <input type="text" value={formData.metrics?.profileVisitsChange || ''} onChange={(e) => updateMetric('profileVisitsChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('interactionsFollowerPercent', 'Interactions from Followers %', <input type="number" step="0.1" value={formData.metrics?.interactionsFollowerPercent || ''} onChange={(e) => updateMetric('interactionsFollowerPercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
-                      {mf('accountsReachedChange', 'Accounts Reached Change', <input type="text" value={formData.metrics?.accountsReachedChange || ''} onChange={(e) => updateMetric('accountsReachedChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('accountsReachedChange', 'Viewers Change', <input type="text" value={formData.metrics?.accountsReachedChange || ''} onChange={(e) => updateMetric('accountsReachedChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('externalLinkTaps', 'External Link Taps', <input type="number" value={formData.metrics?.externalLinkTaps ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('externalLinkTaps', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('engagementRatePercent', 'Engagement Rate %', <input type="number" step="0.1" value={formData.metrics?.engagementRatePercent || ''} onChange={(e) => updateMetric('engagementRatePercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('contentShared', 'Content Shared', <input type="number" value={formData.metrics?.contentShared ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('contentShared', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
@@ -3048,7 +3051,7 @@ const ReportPreviewModal = ({ report, onClose }) => {
           const followerChangeVal = (() => { const fc = m.followerChange; if (fc == null) return null; const n = parseInt(fc); return isNaN(n) ? String(fc) : `${n > 0 ? '+' : ''}${n}`; })();
           const followerChangePosNeg = (() => { const fc = m.followerChange; const n = parseInt(fc); return !isNaN(n) ? n : Number(fc); })();
           const cards = [
-            m.accountsReached != null ? { icon: Users, label: 'Accounts Reached', value: formatCompact(m.accountsReached), badge: m.accountsReachedChange, badgePos: m.accountsReachedChange?.startsWith('+'), iconGradient: 'from-brand to-brand' } : null,
+            m.accountsReached != null ? { icon: Users, label: 'Viewers', value: formatCompact(m.accountsReached), badge: m.accountsReachedChange, badgePos: m.accountsReachedChange?.startsWith('+'), iconGradient: 'from-brand to-brand' } : null,
             m.followers != null ? { icon: Users, label: 'Total Followers', value: formatCompact(m.followers), badge: followerChangeVal, badgePos: followerChangePosNeg >= 0, iconGradient: 'from-pink-600 to-danger' } : null,
             m.views != null ? { icon: Eye, label: 'Total Views', value: formatCompact(m.views), badge: m.viewsFollowerPercent != null ? `${m.viewsFollowerPercent}% followers` : null, badgeNeutral: true, iconGradient: 'from-brand to-brand' } : null,
             m.interactions != null ? { icon: Heart, label: 'Interactions', value: formatCompact(m.interactions), badge: null, iconGradient: 'from-warning to-danger' } : (m.profileVisits != null ? { icon: MousePointer, label: 'Profile Visits', value: formatCompact(m.profileVisits), badge: m.profileVisitsChange, badgePos: m.profileVisitsChange?.startsWith('+'), iconGradient: 'from-brand to-brand' } : null),
