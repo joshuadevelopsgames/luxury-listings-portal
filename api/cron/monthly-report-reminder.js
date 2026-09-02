@@ -18,9 +18,16 @@
  *               to disable per-manager emails).
  */
 
-import { runReportReminder } from '../../lib/reportReminder.mjs';
-
 export const config = { maxDuration: 60 };
+
+// Imported lazily, not at module scope. A static import of lib/*.mjs from this
+// .js handler takes the function down at load with an opaque
+// FUNCTION_INVOCATION_FAILED — which is why this cron silently never ran. A
+// dynamic import resolves fine and keeps failures catchable.
+async function loadReminder() {
+  const mod = await import('../../lib/reportReminder.mjs');
+  return mod.runReportReminder;
+}
 
 const DEFAULT_SUMMARY_RECIPIENTS = 'matthew@luxury-listings.com,michelle@luxury-listings.com';
 
@@ -38,6 +45,7 @@ export default async function handler(req, res) {
     .filter(Boolean);
 
   try {
+    const runReportReminder = await loadReminder();
     const result = await runReportReminder({
       supabaseUrl: process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL,
       serviceKey:
