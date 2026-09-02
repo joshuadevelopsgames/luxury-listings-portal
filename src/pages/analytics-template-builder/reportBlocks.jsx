@@ -48,6 +48,15 @@ function Heading({ icon, children }) {
   );
 }
 
+// A real number, or null when the value is missing/blank/non-numeric. OCR leaves
+// holes ({}, {women: 100}, {men: null}), and treating those as 0 printed
+// convincing-looking zeros on client reports — use this to fall back to "—".
+function numOrNull(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+}
+
 // Compact number for content-type counts: 18000 -> "18K", 6300 -> "6.3K", 479 -> "479".
 function fmtCompact(n) {
   const num = Number(n);
