@@ -14,8 +14,10 @@
       900px design to the sheet width and still paginates.
    2. Backgrounds must survive (print-color-adjust), otherwise the
       hero, metric tiles and chart bars vanish and the sheet is blank.
-   3. No `filter` anywhere. Chrome silently drops a filtered layer
-      in paged output — that alone erased the entire hero gradient.
+   3. No `filter` or `mask-image` anywhere. Paged output drops a
+      filtered layer outright (which erased the whole hero gradient)
+      and rasterises masks in tiles it then loses (which tore white
+      columns through it). Shapes have to be drawn as real geometry.
    4. Nothing may be sticky/fixed or clipped, otherwise the report
       collapses onto a single page.
    ============================================================ */
@@ -76,7 +78,6 @@
     margin: 0 !important;
     padding-bottom: 0 !important;
     min-height: 0 !important;
-    background: #fff !important;
   }
 
   /* The design column, centred on the sheet. Its own 40px side padding is
@@ -99,10 +100,20 @@
     -webkit-filter: none !important;
   }
 
-  /* Paged output also ignores `mask-image`, so the hero's shaped bottom edge
-     prints as a straight line with dead gradient below it. The component
-     renders a print-only SVG of the same cut path, filled with the report
-     background, which paints the identical silhouette the honest way. */
+  /* `mask-image` must be switched OFF here, not merely worked around. The print
+     rasteriser applies the hero mask in tiles and silently drops some of them,
+     which tears transparent white columns straight through the gradient. With
+     the mask off the gradient paints as a plain rectangle and the print-only
+     SVG below cuts the shaped bottom edge instead.
+
+     The SVG fills with var(--report-bg), so the report root must keep that same
+     background (it is deliberately NOT forced to #fff above) — otherwise the
+     cut prints as a visible band in a different colour to the page. */
+  .report-print-scope .hero-bg-fill {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
   .report-print-scope .hero-cut {
     display: block !important;
   }

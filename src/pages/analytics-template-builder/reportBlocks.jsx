@@ -80,6 +80,9 @@ function HeroBlock({ block, client, logo }) {
   const padBottom = sh.cut ? 84 : 46;
 
   // Single-layer mask → genuine transparency, no seam. Border-radius rounds the top corners.
+  // `hero-bg-fill` is a print hook: the mask has to be switched off for paged
+  // output (see print.css) — the print rasteriser applies it in tiles and drops
+  // some of them, tearing white columns through the gradient.
   const bgStyle = {
     position: 'absolute', inset: 0, borderRadius: 'var(--r-card)',
     background: 'radial-gradient(circle at 80% -10%, rgba(255,255,255,.25), transparent 45%), ' + GRAD,
@@ -100,7 +103,7 @@ function HeroBlock({ block, client, logo }) {
     <div className="hero-block" style={{ position: 'relative' }}>
       {/* shadow caster follows the masked silhouette */}
       <div className="hero-bg" style={{ position: 'absolute', inset: 0, filter: 'var(--hero-shadow)' }}>
-        <div style={bgStyle} />
+        <div className="hero-bg-fill" style={bgStyle} />
       </div>
       {/* Print-only twin of the mask. Paged output ignores `mask-image`, so the
           shaped bottom edge would print as a straight line; painting the same
