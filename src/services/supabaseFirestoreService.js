@@ -1075,8 +1075,35 @@ class SupabaseService {
         updated_at: ts(),
       })]).select().single();
       if (error) throw error;
+      // Alert the HR approvers. Deliberately not awaited: the request is already
+      // saved, so a slow or failing email must not delay the confirmation toast
+      // or make a successful submission look like it failed.
+      this._notifyLeaveRequestSubmitted(data.id);
       return data.id;
     } catch (error) { console.error('❌ Error submitting leave request:', error); throw error; }
+  }
+
+  // Hand the new request id to the serverless notifier, which emails the HR
+  // approvers. ONLY the id travels — the endpoint reads the request back with
+  // the service key, so the browser cannot dictate what our domain sends. The
+  // send is idempotent per request id, so a double call is harmless.
+  async _notifyLeaveRequestSubmitted(requestId) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token || !requestId) return;
+      const res = await fetch('/api/notify-leave-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ requestId }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || body?.ok === false) {
+        console.warn('[time-off] approver email not sent:', body?.error || res.status);
+      }
+    } catch (e) {
+      console.warn('[time-off] approver email not sent:', e?.message || e);
+    }
   }
 
   async updateLeaveRequestStatus(requestId, status, reviewedBy, notes) {
