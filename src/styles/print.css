@@ -3,17 +3,34 @@
    Loaded by the public report page and the demo report page.
 
    The browser's Save-as-PDF is the only exporter we use, so the
-   PDF is exactly what these rules produce. Two things matter:
-   1. Backgrounds must survive (print-color-adjust), otherwise the
+   PDF is exactly what these rules produce. The report is designed
+   as a fixed 900px column, so the job here is to put that column
+   on an A4 sheet WITHOUT letting it reflow — a reflowed report
+   rewraps every label and resizes every tile, which is what made
+   the old PDF look nothing like the screen.
+
+   Four things matter:
+   1. Scale, don't reflow. `zoom` (not `transform`) shrinks the
+      900px design to the sheet width and still paginates.
+   2. Backgrounds must survive (print-color-adjust), otherwise the
       hero, metric tiles and chart bars vanish and the sheet is blank.
-   2. Nothing may be sticky/fixed or clipped, otherwise the report
+   3. No `filter` anywhere. Chrome silently drops a filtered layer
+      in paged output — that alone erased the entire hero gradient.
+   4. Nothing may be sticky/fixed or clipped, otherwise the report
       collapses onto a single page.
    ============================================================ */
 
 @media print {
   @page {
     size: A4;
-    margin: 10mm;
+    margin: 12mm 10mm;
+  }
+
+  /* 900px of design mapped onto the 190mm printable width, which lands the
+     column ~13mm from each paper edge. Changing this one number is how you
+     retune the whole PDF. */
+  .report-print-scope {
+    --pdf-scale: 0.773;
   }
 
   /* Keep every background/gradient/fill. Inherited print-color-adjust is
@@ -26,6 +43,7 @@
   html, body {
     height: auto !important;
     overflow: visible !important;
+    background: #fff !important;
   }
 
   /* Screen-only chrome: nav bars, banners, buttons, lightbox. */
@@ -41,28 +59,69 @@
   .report-print-scope {
     height: auto !important;
     min-height: 0 !important;
+    background: #fff !important;
   }
 
-  /* Reports render at a fixed 900px column on screen; let them fill the sheet. */
+  /* ---- Scale, don't reflow ----------------------------------------
+     The report root is widened to exactly one sheet's worth of design
+     pixels and then zoomed back down to 210mm. `zoom` is used rather
+     than `transform: scale()` because it affects layout, so page breaks
+     are still measured correctly; a transform would paint the report at
+     the right size but paginate it at the wrong one and clip page two
+     onwards. Everything inside keeps its authored pixel sizes, so the
+     PDF is the screen layout — just smaller. */
+  .report-print-scope .report-root {
+    zoom: var(--pdf-scale);
+    width: calc((210mm - 20mm) / var(--pdf-scale)) !important;
+    margin: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
+  /* The design column, centred on the sheet. Its own 40px side padding is
+     dropped — the centring gutter is the margin now. */
   .report-print-scope .report-inner {
-    max-width: none !important;
+    max-width: 900px !important;
+    width: 900px !important;
+    margin: 0 auto !important;
     padding: 0 !important;
   }
 
-  .report-print-scope .report-root {
-    padding-bottom: 0 !important;
-    min-height: 0 !important;
+  /* ---- No filters, ever -------------------------------------------
+     Chrome drops filtered layers when it rasterises for print. The hero
+     gradient lives in a `filter: drop-shadow()` wrapper, so leaving this
+     on prints a blank white band where the header should be. The shadow
+     is invisible on paper anyway. */
+  .report-print-scope .hero-bg,
+  .report-print-scope [style*="filter"] {
+    filter: none !important;
+    -webkit-filter: none !important;
   }
 
-  /* Hover transforms/shadows are pure noise on paper. */
+  /* Paged output also ignores `mask-image`, so the hero's shaped bottom edge
+     prints as a straight line with dead gradient below it. The component
+     renders a print-only SVG of the same cut path, filled with the report
+     background, which paints the identical silhouette the honest way. */
+  .report-print-scope .hero-cut {
+    display: block !important;
+  }
+
+  /* Hover transforms are pure noise on paper. Cards lose their shadow (it
+     prints as a grey smudge) but keep a hairline border, so they still read
+     as cards instead of dissolving into the white page. */
   .report-print-scope .rep-card {
     transition: none !important;
     transform: none !important;
     box-shadow: none !important;
+    border: 1px solid var(--track) !important;
   }
 
-  /* Don't split a card, a metric tile or a screenshot across two sheets. */
+  /* Don't split a card, a metric tile, the hero or a screenshot across
+     two sheets. */
+  .report-print-scope .hero-block,
   .report-print-scope .rep-card,
+  .report-print-scope .report-grid > *,
   .report-print-scope .metric-grid > *,
   .report-print-scope .growth-grid > *,
   .report-print-scope img,
@@ -71,7 +130,13 @@
     page-break-inside: avoid !important;
   }
 
-  /* The hero owns the first sheet; the footer closes the last one. */
+  /* A heading stranded at the foot of a page with its content overleaf. */
+  .report-print-scope .rep-heading {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* The footer closes the last sheet; never let it start one on its own. */
   .report-print-scope .report-footer {
     break-before: avoid !important;
     page-break-before: avoid !important;

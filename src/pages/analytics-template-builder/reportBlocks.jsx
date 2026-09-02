@@ -94,11 +94,29 @@ function HeroBlock({ block, client, logo }) {
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    // `hero-block` / `hero-bg` are print hooks: paged output drops a filtered
+    // layer entirely, so print.css has to switch the drop-shadow off (see
+    // `.hero-bg` there) or the whole gradient disappears from the PDF.
+    <div className="hero-block" style={{ position: 'relative' }}>
       {/* shadow caster follows the masked silhouette */}
-      <div style={{ position: 'absolute', inset: 0, filter: 'var(--hero-shadow)' }}>
+      <div className="hero-bg" style={{ position: 'absolute', inset: 0, filter: 'var(--hero-shadow)' }}>
         <div style={bgStyle} />
       </div>
+      {/* Print-only twin of the mask. Paged output ignores `mask-image`, so the
+          shaped bottom edge would print as a straight line; painting the same
+          cut path in the report background colour gives the identical
+          silhouette using geometry the print rasteriser does honour. */}
+      {sh.cut ? (
+        <svg
+          className="hero-cut"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'none', pointerEvents: 'none' }}
+        >
+          <path d={sh.cut} style={{ fill: 'var(--report-bg)' }} />
+        </svg>
+      ) : null}
       <div className="hero-inner" style={{ position: 'relative', padding: `40px 36px ${padBottom}px`, textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           {logo ? (

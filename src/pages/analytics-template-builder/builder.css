@@ -190,31 +190,36 @@
 .atb-preview-overlay::-webkit-scrollbar-thumb:hover { background: #b6b7bd; background-clip: content-box; }
 
 @media print {
+  /* The shared report print rules live in src/styles/print.css (imported by
+     the builder) and key off `.report-print-scope`, which this portal carries.
+     Only the portal's own isolation and layout neutralising belongs here. */
+
   /* During an export (body.atb-printing), show ONLY the portaled print view and
      hide the rest of the app, so the PDF contains just the report. */
   body.atb-printing > :not(.atb-print-portal) { display: none !important; }
+
+  /* `.atb-root` is a clipped flex column on screen; as the print portal it has
+     to be a plain block or the report is cropped to one sheet. */
+  .atb-print-portal { display: block !important; overflow: visible !important; height: auto !important; min-height: 0 !important; }
+
   /* Neutralise the on-screen overlay's fixed/scroll positioning so the full
      report flows across pages instead of clipping to one viewport. */
   .atb-print-portal .atb-preview-overlay { position: static !important; overflow: visible !important; height: auto !important; }
   .atb-print-portal .preview-root { min-height: 0 !important; }
+
+  /* The 968px screen frame would overflow the sheet; print.css sizes the report
+     root itself, so this wrapper must simply get out of the way. */
+  .atb-print-portal .print-root { max-width: none !important; margin: 0 !important; }
+
   .atb-root .no-print, .atb-preview-overlay .no-print { display: none !important; }
   .atb-root .preview-root, .atb-root .print-root, .atb-preview-overlay { background: #fff !important; }
-  /* Force every report element to print its real colors. Inherited
-     print-color-adjust is unreliable for gradients/background-images, so set
-     it directly (with !important) on the whole report subtree — otherwise the
-     hero gradient, metric tiles, bars and accents drop out and the PDF looks
-     washed out. */
-  html, body,
-  .atb-print-portal, .atb-print-portal *,
-  .atb-root .report-root, .atb-root .report-root * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
-  }
 }
 
-/* Real-device mobile: shared report / client preview on a phone */
-@media (max-width: 560px) {
+/* Real-device mobile: shared report / client preview on a phone.
+   Scoped to `screen` on purpose — print media evaluates width against the page
+   box, and a phone export must still produce the 900px desktop column, not a
+   single-column stack with the metric grid forced to two. */
+@media screen and (max-width: 560px) {
   .atb-root .report-inner { padding: 22px 15px 0 !important; }
   .atb-root .report-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
   .atb-root .metric-grid { grid-template-columns: 1fr 1fr !important; gap: 11px !important; }

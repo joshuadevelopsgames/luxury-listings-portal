@@ -14,6 +14,7 @@ import { Icon } from './Icon';
 import { REPORT_DATA, BLOCK_LIBRARY, THEME_PRESETS, GOOGLE_FONTS_HREF } from './reportData';
 import { supabaseService } from '../../services/supabaseService';
 import './builder.css';
+import '../../styles/print.css';
 
 // Local crash-recovery cache for the in-progress (possibly unsaved) template.
 const DRAFT_KEY = 'smm_template_draft_v2';
@@ -227,7 +228,7 @@ function ClientPreview({ template, onClose }) {
   }, []);
 
   return createPortal(
-    <div className="atb-root atb-print-portal">
+    <div className="atb-root atb-print-portal report-print-scope">
       <div className="atb-preview-overlay">
         <div className="preview-root">
           <div className="preview-bar no-print">
