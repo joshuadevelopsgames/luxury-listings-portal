@@ -241,12 +241,16 @@ function RankedBlock({ block, data, field, labelKey, icon }) {
 // ---------- GENDER ----------
 function GenderBlock({ block, data }) {
   const g = data.metrics?.gender;
-  if (!g) return null;
+  // A split needs BOTH halves. `if (!g)` let {} / {women: 100} / {men: null}
+  // through, which rendered a bare "Men %" and a zero-width bar on live reports.
+  const men = numOrNull(g && g.men);
+  const women = numOrNull(g && g.women);
+  if (men == null || women == null) return null;
   return (
     <Card>
       <Heading icon={block.icon || 'activity'}>{block.title}</Heading>
       <div style={{ display: 'flex', gap: 22 }}>
-        {[{ k: 'Men', v: g.men }, { k: 'Women', v: g.women }].map((x) => (
+        {[{ k: 'Men', v: men }, { k: 'Women', v: women }].map((x) => (
           <div key={x.k} style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 8 }}>
               <span style={{ color: 'var(--text-muted)' }}>{x.k}</span>
@@ -288,24 +292,30 @@ function TopContentBlock({ block, data }) {
 function GrowthBlock({ block, data }) {
   const gr = data.metrics?.growth;
   if (!gr) return null;
-  const up = (gr.overall || 0) >= 0;
+  // `?? 0` used to turn missing values into a confident-looking "+0 Net Change"
+  // sitting next to "430 New Follows". Missing reads as "—"; all-missing hides.
+  const overall = numOrNull(gr.overall);
+  const follows = numOrNull(gr.follows);
+  const unfollows = numOrNull(gr.unfollows);
+  if (overall == null && follows == null && unfollows == null) return null;
+  const up = (overall ?? 0) >= 0;
   return (
     <Card>
       <Heading icon={block.icon || 'trendUp'}>{block.title}</Heading>
       <div className="growth-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         <div style={{ textAlign: 'center', padding: 16, borderRadius: 'calc(var(--r-card) * .6)', background: 'var(--inset-bg)' }}>
-          <div className="growth-num" style={{ fontSize: 30, fontWeight: 750, color: up ? '#16a34a' : '#ef4444' }}>{up ? '+' : ''}{gr.overall ?? 0}</div>
+          <div className="growth-num" style={{ fontSize: 30, fontWeight: 750, color: overall == null ? 'var(--text-faint)' : up ? '#16a34a' : '#ef4444' }}>{overall == null ? '—' : `${up ? '+' : ''}${overall}`}</div>
           <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>Net Change</div>
         </div>
         <div style={{ textAlign: 'center', padding: 16, borderRadius: 'calc(var(--r-card) * .6)', background: 'rgba(22,163,74,.10)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 6, minWidth: 0, color: '#16a34a' }}>
-            <Icon name="userPlus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{(gr.follows ?? 0).toLocaleString()}</span>
+            <Icon name="userPlus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{follows == null ? '—' : follows.toLocaleString()}</span>
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>New Follows</div>
         </div>
         <div style={{ textAlign: 'center', padding: 16, borderRadius: 'calc(var(--r-card) * .6)', background: 'rgba(239,68,68,.10)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 6, minWidth: 0, color: '#ef4444' }}>
-            <Icon name="userMinus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{(gr.unfollows ?? 0).toLocaleString()}</span>
+            <Icon name="userMinus" className="ic-18" /><span className="growth-num" style={{ fontSize: 28, fontWeight: 750 }}>{unfollows == null ? '—' : unfollows.toLocaleString()}</span>
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>Unfollows</div>
         </div>
@@ -378,9 +388,16 @@ export function blockHasContent(block, data) {
     case 'interactionsByContent': return list('interactionsByContent');
     case 'locations': return list('topCities') || list('topCountries');
     case 'age': return list('ageRanges');
-    case 'gender': return Boolean(data?.metrics?.gender);
+    case 'gender': {
+      const g = data?.metrics?.gender;
+      return numOrNull(g && g.men) != null && numOrNull(g && g.women) != null;
+    }
     case 'topContent': return list('topContent');
-    case 'growth': return Boolean(data?.metrics?.growth);
+    case 'growth': {
+      const gr = data?.metrics?.growth;
+      if (!gr) return false;
+      return ['overall', 'follows', 'unfollows'].some((k) => numOrNull(gr[k]) != null);
+    }
     case 'activeTimes': return list('activeTimes');
     default: return false;
   }

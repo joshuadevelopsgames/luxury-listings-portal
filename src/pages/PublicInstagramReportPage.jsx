@@ -663,7 +663,9 @@ const PublicInstagramReportPage = () => {
               )}
 
               {/* Growth */}
-              {report.metrics.growth && (report.metrics.growth.follows != null || report.metrics.growth.unfollows != null || report.metrics.growth.overall !== undefined) && (
+              {/* `overall !== undefined` was true for an explicit null, so a growth
+                  object of all-nulls rendered "+0 / 0 / 0" as if it were real. */}
+              {report.metrics.growth && (report.metrics.growth.follows != null || report.metrics.growth.unfollows != null || report.metrics.growth.overall != null) && (
                 <div className="mt-8">
                   <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-brand" />
