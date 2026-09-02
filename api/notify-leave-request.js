@@ -19,13 +19,30 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import {
-  notifyLeaveRequestSubmitted,
-  DEFAULT_LEAVE_NOTIFY_RECIPIENTS,
-} from '../lib/leaveRequestNotification.mjs';
-import { parseRecipients } from '../lib/email.mjs';
 
 export const config = { maxDuration: 30 };
+
+// Loaded lazily rather than at module scope. A static import of lib/ takes the
+// whole function down at load time with an opaque FUNCTION_INVOCATION_FAILED —
+// deferring it means a resolution failure surfaces as a catchable error we can
+// actually read, instead of a 500 with no message.
+let notifierPromise;
+function loadNotifier() {
+  if (!notifierPromise) {
+    notifierPromise = (async () => {
+      const [notify, email] = await Promise.all([
+        import('../lib/leaveRequestNotification.mjs'),
+        import('../lib/email.mjs'),
+      ]);
+      return {
+        notifyLeaveRequestSubmitted: notify.notifyLeaveRequestSubmitted,
+        DEFAULT_LEAVE_NOTIFY_RECIPIENTS: notify.DEFAULT_LEAVE_NOTIFY_RECIPIENTS,
+        parseRecipients: email.parseRecipients,
+      };
+    })();
+  }
+  return notifierPromise;
+}
 
 const ELEVATED_ROLES = new Set(['admin', 'director', 'content_director', 'manager']);
 
@@ -35,6 +52,34 @@ function json(res, status, body) {
 }
 
 export default async function handler(req, res) {
+  // Self-check: `?diag=1` with the CRON_SECRET reports whether the lib/ modules
+  // resolve inside the deployed bundle. Gated on the secret so the error text is
+  // never public, and answers before the POST-only guard so a GET can use it.
+  if (req.query?.diag === '1') {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    try {
+      const mod = await loadNotifier();
+      json(res, 200, {
+        ok: true,
+        libResolved: typeof mod.notifyLeaveRequestSubmitted === 'function',
+        env: {
+          RESEND_API_KEY: Boolean(process.env.RESEND_API_KEY),
+          REMINDER_EMAIL_FROM: Boolean(process.env.REMINDER_EMAIL_FROM),
+          SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+          SUPABASE_URL: Boolean(process.env.REACT_APP_SUPABASE_URL || process.env.SUPABASE_URL),
+          SUPABASE_ANON_KEY: Boolean(process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY),
+        },
+      });
+    } catch (e) {
+      json(res, 200, { ok: false, libResolved: false, error: String(e?.message || e), code: e?.code });
+    }
+    return;
+  }
+
   if (req.method !== 'POST') {
     json(res, 405, { error: 'Method not allowed' });
     return;
@@ -122,6 +167,8 @@ export default async function handler(req, res) {
 
   // ── send ──────────────────────────────────────────────────────────────────
   try {
+    const { notifyLeaveRequestSubmitted, DEFAULT_LEAVE_NOTIFY_RECIPIENTS, parseRecipients } =
+      await loadNotifier();
     const result = await notifyLeaveRequestSubmitted({
       requestId,
       supabaseUrl,
