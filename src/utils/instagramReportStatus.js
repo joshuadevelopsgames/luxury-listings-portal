@@ -81,14 +81,57 @@ export function getReportMonth(report) {
   return d ? d.getMonth() + 1 : 0;
 }
 
+/**
+ * Net follower change, from whichever box it was entered in.
+ *
+ * The report editor asks for this number twice: "Follower Change" under Key
+ * Metrics (-> followerChange) and "Net Change" under Follower Growth
+ * (-> growth.overall). They mean the same thing, and AI extraction commonly
+ * fills only growth.overall — so a finished report was reading as 'partial'
+ * whenever the team used the Follower Growth box. Read either.
+ */
+export function getFollowerChange(metrics) {
+  if (!metrics || typeof metrics !== 'object') return null;
+  const direct = metrics.followerChange;
+  if (direct != null && direct !== '') return direct;
+  const overall = metrics.growth?.overall;
+  if (overall != null && overall !== '') return overall;
+  return null;
+}
+
+/** The metrics that decide whether a report reads complete / partial / no data. */
+export const KEY_METRIC_FIELDS = ['followers', 'accountsReached', 'interactions', 'followerChange'];
+
+/** Labels for KEY_METRIC_FIELDS — kept in step with the report editor's own labels. */
+export const KEY_METRIC_LABELS = {
+  followers: 'Followers',
+  accountsReached: 'Viewers (Accounts Reached)',
+  interactions: 'Interactions',
+  followerChange: 'Follower Change',
+};
+
+/**
+ * Key metrics that still have no number, skipping any the team marked ignored.
+ * Drives both the completion status and the editor's "still needed" highlight,
+ * so a report that reads 'partial' highlights exactly the fields that made it so.
+ */
+export function getMissingKeyFields(metrics) {
+  if (!metrics || typeof metrics !== 'object') return [...KEY_METRIC_FIELDS];
+  const ignored = Array.isArray(metrics._ignoredFields) ? metrics._ignoredFields : [];
+  return KEY_METRIC_FIELDS.filter((f) => {
+    if (ignored.includes(f)) return false;
+    const v = f === 'followerChange' ? getFollowerChange(metrics) : metrics[f];
+    return v == null || v === '';
+  });
+}
+
 /** 'complete' | 'partial' | 'incomplete' based on the key metrics being filled in. */
 export function getReportCompletionStatus(metrics) {
   if (!metrics || typeof metrics !== 'object') return 'incomplete';
-  const keyFields = ['followers', 'accountsReached', 'interactions', 'followerChange'];
   const ignored = Array.isArray(metrics._ignoredFields) ? metrics._ignoredFields : [];
-  const active = keyFields.filter((f) => !ignored.includes(f));
+  const active = KEY_METRIC_FIELDS.filter((f) => !ignored.includes(f));
   if (active.length === 0) return 'complete';
-  const filled = active.filter((f) => metrics[f] != null && metrics[f] !== '').length;
+  const filled = active.length - getMissingKeyFields(metrics).length;
   if (filled >= active.length) return 'complete';
   if (filled >= Math.min(2, active.length)) return 'partial';
   return 'incomplete';

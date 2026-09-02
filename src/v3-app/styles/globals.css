@@ -695,8 +695,28 @@ html, body {
    ========================================================================== */
 
 @media print {
-  * {
-    background: white !important;
-    color: black !important;
+  /* NOTE: do NOT add a blanket `* { background: white; color: black }` here.
+     It strips every gradient, tile and chart fill from Instagram reports and
+     the exported PDF comes out blank. Print styling for reports lives in
+     `print.css`; keep this block for app chrome only. */
+
+  /* Chrome/Safari drop backgrounds by default — keep the design intact. */
+  html, body {
+    background: #fff !important;
+  }
+
+  /* 100dvh on a paged medium forces a full blank sheet before content. */
+  .min-h-screen {
+    min-height: 0 !important;
+  }
+
+  /* Sticky/fixed chrome repeats on every sheet or floats over content. */
+  .sticky, .fixed {
+    position: static !important;
+  }
+
+  /* Anything explicitly marked as screen-only. */
+  .no-print {
+    display: none !important;
   }
 }

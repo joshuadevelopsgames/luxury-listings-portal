@@ -3,6 +3,8 @@ import {
   getReportYear,
   getReportMonth,
   getReportCompletionStatus,
+  getMissingKeyFields,
+  getFollowerChange,
   computeMonthlyReportStatus,
   collectClientReportLinkIds,
 } from './instagramReportStatus';
@@ -63,6 +65,72 @@ describe('getReportCompletionStatus', () => {
   it('ignores fields the report marked as not applicable', () => {
     const metrics = { followers: 100, accountsReached: 200, _ignoredFields: ['interactions', 'followerChange'] };
     expect(getReportCompletionStatus(metrics)).toBe('complete');
+  });
+
+  // The editor's "Net Change" box writes growth.overall, not followerChange.
+  // Reports filled in that way were wrongly reading as 'partial'.
+  it('accepts growth.overall in place of followerChange', () => {
+    const metrics = { followers: 100, accountsReached: 200, interactions: 50, growth: { overall: 21 } };
+    expect(getReportCompletionStatus(metrics)).toBe('complete');
+  });
+
+  it('still counts a report with neither follower-change box as partial', () => {
+    const metrics = { followers: 100, accountsReached: 200, interactions: 50, growth: { follows: 29 } };
+    expect(getReportCompletionStatus(metrics)).toBe('partial');
+  });
+
+  it('treats a net change of exactly 0 as filled in', () => {
+    expect(getReportCompletionStatus({ ...FULL_METRICS, followerChange: 0 })).toBe('complete');
+    const viaGrowth = { followers: 100, accountsReached: 200, interactions: 50, growth: { overall: 0 } };
+    expect(getReportCompletionStatus(viaGrowth)).toBe('complete');
+  });
+});
+
+// The editor highlights exactly these fields, so they must be the same ones
+// that decided the Partial badge in the first place.
+describe('getMissingKeyFields', () => {
+  it('is empty for a complete report', () => {
+    expect(getMissingKeyFields(FULL_METRICS)).toEqual([]);
+  });
+
+  it('names the fields that made a report partial', () => {
+    const missing = getMissingKeyFields({ followers: 100, interactions: 50 });
+    expect(missing).toEqual(['accountsReached', 'followerChange']);
+    expect(getReportCompletionStatus({ followers: 100, interactions: 50 })).toBe('partial');
+  });
+
+  it('skips fields marked as not applicable', () => {
+    const metrics = { followers: 100, _ignoredFields: ['interactions', 'followerChange'] };
+    expect(getMissingKeyFields(metrics)).toEqual(['accountsReached']);
+  });
+
+  it('counts follower change entered in either box as filled', () => {
+    expect(getMissingKeyFields({ ...FULL_METRICS, followerChange: null, growth: { overall: 21 } })).toEqual([]);
+  });
+
+  it('treats a zero as filled in, not missing', () => {
+    expect(getMissingKeyFields({ ...FULL_METRICS, followers: 0 })).toEqual([]);
+  });
+
+  it('lists every key metric when there are no metrics at all', () => {
+    expect(getMissingKeyFields(null)).toEqual(['followers', 'accountsReached', 'interactions', 'followerChange']);
+  });
+});
+
+describe('getFollowerChange', () => {
+  it('prefers followerChange, falls back to growth.overall', () => {
+    expect(getFollowerChange({ followerChange: 5, growth: { overall: 9 } })).toBe(5);
+    expect(getFollowerChange({ growth: { overall: 9 } })).toBe(9);
+  });
+
+  it('keeps a negative net change', () => {
+    expect(getFollowerChange({ growth: { overall: -63 } })).toBe(-63);
+  });
+
+  it('is null when neither box is filled', () => {
+    expect(getFollowerChange({ growth: { follows: 29, unfollows: 8 } })).toBe(null);
+    expect(getFollowerChange({})).toBe(null);
+    expect(getFollowerChange(null)).toBe(null);
   });
 });
 

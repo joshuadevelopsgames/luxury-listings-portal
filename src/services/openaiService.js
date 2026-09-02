@@ -488,7 +488,11 @@ NEWER-LAYOUT LABELS — map these onto the fields below:
 - "New followers" on the Professional dashboard home screen is a GROSS count, NOT the net change — do NOT use it as followerChange. Only "Net followers" is the net change.
 - "Bio link taps" -> externalLinkTaps (the older layout calls this "External link taps"; same field).
 - "Accounts reached" (shown under the "Views by content type" heading) -> accountsReached.
-- "Viewers" -> accountsReached. Instagram's NEWEST layout renamed "Impressions" to "Views" and "Accounts reached" to "Viewers" — a "Viewers" count is the unique-accounts number, so map it to accountsReached, and a change % shown with it -> accountsReachedChange. Never create a separate "viewers" field.
+- VIEWS vs VIEWERS — these are TWO DIFFERENT numbers and in the newest layout they sit right next to each other. Instagram renamed "Impressions" to "Views" and "Accounts reached" to "Viewers". Read them as two separate metrics:
+    * "Views" (older layouts: "Impressions") = the TOTAL number of times content was seen -> views.
+    * "Viewers" (older layouts: "Accounts reached") = the UNIQUE-accounts number -> accountsReached, and a change % shown beside it -> accountsReachedChange.
+  When BOTH labels are visible, fill in BOTH fields. When only one is visible, fill in only that one and OMIT the other — never copy the Views number into accountsReached or the Viewers number into views, and never invent the missing one by estimating from the other. SANITY CHECK: "Viewers" counts unique accounts and "Views" counts total plays, so Viewers can never exceed Views — if your reading has Viewers larger than Views, you have swapped the two labels; re-read the screenshot rather than returning them. Never create a separate "viewers" or "impressions" field.
+- Do not confuse either of these with "Profile visits" / "Profile views", which is its own metric -> profileVisits.
 - FOLLOWER / NON-FOLLOWER SPLIT: in the newer layout the "X% followers / Y% non-followers" line sits directly under the row of metric cards and describes whichever card is CURRENTLY SELECTED (the card with the dark rounded border). If the selected card is "Views" -> viewsFollowerPercent = X. If the selected card is "Interactions" -> interactionsFollowerPercent = X. Never assign a follower % to a metric whose card is not the selected one in that screenshot.
 
 - IMPORTANT: "likes", "comments", "shares", "saves", "reposts" should ONLY be included if Instagram shows an explicit interaction-type breakdown screen listing those individual counts. If only a total "Interactions" number is shown, do NOT populate these fields — a single total does NOT imply individual breakdowns.
@@ -502,9 +506,9 @@ Use these exact field names (include ONLY fields you can actually see):
 {
   "followers": <total follower count, ONLY if explicitly shown>,
   "followerChange": <net change number ("Net followers"), ONLY if explicitly shown>,
-  "accountsReached": <number, from "Accounts reached" or the newer "Viewers" label>,
+  "accountsReached": <number, the UNIQUE-accounts figure from "Viewers" (newest layout) or "Accounts reached" (older layout), ONLY if explicitly shown>,
   "accountsReachedChange": "<string, e.g. '+12.4%', ONLY if shown>",
-  "views": <number>,
+  "views": <number, the TOTAL figure from "Views" (newest layout) or "Impressions" (older layout), ONLY if explicitly shown>,
   "viewsFollowerPercent": <number, the "% followers" shown while the Views card/section is selected>,
   "interactions": <number>,
   "interactionsFollowerPercent": <number, the "% followers" shown while the Interactions card/section is selected>,

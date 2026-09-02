@@ -29,6 +29,8 @@ import {
  * Shows a sample report with extracted data from Instagram analytics screenshots
  * This demonstrates what the final report would look like to clients
  */
+import '../styles/print.css';
+
 const DemoInstagramReportPage = () => {
   const [lightboxImage, setLightboxImage] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -122,7 +124,7 @@ const DemoInstagramReportPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-soft via-pink-50 to-warning-soft">
+    <div className="min-h-screen report-print-scope bg-gradient-to-br from-brand-soft via-pink-50 to-warning-soft">
       {/* Demo Banner */}
       <div className="bg-gradient-to-r from-yellow-400 to-warning text-white py-2 px-4 text-center">
         <div className="flex items-center justify-center gap-2">
@@ -133,7 +135,7 @@ const DemoInstagramReportPage = () => {
       </div>
 
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30">
+      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-30 no-print">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

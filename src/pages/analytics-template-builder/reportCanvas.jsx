@@ -5,7 +5,7 @@
 // ============================================================
 import React from 'react';
 import { Icon } from './Icon';
-import { RenderBlock } from './reportBlocks';
+import { RenderBlock, blockHasContent } from './reportBlocks';
 import {
   THEME_PRESETS, FONT_PRESETS, RADIUS_PRESETS, SHADOW_PRESETS, SURFACE_PRESETS, BLOCK_LIBRARY,
 } from './reportData';
@@ -95,7 +95,11 @@ function ChromeBtn({ icon, onClick, disabled, title }) {
 
 export function ReportCanvas({ template, data, selectedId, onSelect, onMove, onHide, interactive = true }) {
   const vars = buildThemeVars(template.theme);
-  const blocks = template.blocks.filter((b) => b.enabled);
+  // In the builder every enabled block stays put so it can still be selected
+  // and configured. On a real report, a block with no data renders nothing —
+  // drop it entirely rather than leaving an empty grid item, which would eat a
+  // column and strand its neighbour alone on a row.
+  const blocks = template.blocks.filter((b) => b.enabled && (interactive || blockHasContent(b, data)));
   const surf = SURFACE_PRESETS.find((s) => s.key === (template.theme.surfaceKey || (template.theme.mode === 'dark' ? 'dark' : 'light')));
   const isDark = surf ? surf.dark : false;
   return (
@@ -105,7 +109,7 @@ export function ReportCanvas({ template, data, selectedId, onSelect, onMove, onH
       onClick={() => interactive && onSelect(null)}
     >
       <div className="report-inner" style={{ maxWidth: 900, margin: '0 auto', padding: '40px 40px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 26, alignItems: 'start' }} className="report-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 26 }} className="report-grid">
           {blocks.map((b, i) =>
             interactive ? (
               <BlockChrome key={b.id} block={b} index={i} total={blocks.length} selected={selectedId === b.id} onSelect={onSelect} onMove={onMove} onHide={onHide}>

@@ -26,11 +26,14 @@ import {
   UserMinus,
   Activity,
   CalendarDays,
-  FileBarChart
+  FileBarChart,
+  Printer
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
 import { ReportTemplateView } from './analytics-template-builder/ReportTemplateView';
+import { usePrintPage } from '../hooks/usePrintOnLoad';
+import '../styles/print.css';
 
 // ─── Compact number formatter (50000 → "50K", 1200000 → "1.2M") ────────────
 const formatCompact = (value) => {
@@ -97,14 +100,16 @@ const PublicInstagramReportPage = () => {
   }, [publicLinkId]);
 
   // One-click "Export PDF": when opened with ?print=1, fire the print dialog
-  // once the report has rendered. The browser's Save-as-PDF produces the file.
+  // once the report has actually painted (fonts + images), not on a guessed
+  // timer. The browser's Save-as-PDF produces the file.
+  const printPage = usePrintPage();
+  const autoPrint = new URLSearchParams(window.location.search).get('print') === '1';
+  const firedRef = React.useRef(false);
   useEffect(() => {
-    if (!report) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('print') !== '1') return;
-    const t = setTimeout(() => { try { window.print(); } catch (e) {} }, 600);
-    return () => clearTimeout(t);
-  }, [report]);
+    if (!report || !autoPrint || firedRef.current) return;
+    firedRef.current = true;
+    printPage();
+  }, [report, autoPrint, printPage]);
 
   const openLightbox = (index) => {
     setLightboxIndex(index);
@@ -172,16 +177,18 @@ const PublicInstagramReportPage = () => {
   const isMonthlyReport = report && (!report.reportType || report.reportType === 'monthly');
   if (report && (report.template || (isMonthlyReport && !(report.screenshots?.length)))) {
     return (
-      <div className="min-h-screen" style={{ background: '#e8e8ea' }}>
+      <div className="min-h-screen report-print-scope" style={{ background: '#e8e8ea' }}>
+        <PrintBar onPrint={printPage} />
         <ReportTemplateView report={report} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#f8f7ff' }}>
+    <div className="min-h-screen report-print-scope" style={{ background: '#f8f7ff' }}>
+      <PrintBar onPrint={printPage} />
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-lg border-b border-gray-200/60 sticky top-0 z-30 shadow-sm">
+      <header className="bg-white/90 backdrop-blur-lg border-b border-gray-200/60 sticky top-0 z-30 shadow-sm no-print">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center gap-3">
             <img src="/Luxury-listings-logo-CLR.png" alt="Luxury Listings" className="h-8 w-auto object-contain" />
@@ -877,7 +884,7 @@ const PublicInstagramReportPage = () => {
       {/* Lightbox */}
       {lightboxImage && (
         <div 
-          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center no-print"
           onClick={closeLightbox}
         >
           <button
@@ -934,5 +941,21 @@ const PublicInstagramReportPage = () => {
     </div>
   );
 };
+
+/**
+ * Floating "Save as PDF" control. Always available on a shared report, so a
+ * client can export it themselves without the ?print=1 link. Hidden in the
+ * printed output via `.no-print`.
+ */
+const PrintBar = ({ onPrint }) => (
+  <button
+    onClick={onPrint}
+    className="no-print fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 h-11 px-4 rounded-full bg-gray-900 text-white text-sm font-semibold shadow-lg hover:bg-gray-800 transition-colors"
+    title="Save this report as a PDF"
+  >
+    <Printer className="w-4 h-4" />
+    Save as PDF
+  </button>
+);
 
 export default PublicInstagramReportPage;

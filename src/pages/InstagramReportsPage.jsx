@@ -72,6 +72,8 @@ import {
   getReportYear,
   getReportMonth,
   getReportCompletionStatus,
+  getMissingKeyFields,
+  KEY_METRIC_LABELS,
   getReportStatusPeriod,
   isClientStatusArchived,
   collectClientReportLinkIds,
@@ -1534,7 +1536,15 @@ const ReportShareModal = ({ report, onClose }) => {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const exportPdf = () => { window.open(`${link}?print=1`, '_blank'); };
+  // The print view loads the report through the public-link RPC, so a report
+  // that never got a publicLinkId would open on a "Report Not Found" page.
+  const exportPdf = () => {
+    if (!report.publicLinkId) {
+      toast.error('This report has no shareable link yet — save it once, then export.');
+      return;
+    }
+    window.open(`${link}?print=1`, '_blank', 'noopener');
+  };
 
   return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[160] flex items-center justify-center p-4" onClick={onClose}>
@@ -1587,7 +1597,7 @@ const ReportShareModal = ({ report, onClose }) => {
             <button onClick={exportPdf} className="w-full mt-4 flex items-center justify-center gap-2 h-10 rounded-xl border border-gray-200 dark:border-white/15 text-[14px] font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
               <Download className="w-4 h-4 text-brand" /> Export as PDF
             </button>
-            <p className="text-[12px] text-gray-400 mt-2 text-center">Opens a print-ready view — choose “Save as PDF” in the dialog.</p>
+            <p className="text-[12px] text-gray-400 mt-2 text-center">Opens a print-ready view and starts the dialog — choose “Save as PDF”, and turn on “Background graphics” if your browser asks.</p>
           </div>
         </div>
       </div>
@@ -1662,6 +1672,15 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [ignoredFields, setIgnoredFields] = useState(() => report?.metrics?._ignoredFields || []);
   const toggleIgnoreField = (key) => setIgnoredFields(prev => prev.includes(key) ? prev.filter(f => f !== key) : [...prev, key]);
+
+  // A report saved as Partial / No data opens with the key metrics that made it
+  // so called out. Frozen at mount, so the callout doesn't disappear the moment
+  // you type the first number — the per-field highlights still clear as you go.
+  const [openedCompletion] = useState(() => (report ? getReportCompletionStatus(report?.metrics) : 'complete'));
+  const showsMissingHighlights = openedCompletion !== 'complete';
+  const missingKeyFields = showsMissingHighlights
+    ? getMissingKeyFields({ ...(formData.metrics || {}), _ignoredFields: ignoredFields })
+    : [];
   const fileInputRef = useRef(null);
   const hasAutoExtractedRef = useRef(false);
 
@@ -1956,6 +1975,20 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     }));
   };
 
+  // "Follower Change" (Key Metrics) and "Net Change" (Follower Growth) are the
+  // same number in two boxes. Write both so a report stays consistent whichever
+  // one the team fills in — see getFollowerChange in instagramReportStatus.
+  const updateFollowerChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      metrics: {
+        ...prev.metrics,
+        followerChange: value,
+        growth: { ...(prev.metrics?.growth || {}), overall: value }
+      }
+    }));
+  };
+
   // Update array item (like topCities[0].percentage)
   const updateArrayMetric = (arrayKey, index, field, value) => {
     setFormData(prev => {
@@ -2125,17 +2158,27 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
 
   const mf = (key, label, inputEl) => {
     const ignored = ignoredFields.includes(key);
+    const missing = !ignored && missingKeyFields.includes(key);
     return (
       <div key={key}>
-        <div className="flex items-center justify-between mb-0.5">
-          <label className={`text-xs ${ignored ? 'text-gray-400 dark:text-gray-600 line-through' : 'text-gray-500'}`}>{label}</label>
-          <button type="button" onClick={() => toggleIgnoreField(key)} className={`transition-colors ${ignored ? 'text-orange-400' : 'text-gray-300 hover:text-gray-500 dark:text-white/20 dark:hover:text-white/50'}`} title={ignored ? 'Restore field' : 'Ignore field'}>
-            {ignored ? <Eye size={11} /> : <EyeOff size={11} />}
-          </button>
+        <div className="flex items-center justify-between gap-1 mb-0.5">
+          <label className={`text-xs truncate ${ignored ? 'text-gray-400 dark:text-gray-600 line-through' : missing ? 'text-warning font-semibold' : 'text-gray-500'}`}>{label}</label>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {missing && (
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-warning bg-warning/10 px-1 rounded" title="This report reads as incomplete until this number is filled in (or the field is ignored)">
+                Needed
+              </span>
+            )}
+            <button type="button" onClick={() => toggleIgnoreField(key)} className={`transition-colors ${ignored ? 'text-orange-400' : 'text-gray-300 hover:text-gray-500 dark:text-white/20 dark:hover:text-white/50'}`} title={ignored ? 'Restore field' : 'Ignore field'}>
+              {ignored ? <Eye size={11} /> : <EyeOff size={11} />}
+            </button>
+          </div>
         </div>
         {ignored
           ? <div className="text-xs text-gray-400 dark:text-gray-600 italic px-3 py-2 rounded border border-dashed border-gray-200 dark:border-white/10">ignored</div>
-          : inputEl}
+          : missing
+            ? <div className="rounded-[5px] ring-2 ring-warning/60">{inputEl}</div>
+            : inputEl}
       </div>
     );
   };
@@ -2446,6 +2489,30 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                       Numbers are read from your screenshots when possible; add or edit any field below.
                     </p>
+                    {showsMissingHighlights && (
+                      missingKeyFields.length > 0 ? (
+                        <div className="mb-3 flex items-start gap-2 px-3 py-2 rounded-lg bg-warning/10 border border-warning/30">
+                          <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-px" strokeWidth={2} />
+                          <p className="text-xs text-warning">
+                            <span className="font-semibold">
+                              This report reads as {openedCompletion === 'partial' ? 'Partial' : 'No data'}.
+                            </span>{' '}
+                            {missingKeyFields.map((f) => KEY_METRIC_LABELS[f] || f).join(', ')}
+                            {missingKeyFields.length === 1 ? ' is' : ' are'} still empty — highlighted below.
+                            Fill {missingKeyFields.length === 1 ? 'it' : 'them'} in, or use the
+                            <EyeOff size={11} className="inline mx-1 align-[-1px]" />
+                            icon to ignore any that don't apply to this client.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-positive/10 border border-positive/30">
+                          <CheckCircle2 className="w-4 h-4 text-positive flex-shrink-0" strokeWidth={2} />
+                          <p className="text-xs text-positive font-medium">
+                            All key metrics are filled in — this will save as Complete.
+                          </p>
+                        </div>
+                      )
+                    )}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {mf('views', 'Views', <input type="number" value={formData.metrics?.views || ''} onChange={(e) => updateMetric('views', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('followers', 'Followers', <input type="number" value={formData.metrics?.followers || ''} onChange={(e) => updateMetric('followers', parseInt(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
@@ -2460,7 +2527,7 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                       {mf('viewsFollowerPercent', 'Views from Followers %', <input type="number" step="0.1" value={formData.metrics?.viewsFollowerPercent || ''} onChange={(e) => updateMetric('viewsFollowerPercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
-                      {mf('followerChange', 'Follower Change', <input type="number" value={formData.metrics?.followerChange ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateMetric('followerChange', isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
+                      {mf('followerChange', 'Follower Change', <input type="number" value={formData.metrics?.followerChange ?? formData.metrics?.growth?.overall ?? ''} onChange={(e) => { const v = parseInt(e.target.value); updateFollowerChange(isNaN(v) ? null : v); }} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('profileVisitsChange', 'Profile Visits Change', <input type="text" value={formData.metrics?.profileVisitsChange || ''} onChange={(e) => updateMetric('profileVisitsChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('interactionsFollowerPercent', 'Interactions from Followers %', <input type="number" step="0.1" value={formData.metrics?.interactionsFollowerPercent || ''} onChange={(e) => updateMetric('interactionsFollowerPercent', parseFloat(e.target.value) || 0)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
                       {mf('accountsReachedChange', 'Viewers Change', <input type="text" value={formData.metrics?.accountsReachedChange || ''} onChange={(e) => updateMetric('accountsReachedChange', e.target.value)} className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm" placeholder="—" />)}
@@ -2511,8 +2578,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
                         <label className="text-xs text-gray-500">Net Change</label>
                         <input
                           type="number"
-                          value={formData.metrics?.growth?.overall || ''}
-                          onChange={(e) => updateNestedMetric('growth', 'overall', parseInt(e.target.value) || 0)}
+                          value={formData.metrics?.growth?.overall ?? formData.metrics?.followerChange ?? ''}
+                          onChange={(e) => { const v = parseInt(e.target.value); updateFollowerChange(isNaN(v) ? null : v); }}
                           className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
                           placeholder="—"
                         />

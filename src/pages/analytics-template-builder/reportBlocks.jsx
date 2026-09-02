@@ -27,6 +27,8 @@ function Card({ children, style, className = '' }) {
         borderRadius: 'var(--r-card)',
         boxShadow: 'var(--shadow-card)',
         padding: 24,
+        // Fill the grid row so cards sitting side by side share a bottom edge.
+        height: '100%',
         ...style,
       }}
     >
@@ -58,9 +60,9 @@ function fmtCompact(n) {
   return num.toLocaleString();
 }
 
-function Bar({ label, value, max = 100, suffix = '%', thin = false, display = null }) {
+function Bar({ label, value, max = 100, suffix = '%', display = null }) {
   return (
-    <div style={{ marginBottom: thin ? 0 : 14 }}>
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 6 }}>
         <span style={{ color: 'var(--text-muted)' }}>{label}</span>
         <span style={{ fontWeight: 650, color: 'var(--text)' }}>{display != null ? display : value}{suffix}</span>
@@ -172,7 +174,7 @@ function ContentBarsBlock({ block, data, field, icon }) {
   return (
     <Card>
       <Heading icon={block.icon || icon}>{block.title}</Heading>
-      <div>{items.map((it, i) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{items.map((it, i) => (
         useCount
           ? <Bar key={i} label={it.type} value={Number(it.count) || 0} max={max} suffix="" display={fmtCompact(it.count)} />
           : <Bar key={i} label={it.type} value={Number(it.percentage) || 0} suffix="%" />
@@ -319,6 +321,39 @@ function ScreenshotsBlock({ block }) {
       </div>
     </Card>
   );
+}
+
+// ---------- emptiness ----------
+/**
+ * Does this block have anything to draw for this report?
+ *
+ * Every block component already bails to `null` when its data is missing, but
+ * the canvas still wrapped each one in a grid item — so an empty block ate a
+ * column and pushed its neighbour onto its own row (Top Locations and Audience
+ * Gender stacked instead of pairing up). The canvas filters on this instead.
+ *
+ * Keep these conditions in step with the components' own `return null` guards.
+ */
+export function blockHasContent(block, data) {
+  const list = (field) => {
+    const items = data?.metrics?.[field];
+    return Array.isArray(items) && items.length > 0;
+  };
+  switch (block.type) {
+    case 'hero': return true;
+    case 'screenshots': return true;
+    case 'metrics': return Boolean(block.metrics && block.metrics.length);
+    case 'highlights': return Boolean(block.body);
+    case 'viewsByContent': return list('contentBreakdown');
+    case 'interactionsByContent': return list('interactionsByContent');
+    case 'locations': return list('topCities') || list('topCountries');
+    case 'age': return list('ageRanges');
+    case 'gender': return Boolean(data?.metrics?.gender);
+    case 'topContent': return list('topContent');
+    case 'growth': return Boolean(data?.metrics?.growth);
+    case 'activeTimes': return list('activeTimes');
+    default: return false;
+  }
 }
 
 // ---------- dispatcher ----------

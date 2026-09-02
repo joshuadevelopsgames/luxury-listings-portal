@@ -1,0 +1,82 @@
+/* ============================================================
+   Report printing / "Save as PDF".
+   Loaded by the public report page and the demo report page.
+
+   The browser's Save-as-PDF is the only exporter we use, so the
+   PDF is exactly what these rules produce. Two things matter:
+   1. Backgrounds must survive (print-color-adjust), otherwise the
+      hero, metric tiles and chart bars vanish and the sheet is blank.
+   2. Nothing may be sticky/fixed or clipped, otherwise the report
+      collapses onto a single page.
+   ============================================================ */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* Keep every background/gradient/fill. Inherited print-color-adjust is
+     unreliable for background-images, so set it on the whole subtree. */
+  html, body, body * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Screen-only chrome: nav bars, banners, buttons, lightbox. */
+  .no-print { display: none !important; }
+
+  /* Ancestors that clip or scroll would truncate the report to one sheet. */
+  #root,
+  .report-print-scope,
+  .report-print-scope * {
+    overflow: visible !important;
+  }
+
+  .report-print-scope {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Reports render at a fixed 900px column on screen; let them fill the sheet. */
+  .report-print-scope .report-inner {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .report-print-scope .report-root {
+    padding-bottom: 0 !important;
+    min-height: 0 !important;
+  }
+
+  /* Hover transforms/shadows are pure noise on paper. */
+  .report-print-scope .rep-card {
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Don't split a card, a metric tile or a screenshot across two sheets. */
+  .report-print-scope .rep-card,
+  .report-print-scope .metric-grid > *,
+  .report-print-scope .growth-grid > *,
+  .report-print-scope img,
+  .print-keep-together {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* The hero owns the first sheet; the footer closes the last one. */
+  .report-print-scope .report-footer {
+    break-before: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  /* Links print as plain text — a bare URL after every anchor is clutter. */
+  .report-print-scope a[href]::after { content: none !important; }
+}

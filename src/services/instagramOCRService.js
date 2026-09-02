@@ -141,10 +141,20 @@ class InstagramOCRService {
     // Normalize text - replace newlines with spaces, multiple spaces with single
     const normalizedText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
     
-    // === VIEWS === (Views, View, or "total views" wording)
-    const viewsMatch = text.match(/Views?\s*[\n\s]*([0-9,]+)/i) ||
-                       text.match(/([0-9,]+)\s*Views?/i) ||
-                       text.match(/Total\s+views?\s*[\n\s]*([0-9,]+)/i);
+    // === VIEWS (newest layout) / IMPRESSIONS (older layout) ===
+    // The TOTAL times content was seen. Two nearby labels must NOT land here:
+    //   "Profile views" is its own metric (-> profileVisits), so neutralise it
+    //   first — a lookbehind would be cleaner but is a syntax error on older
+    //   Safari, which would take the whole bundle down.
+    //   "Viewers" is the UNIQUE-accounts count (-> accountsReached, below);
+    //   \bViews?\b already excludes it, since "Viewers" runs past the boundary.
+    const viewsText = text.replace(/Profile\s+views?/gi, 'Profile visits');
+    const viewsMatch = viewsText.match(/\bViews?\b\s*[\n\s]*([0-9,]+)/i) ||
+                       viewsText.match(/Total\s+views?\s*[\n\s]*([0-9,]+)/i) ||
+                       viewsText.match(/([0-9,]+)\s*\bViews?\b/i) ||
+                       // Older layouts label this same total "Impressions".
+                       viewsText.match(/\bImpressions?\b\s*[\n\s]*([0-9,]+)/i) ||
+                       viewsText.match(/([0-9,]+)\s*\bImpressions?\b/i);
     if (viewsMatch) {
       metrics.views = this.parseNumber(viewsMatch[1]);
     }
@@ -285,8 +295,8 @@ class InstagramOCRService {
     // === ACCOUNTS REACHED (newest Instagram layout labels this "Viewers") ===
     const accountsReachedMatch = text.match(/Accounts?\s*reached\s*[\n\s]*([0-9,]+)/i) ||
                                   text.match(/([0-9,]+)\s*[\n\s]*Accounts?\s*reached/i) ||
-                                  text.match(/Viewers\s*[\n\s]*([0-9,]+)/i) ||
-                                  text.match(/([0-9,]+)\s*[\n\s]*Viewers/i);
+                                  text.match(/\bViewers\b\s*[\n\s]*([0-9,]+)/i) ||
+                                  text.match(/([0-9,]+)\s*[\n\s]*\bViewers\b/i);
     if (accountsReachedMatch) {
       metrics.accountsReached = this.parseNumber(accountsReachedMatch[1]);
     }
