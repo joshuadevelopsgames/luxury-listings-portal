@@ -20,7 +20,18 @@ export async function waitForPagePaint({ root = document, timeout = 8000 } = {})
     })
   );
 
-  await Promise.race([Promise.all([fonts, images]), deadline]);
+  // Embedded Instagram posts. A cross-origin iframe exposes no `complete`, so
+  // each embed marks itself data-loaded from its own onLoad.
+  const embeds = Promise.all(
+    Array.from(root.querySelectorAll('iframe.post-embed:not([data-loaded])')).map((frame) => (
+      new Promise((resolve) => {
+        frame.addEventListener('load', resolve, { once: true });
+        frame.addEventListener('error', resolve, { once: true });
+      })
+    ))
+  );
+
+  await Promise.race([Promise.all([fonts, images, embeds]), deadline]);
 
   // One more frame so layout settles after the last image swaps in — but
   // rAF never fires in a backgrounded tab, and the export link opens in a

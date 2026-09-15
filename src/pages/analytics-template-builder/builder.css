@@ -230,6 +230,10 @@
   .atb-root .metric-value { font-size: 23px !important; }
   .atb-root .growth-grid { gap: 8px !important; }
   .atb-root .growth-grid .growth-num { font-size: 21px !important; }
+  .atb-root .engagement-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
+  .atb-root .engagement-grid .engagement-num { font-size: 20px !important; }
+  .atb-root .cmp-head { display: none !important; }
+  .atb-root .cmp-row { grid-template-columns: minmax(0, 1fr) auto !important; grid-template-areas: "label change" "values values" "bar bar" !important; row-gap: 4px !important; }
   .atb-root .report-footer { flex-direction: column !important; align-items: center !important; gap: 9px !important; text-align: center; }
   .atb-root .preview-bar { padding: 0 12px !important; }
 }

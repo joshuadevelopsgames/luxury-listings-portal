@@ -12,6 +12,7 @@ import { TopBar, Library, Inspector } from './panels';
 import { ReportCanvas, hexToRgba } from './reportCanvas';
 import { Icon } from './Icon';
 import { REPORT_DATA, BLOCK_LIBRARY, THEME_PRESETS, GOOGLE_FONTS_HREF } from './reportData';
+import { withLibraryBlocks } from './reportAdapter';
 import { supabaseService } from '../../services/supabaseService';
 import './builder.css';
 import '../../styles/print.css';
@@ -36,13 +37,11 @@ function makeInitialTemplate() {
 }
 
 // Merge saved blocks with the library (backfill new sections, icons, metric tiles)
-// and ensure theme defaults — keeps older saves forward-compatible.
+// and ensure theme defaults — keeps older saves forward-compatible. New sections
+// come in switched on and in library order, exactly as reports backfill them, so
+// re-saving an older template can't hide a section its reports already show.
 function normalizeBlocks(savedBlocks) {
-  const blocks = Array.isArray(savedBlocks) ? JSON.parse(JSON.stringify(savedBlocks)) : [];
-  const have = new Set(blocks.map((b) => b.type));
-  BLOCK_LIBRARY.forEach((m) => {
-    if (!have.has(m.type)) blocks.push({ id: 'blk_' + m.type, type: m.type, span: m.span, locked: !!m.locked, enabled: false, icon: m.icon, ...JSON.parse(JSON.stringify(m.defaults || {})) });
-  });
+  const blocks = withLibraryBlocks(Array.isArray(savedBlocks) ? JSON.parse(JSON.stringify(savedBlocks)) : []);
   blocks.forEach((b) => {
     const m = BLOCK_LIBRARY.find((x) => x.type === b.type);
     if (!b.icon) b.icon = m ? m.icon : 'square';

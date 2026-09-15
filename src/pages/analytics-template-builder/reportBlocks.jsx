@@ -7,6 +7,8 @@
 import React from 'react';
 import { Icon } from './Icon';
 import { HERO_SHAPES } from './reportData';
+import { getInstagramEmbedUrl, getInstagramPostUrl } from '../../utils/instagramEmbed';
+import { comparisonRows } from '../../utils/reportComparison';
 
 export const GRAD = 'linear-gradient(135deg, var(--accent-from), var(--accent-via), var(--accent-to))';
 
@@ -213,27 +215,110 @@ function ContentBarsBlock({ block, data, field, icon }) {
   );
 }
 
+// ---------- ENGAGEMENT ----------
+// The editor's interaction boxes. Until this block existed, likes, comments,
+// shares, saves and reposts had no section at all, so numbers the team typed in
+// never reached the report.
+const ENGAGEMENT_TILES = [
+  { key: 'likes', label: 'Likes', icon: 'heart' },
+  { key: 'comments', label: 'Comments', icon: 'message' },
+  { key: 'shares', label: 'Shares', icon: 'send' },
+  { key: 'saves', label: 'Saves', icon: 'bookmark' },
+  { key: 'reposts', label: 'Reposts', icon: 'repeat' },
+];
+export const ENGAGEMENT_FIELDS = ['interactions', 'interactionsFollowerPercent', 'engagementRatePercent', ...ENGAGEMENT_TILES.map((t) => t.key)];
+
+function EngagementBlock({ block, data }) {
+  const m = data.metrics || {};
+  const total = numOrNull(m.interactions);
+  const fromFollowers = numOrNull(m.interactionsFollowerPercent);
+  const rate = numOrNull(m.engagementRatePercent);
+  const tiles = ENGAGEMENT_TILES.map((t) => ({ ...t, value: numOrNull(m[t.key]) })).filter((t) => t.value != null);
+  const stats = [];
+  if (total != null || fromFollowers != null) {
+    stats.push({ label: 'Total Interactions', value: total == null ? '—' : total.toLocaleString(), sub: fromFollowers != null ? `${fromFollowers}% from followers` : '' });
+  }
+  if (rate != null) stats.push({ label: 'Engagement Rate', value: `${rate}%`, sub: '' });
+  if (!stats.length && !tiles.length) return null;
+  return (
+    <Card>
+      <Heading icon={block.icon || 'heart'}>{block.title}</Heading>
+      {stats.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px 44px', marginBottom: tiles.length ? 20 : 0 }}>
+          {stats.map((s) => (
+            <div key={s.label}>
+              <div className="metric-value" style={{ fontSize: 30, fontWeight: 750, color: 'var(--text)', letterSpacing: '-0.02em' }}>{s.value}</div>
+              <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
+              {s.sub ? <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-faint)', marginTop: 6 }}>{s.sub}</div> : null}
+            </div>
+          ))}
+        </div>
+      )}
+      {tiles.length > 0 && (
+        <div className="engagement-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${tiles.length}, 1fr)`, gap: 12 }}>
+          {tiles.map((t) => (
+            <div key={t.key} style={{ minWidth: 0, textAlign: 'center', padding: '16px 8px', borderRadius: 'calc(var(--r-card) * .6)', background: 'var(--inset-bg)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--accent-solid)', marginBottom: 8 }}>
+                <Icon name={t.icon} className="ic-18" />
+              </div>
+              <div className="engagement-num" style={{ fontSize: 24, fontWeight: 750, color: 'var(--text)' }}>{t.value.toLocaleString()}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{t.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ---------- RANKED LIST (locations / age) ----------
+function RankedRows({ items, labelKey }) {
+  const max = Math.max(...items.map((i) => i.percentage)) || 1;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+      {items.map((it, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+          <span style={{ fontSize: 14.5, color: 'var(--text)' }}>{it[labelKey]}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 110, height: 8, borderRadius: 999, background: 'var(--track)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 999, background: GRAD, width: (it.percentage / max) * 100 + '%' }} />
+            </div>
+            <span style={{ fontSize: 13.5, fontWeight: 650, color: 'var(--text)', width: 46, textAlign: 'right' }}>{it.percentage}%</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RankedBlock({ block, data, field, labelKey, icon }) {
   const items = data.metrics?.[field];
   if (!Array.isArray(items) || !items.length) return null;
-  const max = Math.max(...items.map((i) => i.percentage)) || 1;
   return (
     <Card>
       <Heading icon={block.icon || icon}>{block.title}</Heading>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-        {items.map((it, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
-            <span style={{ fontSize: 14.5, color: 'var(--text)' }}>{it[labelKey]}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 110, height: 8, borderRadius: 999, background: 'var(--track)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 999, background: GRAD, width: (it.percentage / max) * 100 + '%' }} />
-              </div>
-              <span style={{ fontSize: 13.5, fontWeight: 650, color: 'var(--text)', width: 46, textAlign: 'right' }}>{it.percentage}%</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      <RankedRows items={items} labelKey={labelKey} />
+    </Card>
+  );
+}
+
+// Cities and countries are separate boxes in the editor. This used to pick one,
+// silently dropping countries whenever cities were also filled in.
+function LocationsBlock({ block, data }) {
+  const lists = [['Cities', data.metrics?.topCities], ['Countries', data.metrics?.topCountries]]
+    .filter(([, items]) => Array.isArray(items) && items.length > 0);
+  if (!lists.length) return null;
+  return (
+    <Card>
+      <Heading icon={block.icon || 'pin'}>{block.title}</Heading>
+      {lists.map(([label, items], i) => (
+        <div key={label} style={{ marginTop: i ? 22 : 0 }}>
+          {lists.length > 1 && (
+            <div style={{ fontSize: 12, fontWeight: 650, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 12 }}>{label}</div>
+          )}
+          <RankedRows items={items} labelKey="name" />
+        </div>
+      ))}
     </Card>
   );
 }
@@ -267,7 +352,58 @@ function GenderBlock({ block, data }) {
 }
 
 // ---------- TOP CONTENT ----------
+// Real reports show the posts the team adds under "Social media post previews"
+// (report.postLinks). metrics.topContent is only the builder's sample data —
+// extraction never produces it — so reading it alone dropped this section from
+// every real report once they all moved onto the template canvas.
 function TopContentBlock({ block, data }) {
+  const links = data.postLinks;
+  if (Array.isArray(links) && links.length) {
+    return (
+      <Card className="rep-card-flow">
+        <Heading icon={block.icon || 'sparkles'}>{block.title}</Heading>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 326px), 1fr))', gap: 18 }}>
+          {links.map((link, i) => {
+            const embedUrl = getInstagramEmbedUrl(link.url);
+            // The link itself goes under the embed, so it's on the report — and on
+            // the PDF, where the embed's own "View on Instagram" can't be clicked.
+            const postUrl = getInstagramPostUrl(link.url);
+            return (
+              <div key={i} className="post-item" style={{ minWidth: 0, containerType: 'inline-size' }}>
+                {embedUrl ? (
+                  // Instagram's embed is roughly a 4:5 image plus header and action rows.
+                  <iframe
+                    className="post-embed"
+                    src={embedUrl}
+                    title={link.label || `Instagram post ${i + 1}`}
+                    allow="encrypted-media"
+                    onLoad={(e) => { e.currentTarget.dataset.loaded = '1'; }}
+                    style={{ display: 'block', width: '100%', height: 'calc(125cqw + 220px)', border: 0, borderRadius: 'calc(var(--r-card) * .55)', background: 'var(--inset-bg)' }}
+                  />
+                ) : (
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 'calc(var(--r-card) * .55)', background: 'var(--inset-bg)', color: 'var(--text)', textDecoration: 'none' }}>
+                    <Icon name="link" className="ic-18" />
+                    <span style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {link.label && <span style={{ fontSize: 14, fontWeight: 650 }}>{link.label}</span>}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13.5, color: 'var(--text-muted)' }}>{link.url}</span>
+                    </span>
+                  </a>
+                )}
+                {link.label && embedUrl && <div style={{ fontSize: 14, fontWeight: 650, color: 'var(--text)', marginTop: 12 }}>{link.label}</div>}
+                {postUrl && (
+                  <a href={postUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, marginTop: link.label ? 4 : 12, fontSize: 13, fontWeight: 600, color: 'var(--accent-solid)', textDecoration: 'none' }}>
+                    <Icon name="instagram" className="ic-14" />
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{postUrl.replace(/^https:\/\/www\./, '').replace(/\/$/, '')}</span>
+                  </a>
+                )}
+                {link.comment && <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--text-muted)', margin: '6px 0 0', whiteSpace: 'pre-wrap' }}>{link.comment}</p>}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    );
+  }
   const items = data.metrics?.topContent;
   if (!Array.isArray(items) || !items.length) return null;
   return (
@@ -289,12 +425,20 @@ function TopContentBlock({ block, data }) {
 }
 
 // ---------- GROWTH ----------
+// Net change for the Follower Growth block. Instagram's newest layout only shows
+// follows/unfollows while the "Net followers" card is selected, so extraction
+// often returns that net number as followerChange alone — the same figure
+// growth.overall holds (see getFollowerChange). Reading growth alone hid this
+// section on reports that had the number.
+export function growthOverall(metrics) {
+  return numOrNull(metrics?.growth?.overall) ?? numOrNull(metrics?.followerChange);
+}
+
 function GrowthBlock({ block, data }) {
-  const gr = data.metrics?.growth;
-  if (!gr) return null;
+  const gr = data.metrics?.growth || {};
   // `?? 0` used to turn missing values into a confident-looking "+0 Net Change"
   // sitting next to "430 New Follows". Missing reads as "—"; all-missing hides.
-  const overall = numOrNull(gr.overall);
+  const overall = growthOverall(data.metrics);
   const follows = numOrNull(gr.follows);
   const unfollows = numOrNull(gr.unfollows);
   if (overall == null && follows == null && unfollows == null) return null;
@@ -363,6 +507,79 @@ function ScreenshotsBlock({ block }) {
   );
 }
 
+// ---------- COMPARISON ----------
+// Growth or decline against the report picked under "Compare to another report".
+// Views and reposts differ by orders of magnitude, so each metric is indexed to
+// the other report as a % change on one shared diverging axis: growth runs right
+// in --cmp-up, decline left in --cmp-down. The arrow and signed % say the same
+// thing without colour, and every row prints both numbers (the table view).
+const CMP_COLS = 'minmax(0, 1.1fr) minmax(0, 1.3fr) minmax(0, 2fr) 84px';
+
+function fmtSignedPct(p) {
+  const v = Math.abs(p) >= 100 ? String(Math.round(p)) : p.toFixed(1);
+  return `${p > 0 ? '+' : ''}${v}%`;
+}
+
+function ComparisonBlock({ block, data }) {
+  const [active, setActive] = React.useState(null);
+  const cmp = data.comparison;
+  const rows = comparisonRows(data.metrics, cmp && cmp.metrics);
+  if (!rows.length) return null;
+  // Longest bar = largest change, never less than ±10% so small moves stay small.
+  const scale = Math.max(10, ...rows.map((r) => Math.abs(r.pct ?? 0)));
+  return (
+    <Card>
+      <Heading icon={block.icon || 'trendUp'}>{block.title}</Heading>
+      <p style={{ margin: '-8px 0 16px', fontSize: 13.5, color: 'var(--text-muted)' }}>Compared with {cmp.label}</p>
+      <div className="cmp-head" style={{ display: 'grid', gridTemplateColumns: CMP_COLS, gap: 14, paddingBottom: 8, borderBottom: '1px solid var(--track)', fontSize: 11.5, fontWeight: 650, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--text-faint)' }}>
+        <span>Metric</span>
+        <span>{cmp.label} → This report</span>
+        <span />
+        <span style={{ textAlign: 'right' }}>Change</span>
+      </div>
+      {rows.map((r) => {
+        const dir = r.diff > 0 ? 'up' : r.diff < 0 ? 'down' : 'flat';
+        const width = r.pct == null ? 0 : Math.min(50, (Math.abs(r.pct) / scale) * 50);
+        const diffText = `${r.diff > 0 ? '+' : ''}${r.diff.toLocaleString()}`;
+        return (
+          <div
+            key={r.key}
+            className="cmp-row"
+            tabIndex={0}
+            onMouseEnter={() => setActive(r.key)}
+            onMouseLeave={() => setActive(null)}
+            onFocus={() => setActive(r.key)}
+            onBlur={() => setActive(null)}
+            style={{ position: 'relative', display: 'grid', gridTemplateColumns: CMP_COLS, gridTemplateAreas: '"label values bar change"', alignItems: 'center', gap: 14, padding: '8px 6px', margin: '0 -6px', borderBottom: '1px solid var(--track)', borderRadius: 8, outline: 'none', background: active === r.key ? 'var(--inset-bg)' : 'transparent' }}
+          >
+            <span style={{ gridArea: 'label', fontSize: 14, color: 'var(--text)' }}>{r.label}</span>
+            <span style={{ gridArea: 'values', fontSize: 13.5, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {r.prev.toLocaleString()} → <span style={{ fontWeight: 650, color: 'var(--text)' }}>{r.curr.toLocaleString()}</span>
+            </span>
+            <span aria-hidden="true" style={{ gridArea: 'bar', position: 'relative', height: 24 }}>
+              <span style={{ position: 'absolute', left: '50%', top: 2, bottom: 2, width: 1, background: 'var(--text-faint)', opacity: 0.45 }} />
+              {width > 0 && (
+                <span style={{ position: 'absolute', top: 7, height: 10, width: `${width}%`, [dir === 'up' ? 'left' : 'right']: '50%', background: dir === 'up' ? 'var(--cmp-up)' : 'var(--cmp-down)', borderRadius: dir === 'up' ? '0 4px 4px 0' : '4px 0 0 4px' }} />
+              )}
+            </span>
+            <span style={{ gridArea: 'change', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4, fontSize: 13.5, fontWeight: 650, color: 'var(--text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {dir !== 'flat' && <Icon name={dir === 'up' ? 'trendUp' : 'trendDown'} className="ic-14" />}
+              {dir === 'flat' ? 'No change' : r.pct == null ? diffText : fmtSignedPct(r.pct)}
+            </span>
+            {active === r.key && (
+              <div className="no-print" role="tooltip" style={{ position: 'absolute', right: 0, bottom: 'calc(100% + 4px)', zIndex: 3, padding: '8px 11px', borderRadius: 10, background: 'var(--card-bg)', boxShadow: '0 10px 28px -10px rgba(0,0,0,.35)', border: '1px solid var(--track)', fontSize: 12.5, color: 'var(--text-muted)', whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+                <strong style={{ fontSize: 14, color: 'var(--text)' }}>{diffText}</strong>
+                {r.pct != null && dir !== 'flat' ? ` (${fmtSignedPct(r.pct)})` : ''}
+                <div style={{ marginTop: 2 }}>{r.label}: {cmp.label} {r.prev.toLocaleString()} → this report {r.curr.toLocaleString()}</div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
 // ---------- emptiness ----------
 /**
  * Does this block have anything to draw for this report?
@@ -392,13 +609,14 @@ export function blockHasContent(block, data) {
       const g = data?.metrics?.gender;
       return numOrNull(g && g.men) != null && numOrNull(g && g.women) != null;
     }
-    case 'topContent': return list('topContent');
+    case 'topContent': return list('topContent') || (Array.isArray(data?.postLinks) && data.postLinks.length > 0);
     case 'growth': {
-      const gr = data?.metrics?.growth;
-      if (!gr) return false;
-      return ['overall', 'follows', 'unfollows'].some((k) => numOrNull(gr[k]) != null);
+      const gr = data?.metrics?.growth || {};
+      return growthOverall(data?.metrics) != null || numOrNull(gr.follows) != null || numOrNull(gr.unfollows) != null;
     }
     case 'activeTimes': return list('activeTimes');
+    case 'engagement': return ENGAGEMENT_FIELDS.some((k) => numOrNull(data?.metrics?.[k]) != null);
+    case 'comparison': return comparisonRows(data?.metrics, data?.comparison?.metrics).length > 0;
     default: return false;
   }
 }
@@ -408,13 +626,12 @@ export function RenderBlock({ block, data, client, logo }) {
   switch (block.type) {
     case 'hero': return <HeroBlock block={block} client={client} logo={logo} />;
     case 'metrics': return <MetricsBlock block={block} data={data} />;
+    case 'engagement': return <EngagementBlock block={block} data={data} />;
+    case 'comparison': return <ComparisonBlock block={block} data={data} />;
     case 'highlights': return <HighlightsBlock block={block} />;
     case 'viewsByContent': return <ContentBarsBlock block={block} data={data} field="contentBreakdown" icon="bar" />;
     case 'interactionsByContent': return <ContentBarsBlock block={block} data={data} field="interactionsByContent" icon="heart" />;
-    case 'locations': {
-      const hasCities = Array.isArray(data.metrics?.topCities) && data.metrics.topCities.length > 0;
-      return <RankedBlock block={block} data={data} field={hasCities ? 'topCities' : 'topCountries'} labelKey="name" icon="pin" />;
-    }
+    case 'locations': return <LocationsBlock block={block} data={data} />;
     case 'age': return <RankedBlock block={block} data={data} field="ageRanges" labelKey="range" icon="users" />;
     case 'gender': return <GenderBlock block={block} data={data} />;
     case 'topContent': return <TopContentBlock block={block} data={data} />;

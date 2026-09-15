@@ -17,6 +17,11 @@ export const REPORT_DATA = {
     profileVisits: 203,
     accountsReached: 5626,
     externalLinkTaps: 15,
+    likes: 980,
+    comments: 64,
+    shares: 112,
+    saves: 58,
+    reposts: 7,
     contentShared: 31,
     contentBreakdown: [
       { type: 'Posts', count: 18000 },
@@ -60,6 +65,15 @@ export const REPORT_DATA = {
       { date: 'Jan 1', views: 369, icon: 'sparkles' },
     ],
   },
+  // Sample "Compare to another report" snapshot (see utils/reportComparison).
+  comparison: {
+    label: 'December 2025',
+    dateRange: 'Dec 1 - Dec 31, 2025',
+    metrics: {
+      views: 21302, accountsReached: 5110, followers: 6585, profileVisits: 231, externalLinkTaps: 9,
+      interactions: 1048, likes: 842, comments: 71, shares: 88, saves: 41, reposts: 7, contentShared: 27,
+    },
+  },
 };
 
 // Block registry — the library of report sections.
@@ -73,8 +87,13 @@ export const BLOCK_LIBRARY = [
       { icon: 'users', label: 'Followers', value: '6,649', sub: '+64 (+1.0%)', trend: 'up' },
       { icon: 'pointer', label: 'Profile Visits', value: '203', sub: '', trend: 'none' },
       { icon: 'globe', label: 'Viewers', value: '5,626', sub: '', trend: 'none' },
+      { icon: 'link', label: 'Link Taps', value: '15', sub: '', trend: 'none' },
       { icon: 'image', label: 'Content Shared', value: '31', sub: '', trend: 'none' },
     ] } },
+  { type: 'engagement', name: 'Engagement', desc: 'Interactions, likes, comments, shares, saves', icon: 'heart', span: 'full',
+    defaults: { title: 'Engagement' } },
+  { type: 'comparison', name: 'Performance Comparison', desc: 'Growth or decline vs. a report picked in the editor', icon: 'trendUp', span: 'full',
+    defaults: { title: 'Performance Comparison' } },
   { type: 'highlights', name: 'Written Highlights', desc: 'Manager notes & takeaways', icon: 'message', span: 'full',
     defaults: { title: 'Report Highlights', body: 'Views climbed to 24,807 this month with a healthy +64 net follower gain (73 follows vs. 9 unfollows). Posts drove the bulk of reach at 18K views, with Reels adding another 6.3K. The audience skews 61% women, concentrated in the 35–54 age range and based primarily in the United States (73.5%). Recommend leaning further into Reels to convert strong non-follower reach into new follows.' } },
   { type: 'viewsByContent', name: 'Views by Content', desc: 'Posts / Stories / Reels split', icon: 'bar', span: 'half',

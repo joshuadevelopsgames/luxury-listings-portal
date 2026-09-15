@@ -39,6 +39,10 @@ export function buildThemeVars(theme) {
     '--text-faint': s.faint,
     '--track': s.track,
     '--r-card': radius,
+    // Growth / decline in the Comparison block: the validated blue↔red diverging
+    // pair (colour-blind safe, unlike green/red), a step lighter on dark surfaces.
+    '--cmp-up': isDark ? '#3987e5' : '#2a78d6',
+    '--cmp-down': isDark ? '#e66767' : '#e34948',
     '--shadow-card': isDark ? shadow.replace(/0\.(\d+)\)/g, (m, d) => '0.' + Math.min(99, +d + 25) + ')') : shadow,
     '--font': font,
     fontFamily: font,

@@ -11,6 +11,7 @@ import { cloudVisionOCRService } from '../services/cloudVisionOCRService';
 // Fallback to browser-based OCR if Cloud Vision and AI extraction fail
 import { instagramOCRService } from '../services/instagramOCRService';
 import { getInstagramEmbedUrl } from '../utils/instagramEmbed';
+import { buildComparisonSnapshot, comparisonLabel, findPreviousMonthReport, listComparableReports } from '../utils/reportComparison';
 import ClientLink from '../components/ui/ClientLink';
 import { ReportTemplateView } from './analytics-template-builder/ReportTemplateView';
 import { classicTemplate } from './analytics-template-builder/reportAdapter';
@@ -1324,6 +1325,7 @@ const InstagramReportsPage = () => {
       {(showCreateModal || editingReport) && (
         <ReportModal
           report={editingReport}
+          reports={reports}
           preSelectedClientId={preSelectedClientId}
           clientList={
             !editingReport && !preSelectedClientId
@@ -1630,7 +1632,7 @@ const TemplatePickerCard = ({ label, sub, active, onClick, previewReport, templa
   </button>
 );
 
-const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave }) => {
+const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, onClose, onSave }) => {
   // Parse existing dates if editing
   const parseExistingDate = (dateField) => {
     if (!dateField) return '';
@@ -1709,6 +1711,29 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
   }, [step, templates, selectedTemplateId, formData.clientId]);
 
   const selectedTemplate = templates.find((t) => String(t.id) === String(selectedTemplateId)) || null;
+
+  // ----- Compare to another report (optional) -----
+  // Any of the client's other monthly/weekly reports, with last month's
+  // suggested. Saved as a snapshot of that report's numbers (utils/reportComparison).
+  const [compareReportId, setCompareReportId] = useState(() => report?.template?.comparison?.reportId || null);
+  const comparisonClient = [...(clientList || []), ...(clients || [])].find((c) => String(c.id) === String(formData.clientId));
+  const comparisonSubject = {
+    id: report?.id,
+    clientId: formData.clientId,
+    clientIds: collectClientReportLinkIds(comparisonClient),
+    startDate: formData.startDate,
+    endDate: formData.endDate,
+  };
+  const comparableReports = listComparableReports(reports, comparisonSubject);
+  const suggestedCompareReport = findPreviousMonthReport(reports, comparisonSubject);
+  const compareReport = compareReportId ? comparableReports.find((r) => String(r.id) === String(compareReportId)) || null : null;
+  // A saved comparison whose report is no longer listed (deleted, or not visible
+  // to this user) keeps its snapshot instead of silently disappearing on re-save.
+  const savedComparison = report?.template?.comparison;
+  const comparisonSnapshot = compareReport
+    ? buildComparisonSnapshot(compareReport)
+    : (savedComparison && savedComparison.reportId === compareReportId && String(report?.clientId) === String(formData.clientId) ? savedComparison : null);
+
   // A lightweight report-shaped object so previews show THIS report's real data.
   const previewReport = {
     clientId: formData.clientId,
@@ -1717,6 +1742,8 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
     dateRange: formData.dateRange,
     notes: formData.notes,
     metrics: formData.metrics,
+    postLinks: formData.postLinks,
+    comparison: comparisonSnapshot,
   };
 
   const hasMetricsForSummary = formData.metrics && typeof formData.metrics === 'object' && Object.keys(formData.metrics).length > 0;
@@ -2120,7 +2147,9 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
       // drops/rearranges metrics).
       const templateId = selectedTemplate ? selectedTemplate.id : null;
       const chosenTemplate = selectedTemplate || classicTemplate();
-      const templateSnapshot = { id: chosenTemplate.id ?? null, name: chosenTemplate.name, theme: chosenTemplate.theme, blocks: chosenTemplate.blocks };
+      // The "Compare to another report" numbers ride along in the snapshot (there's
+      // no column for them), so the public page and PDF need no second lookup.
+      const templateSnapshot = { id: chosenTemplate.id ?? null, name: chosenTemplate.name, theme: chosenTemplate.theme, blocks: chosenTemplate.blocks, comparison: comparisonSnapshot };
 
       // Guard against oversized payloads (Supabase PostgREST limit ~10MB, warn >200KB)
       const payloadSize = new Blob([JSON.stringify({ clientId, clientName, title, dateRange, notes, postLinks, metrics })]).size;
@@ -2819,6 +2848,50 @@ const ReportModal = ({ report, preSelectedClientId, clientList, onClose, onSave 
               >
                 <FileBarChart className="w-4 h-4" /> Build new template
               </button>
+            </div>
+            {/* Optional: a section showing growth / decline against another of the client's reports */}
+            <div className="mb-5 rounded-xl border border-gray-200 dark:border-white/10 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[14px] font-medium text-ink">Compare to another report</p>
+                  <p className="text-[12.5px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    {comparableReports.length || compareReportId
+                      ? 'Adds a section showing growth or decline against the report you pick.'
+                      : `No other reports for ${formData.clientName || 'this client'} to compare with yet.`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={Boolean(compareReportId)}
+                  aria-label="Compare to another report"
+                  disabled={!comparableReports.length && !compareReportId}
+                  onClick={() => setCompareReportId(compareReportId ? null : ((suggestedCompareReport || comparableReports[0])?.id ?? null))}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-40 ${compareReportId ? 'bg-brand' : 'bg-gray-300 dark:bg-white/20'}`}
+                >
+                  <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${compareReportId ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+              {compareReportId && (
+                <>
+                  <select
+                    value={compareReport || comparisonSnapshot ? compareReportId : ''}
+                    onChange={(e) => setCompareReportId(e.target.value || null)}
+                    className="mt-3 w-full px-3 py-2 rounded border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm"
+                  >
+                    {!compareReport && !comparisonSnapshot && <option value="">Pick a report…</option>}
+                    {!compareReport && comparisonSnapshot && <option value={compareReportId}>{comparisonSnapshot.label} (as saved)</option>}
+                    {comparableReports.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {comparisonLabel(r)}{r.title ? ` · ${r.title}` : ''}{suggestedCompareReport && r.id === suggestedCompareReport.id ? ' (last month)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[12px] text-gray-400 mt-2">
+                    Only numbers both reports have are compared. Use Preview to see the section.
+                  </p>
+                </>
+              )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <TemplatePickerCard

@@ -141,6 +141,18 @@
     page-break-inside: avoid !important;
   }
 
+  /* Embedded top posts can run taller than a sheet: let that one card flow
+     across pages, but never split a single post. */
+  .report-print-scope .report-grid > :has(.rep-card-flow),
+  .report-print-scope .rep-card.rep-card-flow {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+  .report-print-scope .post-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
   /* A heading stranded at the foot of a page with its content overleaf. */
   .report-print-scope .rep-heading {
     break-after: avoid !important;
