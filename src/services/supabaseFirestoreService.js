@@ -184,6 +184,19 @@ function getTableChannel(table) {
 }
 
 /**
+ * After this tab writes to a table, refetch for everything listening to it right
+ * away. Listeners otherwise wait for a realtime event, and a table that isn't in
+ * the supabase_realtime publication (instagram_reports, for one) never sends
+ * one, so a newly created report didn't show until the page was refreshed. If a
+ * realtime event does arrive too, each listener's 300ms debounce merges the two.
+ */
+function refreshTableListeners(table) {
+  cacheInvalidate(`${table}:`);
+  const entry = _tableChannels.get(table);
+  if (entry) entry.listeners.forEach((fn) => fn());
+}
+
+/**
  * `realtimeListener` uses `[]` as the catch-path sentinel for array-shaped data.
  * That value is truthy; profile subscribers must ignore it — it is not a row object.
  */
@@ -2585,7 +2598,7 @@ class SupabaseService {
         ({ data, error } = await supabase.from('instagram_reports').insert([rowNoTemplate]).select().single());
       }
       if (error) throw error;
-      cacheInvalidate('instagram_reports:');
+      refreshTableListeners('instagram_reports');
       return { success: true, id: data.id, publicLinkId };
     } catch (error) { console.error('❌ Error creating Instagram report:', error); throw error; }
   }
@@ -2702,7 +2715,7 @@ class SupabaseService {
         console.warn('[updateInstagramReport] Update matched 0 rows — RLS may have blocked the write.', { reportId, processed: clean(processed) });
         throw new Error('Report update failed — your account may not have permission to edit this report. Please contact an admin.');
       }
-      cacheInvalidate('instagram_reports:');
+      refreshTableListeners('instagram_reports');
       return { success: true };
     } catch (error) { throw error; }
   }
@@ -2714,7 +2727,7 @@ class SupabaseService {
       if (!user) throw new Error('You must be signed in');
       const { error } = await supabase.from('instagram_reports').update({ archived: true, archived_at: ts(), archived_by: user.email, updated_at: ts() }).eq('id', reportId);
       if (error) throw error;
-      cacheInvalidate('instagram_reports:');
+      refreshTableListeners('instagram_reports');
       return { success: true };
     } catch (error) { throw error; }
   }
