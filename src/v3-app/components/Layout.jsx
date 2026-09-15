@@ -8,6 +8,7 @@ import { supabaseService } from '../../services/supabaseService';
 import { USER_ROLES } from '../../entities/UserRoles';
 import NotificationsCenter from '../../components/NotificationsCenter';
 import AnnouncementBanner from '../../components/AnnouncementBanner';
+import WhatsNewModal from '../../components/WhatsNewModal';
 import FeedbackButton from '../../components/ui/FeedbackButton';
 import CommandPalette from '../../components/CommandPalette';
 import KeyboardShortcutsOverlay from '../../components/KeyboardShortcutsOverlay';
@@ -790,6 +791,12 @@ const V3Layout = ({ basePath = '' }) => {
         onClose={() => setShortcutsOpen(false)}
       />
 
+
+      {/* What's new (once per release) — for people who can open Instagram Analytics */}
+      <WhatsNewModal
+        enabled={!isViewingAs && (isSystemAdmin || userPermissions.includes('instagram-reports'))}
+        reportsPath={p('/instagram-reports')}
+      />
 
       {/* Feedback & Support */}
       <FeedbackButton />

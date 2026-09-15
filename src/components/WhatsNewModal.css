@@ -1,0 +1,91 @@
+/* ============================================================
+   What's new: the "Compare to another report" motion graphic.
+   One 10s loop: scene 1 turns the comparison on in the editor
+   (0–46%), scene 2 shows the section it adds (50–96%).
+   Chrome uses the portal's --ds-* tokens; the bars use the
+   report's comparison colours (see reportCanvas buildThemeVars).
+   ============================================================ */
+.wn-demo {
+  --wn-up: #2a78d6;
+  --wn-down: #e34948;
+  position: relative;
+  height: 236px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-hairline);
+  font-size: 12px;
+  color: var(--ds-ink);
+}
+.dark .wn-demo { --wn-up: #3987e5; --wn-down: #e66767; }
+
+.wn-scene { position: absolute; inset: 0; padding: 12px 14px; }
+.wn-scene-edit { animation: wn-scene-edit 10s ease-in-out infinite; }
+.wn-scene-report { animation: wn-scene-report 10s ease-in-out infinite; opacity: 0; }
+
+.wn-strong { font-weight: 600; color: var(--ds-ink); }
+.wn-muted { color: var(--ds-ink-muted); font-size: 11px; margin-top: 2px; }
+
+/* ---- scene 1: editor ---- */
+.wn-window-bar { display: flex; align-items: center; gap: 5px; margin-bottom: 12px; color: var(--ds-ink-muted); font-size: 11px; }
+.wn-window-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--ds-hairline-2); }
+.wn-window-bar span { margin-left: 6px; }
+.wn-card { background: var(--ds-surface); border: 1px solid var(--ds-hairline); border-radius: 10px; padding: 11px 12px; }
+.wn-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wn-switch { position: relative; flex-shrink: 0; width: 36px; height: 20px; border-radius: 999px; background: var(--ds-hairline-2); animation: wn-switch 10s infinite; }
+.wn-knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); animation: wn-knob 10s infinite; }
+.wn-select { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 7px 10px; border: 1px solid var(--ds-hairline-2); border-radius: 7px; background: var(--ds-surface); white-space: nowrap; overflow: hidden; animation: wn-select 10s infinite; }
+.wn-select span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.wn-caret { flex-shrink: 0; width: 6px; height: 6px; border-right: 1.5px solid var(--ds-ink-muted); border-bottom: 1.5px solid var(--ds-ink-muted); transform: rotate(45deg) translateY(-2px); }
+.wn-save { position: absolute; right: 14px; bottom: 14px; padding: 7px 14px; border-radius: 9px; background: var(--ds-accent); color: #fff; font-weight: 600; animation: wn-save 10s infinite; }
+.wn-cursor { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: rgba(0, 0, 0, 0.28); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85); animation: wn-cursor 10s infinite; }
+
+/* ---- scene 2: the report section ---- */
+.wn-report-title { font-size: 14px; }
+.wn-rows { margin-top: 12px; }
+.wn-cmp-row { display: grid; grid-template-columns: 62px 1fr 48px; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--ds-hairline); }
+.wn-label { color: var(--ds-ink); }
+.wn-track { position: relative; height: 18px; }
+.wn-track::before { content: ''; position: absolute; left: 50%; top: 1px; bottom: 1px; width: 1px; background: var(--ds-ink-muted); opacity: 0.4; }
+.wn-bar { position: absolute; top: 5px; height: 8px; width: 0; animation: wn-bar 10s infinite; animation-delay: calc(var(--i) * 140ms); }
+.wn-up { left: 50%; background: var(--wn-up); border-radius: 0 4px 4px 0; }
+.wn-down { right: 50%; background: var(--wn-down); border-radius: 4px 0 0 4px; }
+.wn-pct { text-align: right; font-weight: 600; color: var(--ds-ink); font-variant-numeric: tabular-nums; opacity: 0; animation: wn-pct 10s infinite; animation-delay: calc(var(--i) * 140ms); }
+
+/* ---- timeline ---- */
+@keyframes wn-scene-edit { 0%, 45% { opacity: 1; } 49%, 97% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes wn-scene-report { 0%, 46% { opacity: 0; } 50%, 95% { opacity: 1; } 99%, 100% { opacity: 0; } }
+
+/* cursor: in from the bottom, taps the switch, then taps Save */
+@keyframes wn-cursor {
+  0%, 4% { right: 150px; top: 200px; transform: scale(1); opacity: 0; }
+  8% { opacity: 1; }
+  14% { right: 37px; top: 63px; transform: scale(1); }
+  16% { transform: scale(0.7); }
+  18% { transform: scale(1); }
+  30% { right: 37px; top: 63px; }
+  37% { right: 52px; top: 196px; transform: scale(1); }
+  39% { transform: scale(0.7); }
+  41% { transform: scale(1); opacity: 1; }
+  46%, 100% { right: 52px; top: 196px; opacity: 0; }
+}
+@keyframes wn-switch { 0%, 16% { background: var(--ds-hairline-2); } 18%, 100% { background: var(--ds-accent); } }
+@keyframes wn-knob { 0%, 16% { transform: translateX(0); } 18%, 100% { transform: translateX(16px); } }
+@keyframes wn-select { 0%, 19% { opacity: 0; transform: translateY(-4px); } 24%, 100% { opacity: 1; transform: translateY(0); } }
+@keyframes wn-save { 0%, 38% { filter: none; transform: scale(1); } 39% { filter: brightness(0.85); transform: scale(0.96); } 42%, 100% { filter: none; transform: scale(1); } }
+@keyframes wn-bar { 0%, 51% { width: 0; } 60%, 96% { width: var(--w); } 100% { width: 0; } }
+@keyframes wn-pct { 0%, 55% { opacity: 0; } 61%, 95% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Reduced motion: no loop; show both scenes, finished, one above the other. */
+@media (prefers-reduced-motion: reduce) {
+  .wn-demo { height: auto; }
+  .wn-demo *, .wn-demo .wn-scene { animation: none !important; }
+  .wn-demo .wn-scene { position: relative; opacity: 1; }
+  .wn-demo .wn-scene-edit { padding-bottom: 54px; }
+  .wn-demo .wn-scene-report { border-top: 1px solid var(--ds-hairline); }
+  .wn-demo .wn-switch { background: var(--ds-accent); }
+  .wn-demo .wn-knob { transform: translateX(16px); }
+  .wn-demo .wn-bar { width: var(--w); }
+  .wn-demo .wn-pct { opacity: 1; }
+  .wn-demo .wn-cursor { display: none; }
+}
