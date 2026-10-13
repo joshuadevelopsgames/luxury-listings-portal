@@ -1684,7 +1684,6 @@ const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, on
     ? getMissingKeyFields({ ...(formData.metrics || {}), _ignoredFields: ignoredFields })
     : [];
   const fileInputRef = useRef(null);
-  const hasAutoExtractedRef = useRef(false);
 
   // ----- Wizard: step 1 (details) -> step 2 (template) -----
   const [step, setStep] = useState(1);
@@ -1818,31 +1817,29 @@ const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, on
     }));
   };
 
-  // Reset auto-extract ref when opening create modal (new report)
+  // Read any screenshots that are waiting. Runs again whenever a read finishes,
+  // so screenshots dropped mid-read or in a later drop get read too.
   useEffect(() => {
-    if (!report) hasAutoExtractedRef.current = false;
-  }, [report]);
-
-  // Auto-run extraction when screenshots are added
-  useEffect(() => {
-    if (
-      formData.screenshots.length === 0 ||
-      extracting ||
-      hasAutoExtractedRef.current
-    ) return;
-    hasAutoExtractedRef.current = true;
+    if (formData.screenshots.length === 0 || extracting) return;
     runExtraction();
   }, [formData.screenshots.length, extracting]);
 
   const runExtraction = async () => {
-    if (formData.screenshots.length === 0) return;
+    // Only the screenshots present now are read; ones added meanwhile stay
+    // queued and are picked up by the effect above once this read finishes.
+    const batch = formData.screenshots;
+    if (batch.length === 0) return;
+    const removeBatch = (prev) => {
+      batch.forEach((s) => { if (s.previewUrl) URL.revokeObjectURL(s.previewUrl); });
+      return prev.screenshots.filter((s) => !batch.includes(s));
+    };
     setExtracting(true);
     setSlowExtraction(false);
     slowExtractionTimerRef.current = setTimeout(() => setSlowExtraction(true), 15000);
-    setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Analyzing screenshots...' });
+    setExtractionProgress({ current: 0, total: batch.length, status: 'Analyzing screenshots...' });
     try {
-      const images = formData.screenshots.map(s => ({ localFile: s.localFile, url: s.previewUrl }));
-      const imageFiles = formData.screenshots.map(s => s.localFile || s.previewUrl);
+      const images = batch.map(s => ({ localFile: s.localFile, url: s.previewUrl }));
+      const imageFiles = batch.map(s => s.localFile || s.previewUrl);
       let metrics;
       
       // Try AI extraction first (OpenRouter → OpenAI fallback, then Cloud Vision)
@@ -1859,7 +1856,7 @@ const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, on
         
         // Fallback to Cloud Vision OCR
         try {
-          setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Trying Cloud Vision...' });
+          setExtractionProgress({ current: 0, total: batch.length, status: 'Trying Cloud Vision...' });
           metrics = await cloudVisionOCRService.processScreenshots(
             images,
             (current, total, status) => {
@@ -1870,7 +1867,7 @@ const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, on
           console.warn('Cloud Vision failed, falling back to browser OCR:', cloudError);
           
           // Final fallback to browser-based Tesseract OCR
-          setExtractionProgress({ current: 0, total: formData.screenshots.length, status: 'Reading screenshots…' });
+          setExtractionProgress({ current: 0, total: batch.length, status: 'Reading screenshots…' });
           metrics = await instagramOCRService.processScreenshots(
             imageFiles,
             (current, total, status) => {
@@ -1880,10 +1877,16 @@ const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, on
           await instagramOCRService.terminate();
         }
       }
+      metrics = metrics || {};
+      // Merge only defined extraction values so we never overwrite views/profileVisits with undefined when AI/OCR omits them
+      const dateKeys = ['startDate', 'endDate', 'dateRange'];
+      const extractedMetrics = {};
+      for (const [k, v] of Object.entries(metrics)) {
+        if (v !== undefined && v !== null && !dateKeys.includes(k)) extractedMetrics[k] = v;
+      }
+      const filledCount = Object.keys(extractedMetrics).length;
+
       setFormData(prev => {
-        // Revoke object URLs so we don't leak memory, then dump screenshots (OCR-only)
-        (prev.screenshots || []).forEach((s) => { if (s.previewUrl) URL.revokeObjectURL(s.previewUrl); });
-        
         // Handle structured dates from OCR
         let newStartDate = prev.startDate;
         let newEndDate = prev.endDate;
@@ -1893,30 +1896,26 @@ const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, on
         if (metrics.endDate instanceof Date && !isNaN(metrics.endDate.getTime())) {
           newEndDate = metrics.endDate.toISOString().split('T')[0];
         }
-        
-        // Merge only defined extraction values so we never overwrite views/profileVisits with undefined when AI/OCR omits them
-        const dateKeys = ['startDate', 'endDate', 'dateRange'];
-        const extractedMetrics = {};
-        for (const [k, v] of Object.entries(metrics)) {
-          if (v !== undefined && v !== null && !dateKeys.includes(k)) extractedMetrics[k] = v;
-        }
         return {
           ...prev,
           startDate: newStartDate,
           endDate: newEndDate,
           dateRange: metrics.dateRange ?? prev.dateRange,
           metrics: { ...(prev.metrics || {}), ...extractedMetrics },
-          screenshots: []
+          // Screenshots are OCR-only: drop the ones just read, keep any added meanwhile
+          screenshots: removeBatch(prev)
         };
       });
+      if (filledCount > 0) {
+        toast.success(`Filled in ${filledCount} ${filledCount === 1 ? 'number' : 'numbers'} from your screenshots. Check them below.`);
+      } else {
+        toast.error("Couldn't read any numbers from those screenshots. Please enter them below.");
+      }
     } catch (error) {
       console.error('Error extracting metrics:', error);
-      hasAutoExtractedRef.current = false;
-      // Dump screenshots even on error so user can re-add if needed
-      setFormData(prev => {
-        (prev.screenshots || []).forEach((s) => { if (s.previewUrl) URL.revokeObjectURL(s.previewUrl); });
-        return { ...prev, screenshots: [] };
-      });
+      // Drop the failed screenshots so they can be re-added to try again
+      setFormData(prev => ({ ...prev, screenshots: removeBatch(prev) }));
+      toast.error("Couldn't read your screenshots. Try adding them again, or enter the numbers below.");
     } finally {
       clearTimeout(slowExtractionTimerRef.current);
       setSlowExtraction(false);
@@ -2422,7 +2421,10 @@ const ReportModal = ({ report, reports = [], preSelectedClientId, clientList, on
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => handleFileUpload(e.target.files)}
+                  onChange={(e) => {
+                    handleFileUpload(Array.from(e.target.files || []));
+                    e.target.value = ''; // let the same file be picked again
+                  }}
                   className="hidden"
                 />
                 {uploading ? (
